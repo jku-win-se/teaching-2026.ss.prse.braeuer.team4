@@ -72,7 +72,11 @@ public class CalculatorController {
 	 */
 	private String normalizeToInteger(String value) {
 		try {
-			return String.valueOf((int) Double.parseDouble(value));
+			double d = Double.parseDouble(value);
+			if (d == (int) d) {
+				return String.valueOf((int) d);
+			}
+			return value;
 		} catch (NumberFormatException e) {
 			return value;
 		}

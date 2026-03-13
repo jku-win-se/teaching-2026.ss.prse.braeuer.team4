@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import at.jku.se.calculator.CalcAction;
 import at.jku.se.calculator.operators.AddOperation;
+import at.jku.se.calculator.operators.DivideOperation;
 import at.jku.se.calculator.operators.NullOperation;
 
 /**
@@ -44,12 +45,12 @@ public class TestOperationFactory {
 	}
 
 	/**
-	 * Tests that DIV returns a {@link NullOperation} (not yet implemented).
+	 * Tests that DIV returns a {@link DivideOperation}.
 	 */
 	@Test
 	public void testDivisionOperation() {
 		ICalculationOperation operation = OperationFactory.getOperation(CalcAction.DIV);
-		assertTrue(operation instanceof NullOperation);
+		assertTrue(operation instanceof DivideOperation);
 	}
 
 	/**
