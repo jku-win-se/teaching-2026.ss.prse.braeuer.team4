@@ -1,5 +1,6 @@
 package at.jku.se.calculator.factory;
 
+import at.jku.se.calculator.operators.SubtractOperation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +40,7 @@ public class OperationFactory {
 		case MULT:
 			return new NullOperation();
 		case SUB:
-			return new NullOperation();
+			return new SubtractOperation();
 		default:
 			LOGGER.error("Sorry this operation is not yet implemented!");
 			return new NullOperation();
