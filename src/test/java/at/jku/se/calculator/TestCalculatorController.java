@@ -156,6 +156,36 @@ public class TestCalculatorController {
 		assertEquals("20", display);
 	}
 
+	/**
+	 * Simulates division with integer result: 10 / 2 = 5.
+	 */
+	@Test
+	public void testDivisionIntegerResult() {
+		controller.applyAction("10", CalcAction.DIV);
+		String result = controller.applyAction("10/2", null);
+		assertEquals("5", result);
+	}
+
+	/**
+	 * Simulates division with decimal result: 7 / 2 = 3.5.
+	 */
+	@Test
+	public void testDivisionDecimalResult() {
+		controller.applyAction("7", CalcAction.DIV);
+		String result = controller.applyAction("7/2", null);
+		assertEquals("3.5", result);
+	}
+
+	/**
+	 * Simulates division by zero: 10 / 0 = Error.
+	 */
+	@Test
+	public void testDivisionByZero() {
+		controller.applyAction("10", CalcAction.DIV);
+		String result = controller.applyAction("10/0", null);
+		assertEquals("Error", result);
+	}
+
 	// --- controller is instantiable ---
 
 	@Test
