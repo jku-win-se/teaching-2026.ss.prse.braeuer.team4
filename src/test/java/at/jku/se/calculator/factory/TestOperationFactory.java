@@ -1,7 +1,6 @@
 package at.jku.se.calculator.factory;
 
 import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 
 import at.jku.se.calculator.CalcAction;
@@ -32,15 +31,6 @@ public class TestOperationFactory {
 	@Test
 	public void testSubtractionOperation() {
 		ICalculationOperation operation = OperationFactory.getOperation(CalcAction.SUB);
-		assertTrue(operation instanceof NullOperation);
-	}
-
-	/**
-	 * Tests that MULT returns a {@link NullOperation} (not yet implemented).
-	 */
-	@Test
-	public void testMultiplicationOperation() {
-		ICalculationOperation operation = OperationFactory.getOperation(CalcAction.MULT);
 		assertTrue(operation instanceof NullOperation);
 	}
 
