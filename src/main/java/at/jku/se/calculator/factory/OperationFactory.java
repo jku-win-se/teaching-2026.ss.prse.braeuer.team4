@@ -5,10 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import at.jku.se.calculator.CalcAction;
 import at.jku.se.calculator.operators.AddOperation;
-<<<<<<< HEAD
 import at.jku.se.calculator.operators.DivideOperation;
-=======
->>>>>>> 6f70d4557ff56c641af7a7a33633aba37c5a38e9
 import at.jku.se.calculator.operators.MultiplyOperation;
 import at.jku.se.calculator.operators.NullOperation;
 
