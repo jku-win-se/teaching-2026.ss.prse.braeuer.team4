@@ -2,12 +2,7 @@
 
 ## Overview
 
-<<<<<<< Updated upstream
-This repository uses a **GitFlow-inspired branching strategy** based on the model introduced in class.  
-It separates stable releases, integration work, feature development, and emergency fixes.
-=======
 This repository uses a **simple branching strategy** adapted to our current project setup.
->>>>>>> Stashed changes
 
 The goals are:
 
@@ -30,30 +25,6 @@ Characteristics:
 - should not receive direct commits
 - should be tagged for stable releases
 
-<<<<<<< Updated upstream
-Typical usage:
-- receives merges from `release/*`
-- receives merges from `hotfix/*`
-
----
-
-### `develop`
-
-The `develop` branch is the **main integration branch** for ongoing work.
-
-Characteristics:
-- collects completed development work for the next release
-- may temporarily contain unfinished or not-yet-released changes
-- serves as the base branch for most task branches
-
-Typical usage:
-- feature branches always start from `develop`
-- documentation branches usually start from `develop`
-- development bug fixes usually start from `develop`
-
-=======
->>>>>>> Stashed changes
----
 
 ## Supporting Branches
 
@@ -211,22 +182,6 @@ docs/*      project documentation
 bugfix/*    development bug fixes
 ```
 
-Typical flow:
-
-```text
-<<<<<<< Updated upstream
-feature/*  -> develop
-docs/*     -> develop
-bugfix/*   -> develop
-release/*  -> main and develop
-hotfix/*   -> main and develop
-=======
-feature/*  -> main
-docs/*     -> main
-bugfix/*   -> main
-hotfix/*   -> main
->>>>>>> Stashed changes
-```
 
 ---
 
@@ -300,18 +255,6 @@ Open a pull request to merge the branch into:
 develop
 ```
 
-For release branches:
-- merge into `main`
-- then back into `develop`
-
-<<<<<<< Updated upstream
-For hotfix branches:
-- merge into `main`
-- then back into `develop`
-=======
-- GitHub Actions currently run for pull requests into `main`
-- this ensures checks are executed before merge
->>>>>>> Stashed changes
 
 ---
 
@@ -319,7 +262,6 @@ For hotfix branches:
 
 General rule:
 - no direct commits to `main`
-- preferably no direct commits to `develop`
 - use short-lived task branches
 - keep each branch focused on one clear purpose
 
@@ -347,43 +289,7 @@ Examples:
 ## Merge Rules
 
 - never commit directly to `main`
-- avoid direct commits to `develop`
 - always prefer pull requests
 - each branch should have one clear purpose
 - delete short-lived branches after merge
 
----
-
-## Conflict Handling
-
-If `develop` changed while you were working on a branch, update your branch before merging:
-
-```bash
-git checkout develop
-git pull origin develop
-
-git checkout feature/device-control
-git merge develop
-```
-
-Then:
-- resolve conflicts locally
-- test again
-- commit the conflict resolution
-- push the updated branch
-
----
-<<<<<<< Updated upstream
-
-## Notes
-
-This strategy follows the GitFlow principles discussed in class:
-- long-lived `main` and `develop`
-- feature branches from `develop`
-- release branches from `develop`
-- hotfix branches from `main`
-
-The additional branch types `docs/*` and `bugfix/*` are project-specific conventions introduced to keep the repository more structured for this course project.
-
-=======
->>>>>>> Stashed changes
