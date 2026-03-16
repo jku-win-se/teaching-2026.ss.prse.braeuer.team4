@@ -1,0 +1,79 @@
+classDiagram
+
+class Device {
+  <<abstract>>
+  +String id
+  +String name
+  +rename(newName)
+}
+
+class Rule {
+  +String id
+  +String name
+  +boolean enabled
+}
+
+class Schedule {
+  +String id
+  +String name
+  +String recurrencePattern
+  +boolean enabled
+}
+
+class Trigger {
+  <<abstract>>
+}
+
+class TimeTrigger {
+  +String timePattern
+}
+
+class ThresholdTrigger {
+  +String operator
+  +double threshold
+}
+
+class EventTrigger {
+  +String eventType
+}
+
+class Action {
+  +String id
+  +String actionType
+  +String targetValue
+}
+
+class LogEntry {
+  +String id
+  +DateTime timestamp
+  +String actor
+  +String changeDescription
+}
+
+class Notification {
+  +String id
+  +String message
+  +NotificationType type
+  +boolean read
+  +markAsRead()
+}
+
+class NotificationType {
+  <<enumeration>>
+  SUCCESS
+  FAILURE
+}
+
+Rule "1" --> "1" Trigger : evaluates
+Rule "1" --> "1" Action : executes
+Schedule "1" --> "1" Action : executes
+Action --> Device : targets
+
+Trigger <|-- TimeTrigger
+Trigger <|-- ThresholdTrigger
+Trigger <|-- EventTrigger
+
+Device "1" <-- "0..*" LogEntry : recorded for
+
+Rule "1" --> "0..*" Notification : produces
+Notification --> NotificationType
