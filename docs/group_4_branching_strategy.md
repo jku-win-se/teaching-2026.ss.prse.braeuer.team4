@@ -2,14 +2,15 @@
 
 ## Overview
 
-This repository uses a **simple branching strategy** adapted to our current project setup.
+This repository uses a **simplified branching strategy** adapted to our current project setup.
 
 The goals are:
 
 - keep the stable project state separated from ongoing development
 - support parallel work in the team
-- make pull requests easier to review
-- keep releases and fixes traceable
+- ensure CI checks run before merging
+- keep commits and pull requests traceable
+- avoid starting work from outdated branches
 
 ---
 
@@ -20,13 +21,31 @@ The goals are:
 The `main` branch represents the **stable project state**.
 
 Characteristics:
+
 - always intended to be stable and presentation-ready
 - contains only reviewed and integrated work
+- pull requests into `main` trigger the current GitHub Actions setup
 - should not receive direct commits
-- should be tagged for stable releases
+- should be tagged for stable milestones or releases
 
+Typical usage:
 
-## Supporting Branches
+- feature branches are currently merged into `main`
+- documentation branches are currently merged into `main`
+- bugfix branches are currently merged into `main`
+- urgent fixes are merged into `main`
+
+---
+
+### `develop` *(optional integration branch)*
+
+The `develop` branch is currently treated as an **optional integration branch**, not as the default base branch for new work.
+
+---
+
+## Working Branches
+
+Short-lived branches are used for clearly scoped tasks. Each branch should represent **one clear piece of work**.
 
 ### `feature/*`
 
@@ -49,69 +68,12 @@ feature/rules-scheduling
 ```
 
 Rules:
-- branch off from `develop`
-- merge back into `develop`
+
+- create from the latest `main`
+- open pull requests into `main`
 - delete after merge
 
 ---
-
-### `release/*`
-
-Used to prepare a new release.
-
-Naming format:
-
-```text
-release/<version-or-milestone>
-```
-
-Examples:
-
-```text
-release/1.0
-release/m1-demo
-```
-
-Typical tasks:
-- release preparation
-- final polishing
-- minor bug fixes
-- release-related metadata
-
-Rules:
-- branch off from `develop`
-- merge back into both `develop` and `main`
-- tag the release on `main`
-
----
-
-### `hotfix/*`
-
-Used for urgent fixes of problems already present in `main`.
-
-Naming format:
-
-```text
-hotfix/<short-description>
-```
-
-Examples:
-
-```text
-hotfix/login-crash
-hotfix/device-state-corruption
-```
-
-Rules:
-- branch off from `main`
-- merge back into both `main` and `develop`
-- use only for urgent production / release fixes
-
----
-
-## Project-Specific Extension Branches
-
-The following branch types are team conventions added on top of the GitFlow model for better structure in this project.
 
 ### `docs/*`
 
@@ -133,14 +95,16 @@ docs/presentation-20-03
 ```
 
 Typical content:
+
 - UML diagrams
 - architecture documentation
 - presentation material
 - requirements descriptions
 
 Rules:
-- usually branch off from `develop`
-- merge back into `develop`
+
+- create from the latest `main`
+- open pull requests into `main`
 - delete after merge
 
 ---
@@ -163,38 +127,79 @@ bugfix/login-validation
 ```
 
 Rules:
-- usually branch off from `develop`
-- merge back into `develop`
-- not intended for urgent fixes on `main`
-- urgent fixes on `main` must use `hotfix/*`
+
+- create from the latest `main`
+- open pull requests into `main`
+- delete after merge
+
+---
+
+### `hotfix/*`
+
+Used for urgent fixes of problems already present in `main`.
+
+Naming format:
+
+```text
+hotfix/<short-description>
+```
+
+Examples:
+
+```text
+hotfix/login-crash
+hotfix/device-state-corruption
+```
+
+Rules:
+
+- create from `main`
+- merge back into `main`
+- use only for urgent fixes that should be integrated immediately
+- if `develop` is actively maintained later, it must be synchronized separately
 
 ---
 
 ## Summary of Branch Roles
 
 ```text
-main        stable released state
-develop     integration branch for next release
+main        stable project state and default PR target
+develop     optional integration branch, only if kept in sync
 feature/*   new functionality
-release/*   release preparation
-hotfix/*    urgent fix for main
 docs/*      project documentation
 bugfix/*    development bug fixes
+hotfix/*    urgent fix for main
 ```
 
+Current default flow:
+
+```text
+feature/*  -> main
+docs/*     -> main
+bugfix/*   -> main
+hotfix/*   -> main
+```
 
 ---
 
 ## Working Workflow
 
-### 1. Start from `develop`
+### 1. Always update the branch base first
 
-Before creating a new branch:
+Before creating a new branch, always fetch and pull first.
+
+Default workflow:
 
 ```bash
-git checkout develop
-git pull origin develop
+git checkout main
+git fetch origin
+git pull origin main
 ```
+
+Important:
+
+- do not start a new branch from an outdated local branch
+- be especially careful with `develop`, because it is currently behind `main`
 
 ---
 
@@ -212,7 +217,7 @@ Example for documentation:
 git checkout -b docs/uml-grobkonzept
 ```
 
-Example for a development bug fix:
+Example for a bug fix:
 
 ```bash
 git checkout -b bugfix/login-validation
@@ -249,21 +254,29 @@ git push
 
 ### 5. Open a Pull Request
 
-Open a pull request to merge the branch into:
+Open a pull request into:
 
 ```text
-develop
+main
 ```
 
+Reason:
+
+- GitHub Actions currently run for pull requests into `main`
+- this ensures checks are executed before merge
+
+If the team later reactivates `develop` and configures CI for it, the pull request target can be reconsidered.
 
 ---
 
 ### 6. Merge after review
 
 General rule:
+
 - no direct commits to `main`
 - use short-lived task branches
 - keep each branch focused on one clear purpose
+- prefer pull requests over direct pushes
 
 ---
 
@@ -289,7 +302,30 @@ Examples:
 ## Merge Rules
 
 - never commit directly to `main`
-- always prefer pull requests
+- prefer pull requests for all changes
 - each branch should have one clear purpose
 - delete short-lived branches after merge
 
+---
+
+## Conflict Handling
+
+If `main` changed while you were working on a branch, update your branch before merging:
+
+```bash
+git checkout main
+git fetch origin
+git pull origin main
+
+git checkout feature/device-control
+git merge main
+```
+
+Then:
+
+- resolve conflicts locally
+- test again
+- commit the conflict resolution
+- push the updated branch
+
+---
