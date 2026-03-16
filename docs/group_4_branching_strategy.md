@@ -2,8 +2,12 @@
 
 ## Overview
 
+<<<<<<< Updated upstream
 This repository uses a **GitFlow-inspired branching strategy** based on the model introduced in class.  
 It separates stable releases, integration work, feature development, and emergency fixes.
+=======
+This repository uses a **simple branching strategy** adapted to our current project setup.
+>>>>>>> Stashed changes
 
 The goals are:
 
@@ -26,6 +30,7 @@ Characteristics:
 - should not receive direct commits
 - should be tagged for stable releases
 
+<<<<<<< Updated upstream
 Typical usage:
 - receives merges from `release/*`
 - receives merges from `hotfix/*`
@@ -46,6 +51,8 @@ Typical usage:
 - documentation branches usually start from `develop`
 - development bug fixes usually start from `develop`
 
+=======
+>>>>>>> Stashed changes
 ---
 
 ## Supporting Branches
@@ -207,11 +214,18 @@ bugfix/*    development bug fixes
 Typical flow:
 
 ```text
+<<<<<<< Updated upstream
 feature/*  -> develop
 docs/*     -> develop
 bugfix/*   -> develop
 release/*  -> main and develop
 hotfix/*   -> main and develop
+=======
+feature/*  -> main
+docs/*     -> main
+bugfix/*   -> main
+hotfix/*   -> main
+>>>>>>> Stashed changes
 ```
 
 ---
@@ -290,9 +304,14 @@ For release branches:
 - merge into `main`
 - then back into `develop`
 
+<<<<<<< Updated upstream
 For hotfix branches:
 - merge into `main`
 - then back into `develop`
+=======
+- GitHub Actions currently run for pull requests into `main`
+- this ensures checks are executed before merge
+>>>>>>> Stashed changes
 
 ---
 
@@ -354,6 +373,7 @@ Then:
 - push the updated branch
 
 ---
+<<<<<<< Updated upstream
 
 ## Notes
 
@@ -365,3 +385,5 @@ This strategy follows the GitFlow principles discussed in class:
 
 The additional branch types `docs/*` and `bugfix/*` are project-specific conventions introduced to keep the repository more structured for this course project.
 
+=======
+>>>>>>> Stashed changes
