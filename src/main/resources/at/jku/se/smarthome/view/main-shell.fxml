@@ -32,11 +32,30 @@
                     onAction="#showDashboard" style="-fx-text-fill: white;"/>
             <Button fx:id="roomsBtn" text="Rooms" styleClass="nav-button"
                     onAction="#showRooms" style="-fx-text-fill: white;"/>
-            <Button fx:id="automationBtn" text="Automation" styleClass="nav-button"
+            <Button fx:id="devicesBtn" text="Devices" styleClass="nav-button"
+                    onAction="#showDevices" style="-fx-text-fill: white;"/>
+            <Button fx:id="schedulesBtn" text="Schedules" styleClass="nav-button"
+                    onAction="#showSchedules" style="-fx-text-fill: white;"/>
+            <Button fx:id="automationBtn" text="Rules" styleClass="nav-button"
                     onAction="#showAutomation" style="-fx-text-fill: white;"/>
+            <Button fx:id="scenesBtn" text="Scenes" styleClass="nav-button"
+                    onAction="#showScenes" style="-fx-text-fill: white;"/>
             <Button fx:id="energyBtn" text="Energy" styleClass="nav-button"
                     onAction="#showEnergy" style="-fx-text-fill: white;"/>
-            <Button fx:id="settingsBtn" text="Settings" styleClass="nav-button"
+            <Button fx:id="activityLogBtn" text="Activity Log" styleClass="nav-button"
+                    onAction="#showActivityLog" style="-fx-text-fill: white;"/>
+            
+            <Label text="Settings" style="-fx-text-fill: #95a5a6; -fx-font-size: 12; -fx-font-weight: bold; -fx-padding: 10 0 5 0;"/>
+            
+            <Button fx:id="usersBtn" text="Users" styleClass="nav-button"
+                    onAction="#showUsers" style="-fx-text-fill: white;"/>
+            <Button fx:id="vacationModeBtn" text="Vacation Mode" styleClass="nav-button"
+                    onAction="#showVacationMode" style="-fx-text-fill: white;"/>
+            <Button fx:id="simulationBtn" text="Simulation" styleClass="nav-button"
+                    onAction="#showSimulation" style="-fx-text-fill: white;"/> 
+            <Button fx:id="iotSettingsBtn" text="IoT Integration" styleClass="nav-button"
+                    onAction="#showIoTSettings" style="-fx-text-fill: white;"/>
+            <Button fx:id="settingsBtn" text="Preferences" styleClass="nav-button"
                     onAction="#showSettings" style="-fx-text-fill: white;"/>
             
             <VBox VBox.vgrow="ALWAYS"/>
@@ -45,6 +64,15 @@
     
     <!-- Content Area -->
     <center>
-        <StackPane fx:id="contentArea" style="-fx-padding: 20; -fx-background-color: #ecf0f1;"/>
+                <StackPane style="-fx-background-color: #ecf0f1;">
+                        <StackPane fx:id="contentArea" style="-fx-padding: 20; -fx-background-color: #ecf0f1;"/>
+                        <VBox fx:id="toastContainer"
+                                  alignment="TOP_RIGHT"
+                                  mouseTransparent="true"
+                                  pickOnBounds="false"
+                                  spacing="10"
+                                  style="-fx-padding: 20;"
+                                  StackPane.alignment="TOP_RIGHT"/>
+                </StackPane>
     </center>
 </BorderPane>

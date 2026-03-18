@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.NotificationEntry;
+import at.jku.se.smarthome.service.MockNotificationService;
 import at.jku.se.smarthome.service.MockSmartHomeService;
 import javafx.fxml.FXML;
 import javafx.scene.chart.PieChart;
@@ -32,6 +34,7 @@ public class DashboardController {
     private VBox notificationTray;
     
     private final MockSmartHomeService service = MockSmartHomeService.getInstance();
+    private final MockNotificationService notificationService = MockNotificationService.getInstance();
     
     /**
      * Initializes the dashboard after FXML has been loaded.
@@ -42,6 +45,7 @@ public class DashboardController {
         loadFavoriteDevices();
         loadEnergyData();
         loadNotifications();
+        notificationService.getNotifications().addListener((javafx.collections.ListChangeListener<NotificationEntry>) change -> loadNotifications());
     }
     
     /**
@@ -243,15 +247,40 @@ public class DashboardController {
         }
         
         notificationTray.getChildren().clear();
-        
-        // Add sample notifications
-        Label notification1 = new Label("✓ All devices are operational");
-        notification1.setStyle("-fx-text-fill: #27ae60; -fx-font-size: 12;");
-        
-        Label notification2 = new Label("ℹ Dashboard loaded successfully");
-        notification2.setStyle("-fx-text-fill: #3498db; -fx-font-size: 12;");
-        
-        notificationTray.getChildren().addAll(notification1, notification2);
+
+        if (notificationService.getNotifications().isEmpty()) {
+            Label emptyLabel = new Label("No new notifications");
+            emptyLabel.setStyle("-fx-text-fill: #7f8c8d;");
+            notificationTray.getChildren().add(emptyLabel);
+            return;
+        }
+
+        int count = 0;
+        for (NotificationEntry entry : notificationService.getNotifications()) {
+            if (count >= 5) {
+                break;
+            }
+            Label label = new Label(formatNotification(entry));
+            label.setWrapText(true);
+            label.setStyle(notificationStyle(entry.getType()));
+            notificationTray.getChildren().add(label);
+            count++;
+        }
+    }
+
+    private String formatNotification(NotificationEntry entry) {
+        return "[" + entry.getTimestamp() + "] " + entry.getMessage();
+    }
+
+    private String notificationStyle(String type) {
+        switch (type) {
+            case "success":
+                return "-fx-text-fill: #27ae60; -fx-font-size: 12;";
+            case "error":
+                return "-fx-text-fill: #e74c3c; -fx-font-size: 12;";
+            default:
+                return "-fx-text-fill: #3498db; -fx-font-size: 12;";
+        }
     }
     
     /**

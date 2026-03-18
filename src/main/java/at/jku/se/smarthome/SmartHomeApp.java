@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import at.jku.se.smarthome.controller.LoginController;
 import at.jku.se.smarthome.controller.MainController;
+import at.jku.se.smarthome.controller.RegisterController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -20,7 +21,9 @@ public class SmartHomeApp extends Application {
     
     private Stage primaryStage;
     private Scene loginScene;
+    private Scene registerScene;
     private Scene mainScene;
+    private MainController mainController;
     
     /**
      * Starts the JavaFX application.
@@ -41,11 +44,15 @@ public class SmartHomeApp extends Application {
         // Load login scene
         loadLoginScene();
         
+        // Load register scene
+        loadRegisterScene();
+        
         // Load main scene
         loadMainScene();
         
         // Show login scene first
         primaryStage.setScene(loginScene);
+        primaryStage.setMaximized(true);
         primaryStage.show();
     }
     
@@ -61,9 +68,41 @@ public class SmartHomeApp extends Application {
         BorderPane loginRoot = loader.load();
         
         LoginController loginController = loader.getController();
-        loginController.setLoginCallback(this::showMainScene);
+        loginController.setLoginCallback(new LoginController.LoginCallback() {
+            @Override
+            public void onLoginSuccess() {
+                showMainScene();
+            }
+            
+            @Override
+            public void onRegisterClick() {
+                showRegisterScene();
+            }
+        });
         
         loginScene = new Scene(loginRoot);
+    }
+    
+    /**
+     * Loads the register FXML and scene.
+     * 
+     * @throws IOException if register FXML cannot be loaded
+     */
+    private void loadRegisterScene() throws IOException {
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/at/jku/se/smarthome/view/register-view.fxml")
+        );
+        BorderPane registerRoot = loader.load();
+        
+        RegisterController registerController = loader.getController();
+        registerController.setRegisterCallback(new RegisterController.RegisterCallback() {
+            @Override
+            public void onBackToLogin() {
+                showLoginScene();
+            }
+        });
+        
+        registerScene = new Scene(registerRoot);
     }
     
     /**
@@ -77,7 +116,7 @@ public class SmartHomeApp extends Application {
         );
         BorderPane mainRoot = loader.load();
         
-        MainController mainController = loader.getController();
+        mainController = loader.getController();
         mainController.setMainCallback(this::showLoginScene);
         
         mainScene = new Scene(mainRoot);
@@ -87,7 +126,17 @@ public class SmartHomeApp extends Application {
      * Shows the main application scene.
      */
     private void showMainScene() {
+        if (mainController != null) {
+            mainController.refreshSessionState();
+        }
         primaryStage.setScene(mainScene);
+    }
+    
+    /**
+     * Shows the register scene.
+     */
+    private void showRegisterScene() {
+        primaryStage.setScene(registerScene);
     }
     
     /**

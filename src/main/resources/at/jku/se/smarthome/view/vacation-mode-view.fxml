@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="at.jku.se.smarthome.controller.VacationModeController"
+            stylesheets="@styles.css"
+            fitToWidth="true"
+            hbarPolicy="NEVER">
+    
+    <VBox spacing="20" style="-fx-padding: 20;">
+        
+        <Label text="Vacation Mode" style="-fx-font-size: 24; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
+        
+        <!-- Toggle and Dates -->
+        <VBox spacing="15" style="-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 20; -fx-background-color: #ffffff;">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Vacation Mode:" style="-fx-font-size: 14; -fx-text-fill: #34495e;"/>
+                <ToggleButton fx:id="vacationToggle" text="OFF" onAction="#handleToggleVacation" style="-fx-padding: 8 20;"/>
+            </HBox>
+            
+            <VBox spacing="15">
+                <Label text="Select Dates" style="-fx-font-size: 12; -fx-text-fill: #7f8c8d; -fx-font-weight: bold;"/>
+                
+                <HBox spacing="15">
+                    <VBox spacing="5" prefWidth="200">
+                        <Label text="Start Date" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
+                        <DatePicker fx:id="startDatePicker" style="-fx-padding: 8;"/>
+                    </VBox>
+                    
+                    <VBox spacing="5" prefWidth="200">
+                        <Label text="End Date" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
+                        <DatePicker fx:id="endDatePicker" style="-fx-padding: 8;"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+            
+            <VBox spacing="5">
+                <Label text="Schedule to Apply" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
+                <ComboBox fx:id="scheduleCombo" prefWidth="300"/>
+            </VBox>
+        </VBox>
+        
+        <!-- Info -->
+        <VBox spacing="10" style="-fx-border-color: #e8f4f8; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #e8f8f5;">
+            <Label text="ℹ During vacation mode:" style="-fx-font-size: 12; -fx-text-fill: #16a085;"/>
+            <Label text="• Normal schedules will be overridden" style="-fx-font-size: 11; -fx-text-fill: #16a085;"/>
+            <Label text="• Selected schedule will run instead" style="-fx-font-size: 11; -fx-text-fill: #16a085;"/>
+            <Label text="• All devices will be managed automatically" style="-fx-font-size: 11; -fx-text-fill: #16a085;"/>
+        </VBox>
+
+        <VBox spacing="10" style="-fx-border-color: #d6eaf8; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #f4f9fd;">
+            <Label text="Current Vacation Override" style="-fx-font-size: 14; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
+            <Label fx:id="currentStatusLabel" text="Vacation mode is currently disabled." wrapText="true" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
+            <Label fx:id="selectedScheduleLabel" text="No schedule selected yet." wrapText="true" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
+            <Label fx:id="overrideSummaryLabel" text="When enabled, the chosen schedule becomes the effective schedule for the selected date range." wrapText="true" style="-fx-font-size: 12; -fx-text-fill: #5d6d7e;"/>
+        </VBox>
+        
+        <!-- Affected Devices -->
+        <VBox spacing="10" style="-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 20; -fx-background-color: #ffffff;">
+            <Label text="Affected Devices" style="-fx-font-size: 14; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
+            <VBox fx:id="affectedDevicesBox" spacing="5" style="-fx-padding: 10;">
+                <Label text="No devices selected" style="-fx-text-fill: #7f8c8d;"/>
+            </VBox>
+        </VBox>
+        
+        <!-- Action Button -->
+        <HBox spacing="10">
+            <Button fx:id="activateBtn" text="Activate Vacation Mode" styleClass="btn-primary" onAction="#handleActivate" prefWidth="200" disable="true"/>
+            <Button fx:id="deactivateBtn" text="Deactivate" styleClass="btn-secondary" onAction="#handleDeactivate" prefWidth="150" disable="true"/>
+        </HBox>
+    </VBox>
+</ScrollPane>

@@ -233,6 +233,46 @@
     -fx-border-color: #27ae60;
 }
 
+/* Global Toasts */
+.toast {
+    -fx-background-color: rgba(44, 62, 80, 0.96);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 12 14;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 18, 0.2, 0, 6);
+}
+
+.toast-success {
+    -fx-border-color: #27ae60;
+    -fx-border-width: 0 0 0 4;
+}
+
+.toast-error {
+    -fx-border-color: #e74c3c;
+    -fx-border-width: 0 0 0 4;
+}
+
+.toast-info {
+    -fx-border-color: #3498db;
+    -fx-border-width: 0 0 0 4;
+}
+
+.toast-title {
+    -fx-text-fill: white;
+    -fx-font-size: 13;
+    -fx-font-weight: bold;
+}
+
+.toast-message {
+    -fx-text-fill: #ecf0f1;
+    -fx-font-size: 12;
+}
+
+.toast-time {
+    -fx-text-fill: #bdc3c7;
+    -fx-font-size: 10;
+}
+
 /* VBox */
 .vbox {
     -fx-spacing: 10;

@@ -10,34 +10,38 @@
 <?import javafx.scene.text.Font?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="at.jku.se.smarthome.controller.LoginController"
+            fx:controller="at.jku.se.smarthome.controller.RegisterController"
             stylesheets="@styles.css">
     
     <center>
         <VBox alignment="CENTER" spacing="20" style="-fx-padding: 40;">
-            <Label text="Smart Home Orchestrator" style="-fx-font-size: 28; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
+            <Label text="Create Your Account" style="-fx-font-size: 28; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
             
             <VBox spacing="10" style="-fx-max-width: 400;">
                 <Label text="Email" style="-fx-font-size: 14; -fx-text-fill: #34495e;"/>
                 <TextField fx:id="emailField" promptText="Enter your email"
                            style="-fx-padding: 10; -fx-font-size: 12;"/>
                 
+                <Label text="Username" style="-fx-font-size: 14; -fx-text-fill: #34495e;"/>
+                <TextField fx:id="usernameField" promptText="Choose a username"
+                           style="-fx-padding: 10; -fx-font-size: 12;"/>
+                
                 <Label text="Password" style="-fx-font-size: 14; -fx-text-fill: #34495e;"/>
                 <PasswordField fx:id="passwordField" promptText="Enter your password"
-                               onAction="#handleLogin"
                                style="-fx-padding: 10; -fx-font-size: 12;"/>
                 
-                <Button fx:id="loginButton" text="Login" styleClass="btn-primary"
-                        onAction="#handleLogin" style="-fx-padding: 12; -fx-font-size: 14;"/>
+                <Label text="Confirm Password" style="-fx-font-size: 14; -fx-text-fill: #34495e;"/>
+                <PasswordField fx:id="confirmPasswordField" promptText="Confirm your password"
+                               style="-fx-padding: 10; -fx-font-size: 12;"/>
                 
-                <VBox alignment="CENTER" spacing="5" style="-fx-padding-top: 10;">
-                    <Label text="No account?" style="-fx-font-size: 12; -fx-text-fill: #7f8c8d;"/>
-                    <Label text="Register" style="-fx-font-size: 12; -fx-text-fill: #3498db; -fx-underline: true; -fx-cursor: hand;"
-                           onMouseClicked="#handleRegisterClick"/>
-                </VBox>
+                <Button fx:id="registerButton" text="Register" styleClass="btn-primary"
+                        onAction="#handleRegister" style="-fx-padding: 12; -fx-font-size: 14;"/>
             </VBox>
             
             <Label fx:id="errorLabel" text="" style="-fx-text-fill: #e74c3c; -fx-font-size: 12;"/>
+            
+            <Label text="Already have an account? Login" style="-fx-text-fill: #3498db; -fx-cursor: hand; -fx-font-size: 12;"
+                   onMouseClicked="#handleBackToLogin"/>
         </VBox>
     </center>
 </BorderPane>

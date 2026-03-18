@@ -1,6 +1,6 @@
 package at.jku.se.smarthome.controller;
 
-import at.jku.se.smarthome.service.MockSmartHomeService;
+import at.jku.se.smarthome.service.MockUserService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -23,18 +23,19 @@ public class LoginController {
     @FXML
     private Label errorLabel;
     
-    private final MockSmartHomeService service = MockSmartHomeService.getInstance();
+    private final MockUserService userService = MockUserService.getInstance();
     private LoginCallback loginCallback;
     
     /**
-     * Callback interface for login success.
+     * Callback interface for login and registration events.
      */
     public interface LoginCallback {
         void onLoginSuccess();
+        void onRegisterClick();
     }
     
     /**
-     * Sets the callback to be invoked on successful login.
+     * Sets the callback to be invoked on login or register.
      * 
      * @param callback the callback function
      */
@@ -56,13 +57,23 @@ public class LoginController {
             return;
         }
         
-        if (service.authenticate(email, password)) {
+        if (userService.login(email, password)) {
             errorLabel.setText("");
             if (loginCallback != null) {
                 loginCallback.onLoginSuccess();
             }
         } else {
             showError("Authentication failed. Please try again.");
+        }
+    }
+    
+    /**
+     * Handles register link click.
+     */
+    @FXML
+    private void handleRegisterClick() {
+        if (loginCallback != null) {
+            loginCallback.onRegisterClick();
         }
     }
     
