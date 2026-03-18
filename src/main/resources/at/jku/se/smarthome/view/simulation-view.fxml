@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="at.jku.se.smarthome.controller.SimulationController"
+            stylesheets="@styles.css"
+            fitToWidth="true"
+            hbarPolicy="NEVER">
+    
+    <VBox spacing="20" style="-fx-padding: 20;">
+        
+        <Label text="Smart Home Simulation" style="-fx-font-size: 24; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
+    <Label fx:id="summaryLabel" text="Configure the start time, initial sensors, and active rules. The replay uses a cloned device snapshot and never changes live devices." style="-fx-font-size: 12; -fx-text-fill: #7f8c8d;"/>
+        
+        <!-- Warning -->
+        <VBox style="-fx-border-color: #f39c12; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #fef5e7;">
+            <Label text="⚠ Warning: Simulation does not affect live system" style="-fx-font-size: 12; -fx-text-fill: #d68910;"/>
+            <Label text="Changes made during simulation are virtual only" style="-fx-font-size: 11; -fx-text-fill: #d68910;"/>
+        </VBox>
+        
+        <!-- Configuration -->
+        <VBox spacing="15" style="-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 20; -fx-background-color: #ffffff;">
+            <Label text="Simulation Configuration" style="-fx-font-size: 16; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
+            
+            <GridPane hgap="15" vgap="10">
+                <columnConstraints>
+                    <javafx.scene.layout.ColumnConstraints prefWidth="150"/>
+                    <javafx.scene.layout.ColumnConstraints prefWidth="200" hgrow="SOMETIMES"/>
+                </columnConstraints>
+                
+                <Label text="Start Time:" style="-fx-text-fill: #34495e;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <TextField fx:id="startTimeSpinner" promptText="HH:MM:SS" style="-fx-padding: 5;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                
+                <Label text="Speed:" style="-fx-text-fill: #34495e;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <ComboBox fx:id="speedCombo" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="Select speed"/>
+            </GridPane>
+            
+            <VBox spacing="10">
+                <Label text="Initial Sensor Values" style="-fx-font-size: 12; -fx-text-fill: #34495e; -fx-font-weight: bold;"/>
+                <TextField fx:id="temperatureField" promptText="Initial Temperature (°C)" style="-fx-padding: 5;"/>
+                <TextField fx:id="humidityField" promptText="Initial Humidity (%)" style="-fx-padding: 5;"/>
+            </VBox>
+            
+            <VBox spacing="10">
+                <Label text="Active Rules" style="-fx-font-size: 12; -fx-text-fill: #34495e; -fx-font-weight: bold;"/>
+                <VBox fx:id="rulesCheckBox" spacing="5" style="-fx-padding: 10; -fx-border-color: #ecf0f1; -fx-border-radius: 4;"/>
+            </VBox>
+        </VBox>
+        
+        <!-- Controls -->
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Button fx:id="startBtn" text="Start Simulation" styleClass="btn-primary" onAction="#handleStart" prefWidth="150"/>
+            <Button fx:id="pauseBtn" text="Pause" styleClass="btn-secondary" onAction="#handlePause" prefWidth="150" disable="true"/>
+            <Button fx:id="resetBtn" text="Reset" styleClass="btn-secondary" onAction="#handleReset" prefWidth="150"/>
+        </HBox>
+        
+        <!-- Progress -->
+        <VBox spacing="10">
+            <Label text="Timeline" style="-fx-font-size: 12; -fx-text-fill: #34495e; -fx-font-weight: bold;"/>
+            <Slider fx:id="progressSlider" min="0" max="100" style="-fx-padding: 10;"/>
+            <Label fx:id="progressLabel" text="00:00:00" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
+        </VBox>
+        
+        <!-- Log Output -->
+        <VBox spacing="10">
+            <Label text="Simulated Device States" style="-fx-font-size: 12; -fx-text-fill: #34495e; -fx-font-weight: bold;"/>
+            <TableView fx:id="simulatedDevicesTable" prefHeight="200">
+                <columns>
+                    <TableColumn fx:id="simDeviceColumn" text="Device" prefWidth="170"/>
+                    <TableColumn fx:id="simRoomColumn" text="Room" prefWidth="120"/>
+                    <TableColumn fx:id="simTypeColumn" text="Type" prefWidth="120"/>
+                    <TableColumn fx:id="simStateColumn" text="Simulated State" prefWidth="140"/>
+                    <TableColumn fx:id="simLastChangedColumn" text="Last Changed" prefWidth="120"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <!-- Log Output -->
+        <VBox spacing="10">
+            <Label text="Simulation Replay Log" style="-fx-font-size: 12; -fx-text-fill: #34495e; -fx-font-weight: bold;"/>
+            <TextArea fx:id="logOutput" prefHeight="200" editable="false" style="-fx-font-size: 10;"/>
+        </VBox>
+    </VBox>
+</ScrollPane>

@@ -1,0 +1,363 @@
+package at.jku.se.smarthome.controller;
+
+import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.Room;
+import at.jku.se.smarthome.service.MockLogService;
+import at.jku.se.smarthome.service.MockRoomService;
+import javafx.fxml.FXML;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+
+/**
+ * Controller for device control and state display.
+ * Handles manual control of devices with type-specific UI.
+ * Logs all state changes to activity log (FR-08).
+ */
+public class DevicesController {
+    
+    @FXML
+    private VBox devicesContainer;
+    
+    @FXML
+    private ComboBox<String> roomFilterCombo;
+    
+    private final MockRoomService roomService = MockRoomService.getInstance();
+    private final MockLogService logService = MockLogService.getInstance();
+    private String selectedRoomFilter = null;
+    
+    @FXML
+    private void initialize() {
+        // Populate room filter combo
+        roomFilterCombo.getItems().add("All Rooms");
+        for (Room room : roomService.getRooms()) {
+            roomFilterCombo.getItems().add(room.getName());
+        }
+        roomFilterCombo.setValue("All Rooms");
+        roomFilterCombo.setOnAction(e -> handleRoomFilterChange());
+        
+        // Initial load of all devices
+        loadDevices();
+    }
+    
+    /**
+     * Loads and displays devices based on filter.
+     */
+    private void loadDevices() {
+        devicesContainer.getChildren().clear();
+        
+        for (Room room : roomService.getRooms()) {
+            // Check room filter
+            if (selectedRoomFilter != null && !room.getName().equals(selectedRoomFilter)) {
+                continue;
+            }
+            
+            for (Device device : room.getDevices()) {
+                VBox deviceCard = createDeviceCard(device, room);
+                devicesContainer.getChildren().add(deviceCard);
+            }
+        }
+    }
+    
+    /**
+     * Creates a device control card based on device type.
+     */
+    private VBox createDeviceCard(Device device, Room room) {
+        VBox card = new VBox(10);
+        card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #ffffff;");
+        
+        // Header with device name, type, and room
+        HBox header = new HBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+        
+        Label nameLabel = new Label(device.getName());
+        nameLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        
+        Label typeLabel = new Label(device.getType());
+        typeLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #7f8c8d; -fx-padding: 3 8; -fx-border-radius: 3; -fx-background-color: #ecf0f1;");
+        
+        Label roomLabel = new Label(room.getName());
+        roomLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #95a5a6;");
+        
+        header.getChildren().addAll(nameLabel, typeLabel, roomLabel);
+        card.getChildren().add(header);
+        
+        // Device-type specific controls
+        switch (device.getType().toLowerCase()) {
+            case "switch":
+                createSwitchControls(card, device, room);
+                break;
+            case "dimmer":
+                createDimmerControls(card, device, room);
+                break;
+            case "thermostat":
+                createThermostatControls(card, device, room);
+                break;
+            case "sensor":
+                createSensorControls(card, device, room);
+                break;
+            case "cover/blind":
+                createCoverControls(card, device, room);
+                break;
+            default:
+                break;
+        }
+        
+        return card;
+    }
+    
+    /**
+     * Creates controls for Switch devices.
+     */
+    private void createSwitchControls(VBox card, Device device, Room room) {
+        HBox controls = new HBox(10);
+        controls.setAlignment(Pos.CENTER_LEFT);
+        
+        ToggleButton toggleBtn = new ToggleButton(device.getState() ? "ON" : "OFF");
+        toggleBtn.setSelected(device.getState());
+        toggleBtn.setPrefWidth(80);
+        applyLargeSwitchButtonStyle(toggleBtn, device.getState());
+        
+        toggleBtn.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            device.setState(newVal);
+            toggleBtn.setText(newVal ? "ON" : "OFF");
+            applyLargeSwitchButtonStyle(toggleBtn, newVal);
+            // Log the action
+            logService.addLogEntry(device.getName(), room.getName(), 
+                "Turned " + (newVal ? "ON" : "OFF"), "User");
+        });
+        
+        Label stateLabel = new Label("State: " + (device.getState() ? "ON" : "OFF"));
+        stateLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e;");
+        device.stateProperty().addListener((obs, oldVal, newVal) -> 
+            stateLabel.setText("State: " + (newVal ? "ON" : "OFF")));
+        
+        controls.getChildren().addAll(toggleBtn, stateLabel);
+        card.getChildren().add(controls);
+    }
+
+    private void applyLargeSwitchButtonStyle(ToggleButton toggleButton, boolean enabled) {
+        toggleButton.setStyle(enabled
+                ? "-fx-padding: 8 20; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #27ae60; -fx-text-fill: #ffffff; -fx-border-color: #1e8449; -fx-border-radius: 4; -fx-background-radius: 4;"
+                : "-fx-padding: 8 20; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #ecf0f1; -fx-text-fill: #2c3e50; -fx-border-color: #bdc3c7; -fx-border-radius: 4; -fx-background-radius: 4;");
+    }
+    
+    /**
+     * Creates controls for Dimmer devices.
+     */
+    private void createDimmerControls(VBox card, Device device, Room room) {
+        VBox controls = new VBox(8);
+        
+        HBox sliderBox = new HBox(10);
+        sliderBox.setAlignment(Pos.CENTER_LEFT);
+        
+        Slider brightnessSlider = new Slider(0, 100, device.getBrightness());
+        brightnessSlider.setPrefWidth(300);
+        brightnessSlider.setShowTickLabels(true);
+        brightnessSlider.setShowTickMarks(true);
+        brightnessSlider.setMajorTickUnit(10);
+        
+        Label brightnessLabel = new Label("Brightness: " + (int)device.getBrightness() + "%");
+        brightnessLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e; -fx-min-width: 100;");
+        
+        brightnessSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            device.setBrightness(newVal.intValue());
+            brightnessLabel.setText("Brightness: " + newVal.intValue() + "%");
+            // Log the action
+            logService.addLogEntry(device.getName(), room.getName(), 
+                "Set brightness to " + newVal.intValue() + "%", "User");
+        });
+        
+        sliderBox.getChildren().addAll(brightnessSlider, brightnessLabel);
+        
+        HBox stateBox = new HBox(10);
+        stateBox.setAlignment(Pos.CENTER_LEFT);
+        
+        ToggleButton toggleBtn = new ToggleButton(device.getState() ? "ON" : "OFF");
+        toggleBtn.setSelected(device.getState());
+        toggleBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
+        toggleBtn.setPrefWidth(60);
+        
+        toggleBtn.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            device.setState(newVal);
+            toggleBtn.setText(newVal ? "ON" : "OFF");
+            // Log the action
+            logService.addLogEntry(device.getName(), room.getName(), 
+                "Turned " + (newVal ? "ON" : "OFF"), "User");
+        });
+        
+        Label stateLabel = new Label("State: " + (device.getState() ? "ON" : "OFF"));
+        stateLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #34495e;");
+        device.stateProperty().addListener((obs, oldVal, newVal) -> 
+            stateLabel.setText("State: " + (newVal ? "ON" : "OFF")));
+        
+        stateBox.getChildren().addAll(toggleBtn, stateLabel);
+        
+        controls.getChildren().addAll(sliderBox, stateBox);
+        card.getChildren().add(controls);
+    }
+    
+    /**
+     * Creates controls for Thermostat devices.
+     */
+    private void createThermostatControls(VBox card, Device device, Room room) {
+        HBox controls = new HBox(10);
+        controls.setAlignment(Pos.CENTER_LEFT);
+        
+        Label tempLabel = new Label("Target Temperature:");
+        tempLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e;");
+        
+        Button minusBtn = new Button("−");
+        minusBtn.setStyle("-fx-padding: 5 12; -fx-font-size: 14;");
+        minusBtn.setPrefWidth(40);
+        
+        Label tempValueLabel = new Label(String.format("%.1f°C", device.getTemperature()));
+        tempValueLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #e74c3c; -fx-min-width: 60; -fx-text-alignment: center;");
+        
+        Button plusBtn = new Button("+");
+        plusBtn.setStyle("-fx-padding: 5 12; -fx-font-size: 14;");
+        plusBtn.setPrefWidth(40);
+        
+        minusBtn.setOnAction(e -> {
+            device.setTemperature(device.getTemperature() - 1);
+            tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
+            // Log the action
+            logService.addLogEntry(device.getName(), room.getName(), 
+                "Set temperature to " + String.format("%.1f°C", device.getTemperature()), "User");
+        });
+        
+        plusBtn.setOnAction(e -> {
+            device.setTemperature(device.getTemperature() + 1);
+            tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
+            // Log the action
+            logService.addLogEntry(device.getName(), room.getName(), 
+                "Set temperature to " + String.format("%.1f°C", device.getTemperature()), "User");
+        });
+        
+        device.temperatureProperty().addListener((obs, oldVal, newVal) -> 
+            tempValueLabel.setText(String.format("%.1f°C", newVal.doubleValue())));
+        
+        controls.getChildren().addAll(tempLabel, minusBtn, tempValueLabel, plusBtn);
+        card.getChildren().add(controls);
+    }
+    
+    /**
+     * Creates controls for Sensor devices.
+     */
+    private void createSensorControls(VBox card, Device device, Room room) {
+        VBox controls = new VBox(8);
+        
+        HBox readingBox = new HBox(10);
+        readingBox.setAlignment(Pos.CENTER_LEFT);
+        
+        Label readingLabel = new Label("Current Reading:");
+        readingLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e;");
+        
+        Label valueLabel = new Label(String.format("%.1f", device.getTemperature()));
+        valueLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #3498db;");
+        
+        device.temperatureProperty().addListener((obs, oldVal, newVal) -> 
+            valueLabel.setText(String.format("%.1f", newVal.doubleValue())));
+        
+        readingBox.getChildren().addAll(readingLabel, valueLabel);
+        
+        HBox injectBox = new HBox(10);
+        injectBox.setAlignment(Pos.CENTER_LEFT);
+        
+        Label injectLabel = new Label("Inject Test Value:");
+        injectLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e;");
+        
+        TextField testValueField = new TextField();
+        testValueField.setPromptText("Enter value (e.g., 25.5)");
+        testValueField.setPrefWidth(150);
+        testValueField.setStyle("-fx-padding: 5;");
+        
+        Button injectBtn = new Button("Inject");
+        injectBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
+        injectBtn.setOnAction(e -> {
+            try {
+                double value = Double.parseDouble(testValueField.getText());
+                device.setTemperature(value);
+                testValueField.clear();
+                // Log the action
+                logService.addLogEntry(device.getName(), room.getName(), 
+                    "Test value injected: " + value, "User");
+            } catch (NumberFormatException ex) {
+                // Invalid input - silently ignore
+            }
+        });
+        
+        injectBox.getChildren().addAll(injectLabel, testValueField, injectBtn);
+        
+        controls.getChildren().addAll(readingBox, injectBox);
+        card.getChildren().add(controls);
+    }
+    
+    /**
+     * Creates controls for Cover/Blind devices.
+     */
+    private void createCoverControls(VBox card, Device device, Room room) {
+        HBox controls = new HBox(10);
+        controls.setAlignment(Pos.CENTER_LEFT);
+        
+        Label positionLabel = new Label("Cover Position:");
+        positionLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e;");
+        
+        Label statusLabel = new Label(device.getState() ? "OPEN" : "CLOSED");
+        statusLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: " + 
+            (device.getState() ? "#27ae60;" : "#e74c3c;"));
+        
+        device.stateProperty().addListener((obs, oldVal, newVal) -> {
+            statusLabel.setText(newVal ? "OPEN" : "CLOSED");
+            statusLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: " + 
+                (newVal ? "#27ae60;" : "#e74c3c;"));
+        });
+        
+        Button openBtn = new Button("Open");
+        openBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
+        openBtn.setOnAction(e -> {
+            device.setState(true);
+            // Log the action
+            logService.addLogEntry(device.getName(), room.getName(), 
+                "Opened", "User");
+        });
+        
+        Button closeBtn = new Button("Close");
+        closeBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
+        closeBtn.setOnAction(e -> {
+            device.setState(false);
+            // Log the action
+            logService.addLogEntry(device.getName(), room.getName(), 
+                "Closed", "User");
+        });
+        
+        controls.getChildren().addAll(positionLabel, statusLabel, openBtn, closeBtn);
+        card.getChildren().add(controls);
+    }
+    
+    /**
+     * Handles room filter change.
+     */
+    @FXML
+    private void handleRoomFilterChange() {
+        String selected = roomFilterCombo.getValue();
+        selectedRoomFilter = selected != null && !selected.equals("All Rooms") ? selected : null;
+        loadDevices();
+    }
+    
+    /**
+     * Clears the room filter.
+     */
+    @FXML
+    private void handleClearRoomFilter() {
+        roomFilterCombo.setValue("All Rooms");
+        selectedRoomFilter = null;
+        loadDevices();
+    }
+}

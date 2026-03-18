@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="at.jku.se.smarthome.controller.UsersController"
+            stylesheets="@styles.css"
+            fitToWidth="true"
+            hbarPolicy="NEVER">
+    
+    <VBox spacing="20" style="-fx-padding: 20;">
+        
+        <Label text="User Management" style="-fx-font-size: 24; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
+        
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Button fx:id="inviteBtn" text="+ Invite Member" styleClass="btn-primary" onAction="#handleInviteMember"/>
+            <Label text="Status Filter:" style="-fx-text-fill: #34495e;"/>
+            <ComboBox fx:id="statusFilterCombo" prefWidth="160"/>
+        </HBox>
+        
+        <TableView fx:id="usersTable" style="-fx-padding: 10;">
+            <columns>
+                <TableColumn text="Email" prefWidth="200" fx:id="emailColumn"/>
+                <TableColumn text="Role" prefWidth="100" fx:id="roleColumn"/>
+                <TableColumn text="Status" prefWidth="100" fx:id="statusColumn"/>
+                <TableColumn text="Actions" prefWidth="150" fx:id="actionsColumn"/>
+            </columns>
+        </TableView>
+    </VBox>
+</ScrollPane>

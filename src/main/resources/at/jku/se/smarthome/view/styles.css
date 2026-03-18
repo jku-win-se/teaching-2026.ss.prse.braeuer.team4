@@ -1,0 +1,306 @@
+/* SmartHome UI Styles */
+
+/* Color Variables */
+:root {
+    -fx-primary: #2c3e50;
+    -fx-secondary: #34495e;
+    -fx-accent: #3498db;
+    -fx-success: #27ae60;
+    -fx-danger: #e74c3c;
+    -fx-background: #ecf0f1;
+    -fx-light: #bdc3c7;
+    -fx-text-dark: #2c3e50;
+    -fx-text-light: #ffffff;
+}
+
+/* General Styles */
+* {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+}
+
+.root {
+    -fx-background-color: #ecf0f1;
+    -fx-font-size: 12;
+}
+
+/* Header */
+.header {
+    -fx-background-color: #2c3e50;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 15 20;
+    -fx-border-color: #1a252f;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* Sidebar */
+.sidebar {
+    -fx-background-color: #34495e;
+    -fx-padding: 20;
+    -fx-min-width: 200;
+}
+
+/* Navigation Button */
+.nav-button {
+    -fx-padding: 12 15;
+    -fx-background-color: #2c3e50;
+    -fx-text-fill: #ecf0f1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-font-size: 13;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: #3498db;
+}
+
+.nav-button:pressed {
+    -fx-background-color: #2980b9;
+}
+
+/* Primary Button */
+.btn-primary {
+    -fx-padding: 12 20;
+    -fx-background-color: #3498db;
+    -fx-text-fill: #ffffff;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-font-size: 13;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.btn-primary:hover {
+    -fx-background-color: #2980b9;
+}
+
+.btn-primary:pressed {
+    -fx-background-color: #1f5e7a;
+}
+
+/* Secondary Button */
+.btn-secondary {
+    -fx-padding: 10 15;
+    -fx-background-color: #7f8c8d;
+    -fx-text-fill: #ffffff;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-font-size: 12;
+    -fx-cursor: hand;
+}
+
+.btn-secondary:hover {
+    -fx-background-color: #95a5a6;
+}
+
+.btn-secondary:pressed {
+    -fx-background-color: #5a6c7d;
+}
+
+/* Device Card */
+.device-card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 15;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+}
+
+.device-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 8, 0, 0, 3);
+}
+
+/* Labels */
+.label {
+    -fx-text-fill: #2c3e50;
+}
+
+.label-primary {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Text Fields */
+.text-field {
+    -fx-padding: 10;
+    -fx-font-size: 12;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-background-color: #ffffff;
+}
+
+.text-field:focused {
+    -fx-border-color: #3498db;
+    -fx-border-width: 2;
+}
+
+/* Password Field */
+.password-field {
+    -fx-padding: 10;
+    -fx-font-size: 12;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-background-color: #ffffff;
+}
+
+.password-field:focused {
+    -fx-border-color: #3498db;
+    -fx-border-width: 2;
+}
+
+/* Slider */
+.slider {
+    -fx-control-inner-background: #ecf0f1;
+}
+
+.slider .thumb {
+    -fx-background-color: #3498db;
+}
+
+.slider .track {
+    -fx-background-color: #bdc3c7;
+}
+
+/* Toggle Button */
+.toggle-button {
+    -fx-padding: 10 15;
+    -fx-background-color: #ecf0f1;
+    -fx-text-fill: #2c3e50;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+
+.toggle-button:selected {
+    -fx-background-color: #27ae60;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #1e8449;
+}
+
+.toggle-button:hover {
+    -fx-background-color: #d5dbdb;
+}
+
+/* Scroll Pane */
+.scroll-pane {
+    -fx-background-color: #ecf0f1;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: #ecf0f1;
+}
+
+/* Chart */
+.chart {
+    -fx-padding: 20;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 8;
+}
+
+.chart-title {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Notification */
+.notification {
+    -fx-background-color: #e8f4f8;
+    -fx-border-color: #3498db;
+    -fx-border-radius: 4;
+    -fx-padding: 10;
+    -fx-border-left-width: 4;
+}
+
+.notification.warning {
+    -fx-background-color: #fef5e7;
+    -fx-border-color: #f39c12;
+}
+
+.notification.error {
+    -fx-background-color: #fadbd8;
+    -fx-border-color: #e74c3c;
+}
+
+.notification.success {
+    -fx-background-color: #d5f4e6;
+    -fx-border-color: #27ae60;
+}
+
+/* Global Toasts */
+.toast {
+    -fx-background-color: rgba(44, 62, 80, 0.96);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 12 14;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 18, 0.2, 0, 6);
+}
+
+.toast-success {
+    -fx-border-color: #27ae60;
+    -fx-border-width: 0 0 0 4;
+}
+
+.toast-error {
+    -fx-border-color: #e74c3c;
+    -fx-border-width: 0 0 0 4;
+}
+
+.toast-info {
+    -fx-border-color: #3498db;
+    -fx-border-width: 0 0 0 4;
+}
+
+.toast-title {
+    -fx-text-fill: white;
+    -fx-font-size: 13;
+    -fx-font-weight: bold;
+}
+
+.toast-message {
+    -fx-text-fill: #ecf0f1;
+    -fx-font-size: 12;
+}
+
+.toast-time {
+    -fx-text-fill: #bdc3c7;
+    -fx-font-size: 10;
+}
+
+/* VBox */
+.vbox {
+    -fx-spacing: 10;
+    -fx-padding: 10;
+}
+
+/* HBox */
+.hbox {
+    -fx-spacing: 10;
+    -fx-padding: 10;
+}
+
+/* GridPane */
+.grid-pane {
+    -fx-hgap: 15;
+    -fx-vgap: 15;
+    -fx-padding: 10;
+}
+
+/* Alert Dialog */
+.alert {
+    -fx-padding: 20;
+}
+
+.alert .header-panel {
+    -fx-background-color: #3498db;
+}
+
+.alert .content {
+    -fx-text-fill: #2c3e50;
+}

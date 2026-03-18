@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="at.jku.se.smarthome.controller.MainController"
+            stylesheets="@styles.css">
+    
+    <!-- Header -->
+    <top>
+        <HBox styleClass="header" alignment="CENTER_RIGHT" spacing="20" style="-fx-padding: 15 20; -fx-background-color: #2c3e50;">
+            <HBox HBox.hgrow="ALWAYS"/>
+            <Label fx:id="userLabel" text="User" style="-fx-text-fill: white; -fx-font-size: 14;"/>
+            <Button fx:id="logoutButton" text="Logout" styleClass="btn-secondary"
+                    onAction="#handleLogout"/>
+        </HBox>
+    </top>
+    
+    <!-- Sidebar -->
+    <left>
+        <VBox styleClass="sidebar" spacing="10" style="-fx-padding: 20; -fx-background-color: #34495e; -fx-min-width: 200;">
+            <Label text="Navigation" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+            
+            <Button fx:id="dashboardBtn" text="Dashboard" styleClass="nav-button"
+                    onAction="#showDashboard" style="-fx-text-fill: white;"/>
+            <Button fx:id="roomsBtn" text="Rooms" styleClass="nav-button"
+                    onAction="#showRooms" style="-fx-text-fill: white;"/>
+            <Button fx:id="devicesBtn" text="Devices" styleClass="nav-button"
+                    onAction="#showDevices" style="-fx-text-fill: white;"/>
+            <Button fx:id="schedulesBtn" text="Schedules" styleClass="nav-button"
+                    onAction="#showSchedules" style="-fx-text-fill: white;"/>
+            <Button fx:id="automationBtn" text="Rules" styleClass="nav-button"
+                    onAction="#showAutomation" style="-fx-text-fill: white;"/>
+            <Button fx:id="scenesBtn" text="Scenes" styleClass="nav-button"
+                    onAction="#showScenes" style="-fx-text-fill: white;"/>
+            <Button fx:id="energyBtn" text="Energy" styleClass="nav-button"
+                    onAction="#showEnergy" style="-fx-text-fill: white;"/>
+            <Button fx:id="activityLogBtn" text="Activity Log" styleClass="nav-button"
+                    onAction="#showActivityLog" style="-fx-text-fill: white;"/>
+            
+            <Label text="Settings" style="-fx-text-fill: #95a5a6; -fx-font-size: 12; -fx-font-weight: bold; -fx-padding: 10 0 5 0;"/>
+            
+            <Button fx:id="usersBtn" text="Users" styleClass="nav-button"
+                    onAction="#showUsers" style="-fx-text-fill: white;"/>
+            <Button fx:id="vacationModeBtn" text="Vacation Mode" styleClass="nav-button"
+                    onAction="#showVacationMode" style="-fx-text-fill: white;"/>
+            <Button fx:id="simulationBtn" text="Simulation" styleClass="nav-button"
+                    onAction="#showSimulation" style="-fx-text-fill: white;"/> 
+            <Button fx:id="iotSettingsBtn" text="IoT Integration" styleClass="nav-button"
+                    onAction="#showIoTSettings" style="-fx-text-fill: white;"/>
+            <Button fx:id="settingsBtn" text="Preferences" styleClass="nav-button"
+                    onAction="#showSettings" style="-fx-text-fill: white;"/>
+            
+            <VBox VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+    
+    <!-- Content Area -->
+    <center>
+                <StackPane style="-fx-background-color: #ecf0f1;">
+                        <StackPane fx:id="contentArea" style="-fx-padding: 20; -fx-background-color: #ecf0f1;"/>
+                        <VBox fx:id="toastContainer"
+                                  alignment="TOP_RIGHT"
+                                  mouseTransparent="true"
+                                  pickOnBounds="false"
+                                  spacing="10"
+                                  style="-fx-padding: 20;"
+                                  StackPane.alignment="TOP_RIGHT"/>
+                </StackPane>
+    </center>
+</BorderPane>

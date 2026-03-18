@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "SimpleCalculator",
+            "request": "launch",
+            "mainClass": "at.jku.se.calculator.SimpleCalculator",
+            "projectName": "calculator"
+        },
+        {
+            "type": "java",
+            "name": "SmartHomeApp",
+            "request": "launch",
+            "mainClass": "at.jku.se.smarthome.SmartHomeApp",
+            "projectName": "calculator"
+        },
+        {
+            "type": "java",
+            "name": "Debug SmartHome (JavaFX)",
+            "request": "launch",
+            "mainClass": "at.jku.se.smarthome.SmartHomeApp",
+            "projectName": "calculator",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "maven: clean compile",
+            "vmArgs": "--module-path ${env:USERPROFILE}\\.m2\\repository\\org\\openjfx\\javafx-base\\21\\javafx-base-21-win.jar;${env:USERPROFILE}\\.m2\\repository\\org\\openjfx\\javafx-controls\\21\\javafx-controls-21-win.jar;${env:USERPROFILE}\\.m2\\repository\\org\\openjfx\\javafx-fxml\\21\\javafx-fxml-21-win.jar;${env:USERPROFILE}\\.m2\\repository\\org\\openjfx\\javafx-graphics\\21\\javafx-graphics-21-win.jar --add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base"
+        }
+    ]
+}
