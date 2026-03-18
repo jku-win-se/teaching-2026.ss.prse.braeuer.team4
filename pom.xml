@@ -21,7 +21,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>at.jku.se.calculator.SimpleCalculator</mainClass>
+							<mainClass>at.jku.se.smarthome.SmartHomeApp</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -31,7 +31,7 @@
 				<artifactId>javafx-maven-plugin</artifactId>
 				<version>0.0.8</version>
 				<configuration>
-					<mainClass>at.jku.se.calculator.SimpleCalculator</mainClass>
+					<mainClass>at.jku.se.smarthome.SmartHomeApp</mainClass>
 				</configuration>
 			</plugin>
 			<plugin>
