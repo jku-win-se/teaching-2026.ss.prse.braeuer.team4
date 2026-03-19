@@ -22,7 +22,7 @@ import javafx.util.Duration;
 /**
  * Main controller for the application shell.
  * 
- * Handles navigation between different views (Dashboard, Rooms, Rules, Energy, Settings)
+ * Handles navigation between different views (Devices, Rooms, Rules, Energy, Settings)
  * and manages the user session (login/logout).
  */
 public class MainController {
@@ -38,9 +38,6 @@ public class MainController {
 
     @FXML
     private VBox toastContainer;
-    
-    @FXML
-    private Button dashboardBtn;
     
     @FXML
     private Button roomsBtn;
@@ -113,7 +110,7 @@ public class MainController {
         updateUserLabel();
         applyRoleAccess();
         if (contentArea.getChildren().isEmpty()) {
-            showDashboard();
+            showDevices();
         }
     }
 
@@ -176,14 +173,6 @@ public class MainController {
         alert.setContentText(featureName + " is only available to the Owner role. Members can control devices but cannot manage the system.");
         alert.showAndWait();
         return false;
-    }
-    
-    /**
-     * Shows the Dashboard view.
-     */
-    @FXML
-    private void showDashboard() {
-        loadView("dashboard-view.fxml");
     }
     
     /**
