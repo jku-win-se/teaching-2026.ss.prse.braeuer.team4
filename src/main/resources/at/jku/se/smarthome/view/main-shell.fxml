@@ -28,8 +28,6 @@
         <VBox styleClass="sidebar" spacing="10" style="-fx-padding: 20; -fx-background-color: #34495e; -fx-min-width: 200;">
             <Label text="Navigation" style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
             
-            <Button fx:id="dashboardBtn" text="Dashboard" styleClass="nav-button"
-                    onAction="#showDashboard" style="-fx-text-fill: white;"/>
             <Button fx:id="roomsBtn" text="Rooms" styleClass="nav-button"
                     onAction="#showRooms" style="-fx-text-fill: white;"/>
             <Button fx:id="devicesBtn" text="Devices" styleClass="nav-button"
