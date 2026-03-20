@@ -12,6 +12,25 @@ The goals are:
 - keep commits and pull requests traceable
 - avoid starting work from outdated branches
 
+## Summary of Branch Roles
+
+```text
+main        stable project state and default PR target
+develop     optional integration branch, only if kept in sync
+feature/*   new functionality
+docs/*      project documentation
+bugfix/*    development bug fixes
+hotfix/*    urgent fix for main
+```
+
+Current default flow:
+
+```text
+feature/*  -> main
+docs/*     -> main
+bugfix/*   -> main
+hotfix/*   -> main
+```
 ---
 
 ## Main Branches
@@ -160,25 +179,7 @@ Rules:
 
 ---
 
-## Summary of Branch Roles
 
-```text
-main        stable project state and default PR target
-develop     optional integration branch, only if kept in sync
-feature/*   new functionality
-docs/*      project documentation
-bugfix/*    development bug fixes
-hotfix/*    urgent fix for main
-```
-
-Current default flow:
-
-```text
-feature/*  -> main
-docs/*     -> main
-bugfix/*   -> main
-hotfix/*   -> main
-```
 
 ---
 
