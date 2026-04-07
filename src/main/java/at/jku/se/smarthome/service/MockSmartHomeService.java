@@ -39,6 +39,14 @@ public class MockSmartHomeService {
     }
     
     /**
+     * Resets the singleton for unit testing.
+     * Must NOT be called from production code.
+     */
+    static synchronized void resetForTesting() {
+        instance = null;
+    }
+
+    /**
      * Initializes the service with mock device data.
      */
     private void initializeMockData() {
@@ -47,7 +55,9 @@ public class MockSmartHomeService {
         devices.add(new Device("dev-003", "Bedroom Dimmer", "Dimmer", "Bedroom", false));
         devices.add(new Device("dev-004", "Kitchen Light", "Switch", "Kitchen", true));
         devices.add(new Device("dev-005", "Bedroom Thermostat", "Thermostat", "Bedroom", true));
-        
+        devices.add(new Device("dev-006", "Garden Blind", "Cover/Blind", "Garden", false));
+        devices.add(new Device("dev-007", "Hallway Motion Sensor", "Sensor", "Hallway", true));
+
         // Set initial brightness and temperature values
         devices.get(2).setBrightness(75);
         devices.get(1).setTemperature(22.5);
@@ -164,5 +174,52 @@ public class MockSmartHomeService {
      */
     public void logout() {
         this.currentUser = "User";
+    }
+
+    /**
+     * Opens a blind/cover device (sets state to true = OPEN).
+     *
+     * @param deviceId the device identifier
+     * @return true if successful, false if the device is not found or not a Cover/Blind
+     */
+    public boolean openBlind(String deviceId) {
+        Device device = getDeviceById(deviceId);
+        if (device != null && "Cover/Blind".equals(device.getType())) {
+            device.setState(true);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Closes a blind/cover device (sets state to false = CLOSED).
+     *
+     * @param deviceId the device identifier
+     * @return true if successful, false if the device is not found or not a Cover/Blind
+     */
+    public boolean closeBlind(String deviceId) {
+        Device device = getDeviceById(deviceId);
+        if (device != null && "Cover/Blind".equals(device.getType())) {
+            device.setState(false);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Injects a test value into a sensor device.
+     * Any double is accepted — sensors have no inherent range constraint.
+     *
+     * @param deviceId the device identifier
+     * @param value    the value to inject
+     * @return true if successful, false if the device is not found or not a Sensor
+     */
+    public boolean injectSensorValue(String deviceId, double value) {
+        Device device = getDeviceById(deviceId);
+        if (device != null && "Sensor".equals(device.getType())) {
+            device.setTemperature(value);
+            return true;
+        }
+        return false;
     }
 }

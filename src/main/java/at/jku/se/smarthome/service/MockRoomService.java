@@ -46,6 +46,7 @@ public class MockRoomService {
         
         Room hallway = new Room("room-005", "Hallway", 0);
         hallway.addDevice(new Device("dev-007", "Motion Sensor", "Sensor", "Hallway", true));
+        hallway.addDevice(new Device("dev-008", "Hallway Blind", "Cover/Blind", "Hallway", false));
         rooms.add(hallway);
     }
     
