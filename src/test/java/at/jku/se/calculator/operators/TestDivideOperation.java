@@ -10,19 +10,6 @@ import org.junit.Test;
  * Tests for the {@link DivideOperation} class.
  */
 public class TestDivideOperation {
-package at.jku.se.calculator.operators;
-import at.jku.se.calculator.ICalculationOperation;
-
-	public class DivideOperation implements ICalculationOperation {
-
-		@Override
-		public double calculate(double left, double right) {
-			if (right == 0) {
-				throw new IllegalArgumentException("Division by zero");
-			}
-			return left / right;
-		}
-	}
 
 	private DivideOperation divide;
 
