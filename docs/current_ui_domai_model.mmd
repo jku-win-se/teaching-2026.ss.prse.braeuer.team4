@@ -1,0 +1,103 @@
+classDiagram
+
+class Room {
+    +String id
+    +String name
+    +int deviceCount
+    +ObservableList~Device~ devices
+    +addDevice(Device device)
+    +removeDevice(Device device)
+}
+
+class Device {
+    +String id
+    +String name
+    +String type
+    +String room
+    +boolean state
+    +int brightness
+    +double temperature
+}
+
+class User {
+    +String email
+    +String username
+    +String password
+    +String role
+    +String status
+}
+
+class Rule {
+    +String id
+    +String name
+    +String triggerType
+    +String sourceDevice
+    +String condition
+    +String action
+    +String targetDevice
+    +boolean enabled
+    +String status
+}
+
+class Schedule {
+    +String id
+    +String name
+    +String device
+    +String action
+    +String time
+    +String recurrence
+    +boolean active
+}
+
+class Scene {
+    +String id
+    +String name
+    +String description
+    +ObservableList~String~ deviceStates
+    +addDeviceState(String deviceState)
+}
+
+class LogEntry {
+    +String timestamp
+    +String device
+    +String room
+    +String action
+    +String actor
+}
+
+class NotificationEntry {
+    +String timestamp
+    +String message
+    +String type
+}
+
+class IntegrationDevice {
+    +String name
+    +String type
+    +String topic
+    +String status
+}
+
+class SimulationDeviceState {
+    +String deviceName
+    +String room
+    +String type
+    +String state
+    +String lastChanged
+}
+
+class VacationModeConfig {
+    +boolean enabled
+    +LocalDate startDate
+    +LocalDate endDate
+    +String scheduleId
+    +isConfigured()
+}
+
+%% 关系映射 (基于代码中的集合和逻辑引用)
+Room "1" --> "0..*" Device : contains
+Scene "1" --> "0..*" String : deviceStates (serialized)
+Rule ..> Device : references (by name/id)
+Schedule ..> Device : references (by name/id)
+LogEntry ..> Device : records for (by name)
+VacationModeConfig ..> Schedule : triggers (by id)
