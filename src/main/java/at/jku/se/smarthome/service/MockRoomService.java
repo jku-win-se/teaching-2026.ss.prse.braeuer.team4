@@ -24,7 +24,15 @@ public class MockRoomService {
         }
         return instance;
     }
-    
+
+    /**
+     * Resets the singleton for unit testing.
+     * Must NOT be called from production code.
+     */
+    static synchronized void resetForTesting() {
+        instance = null;
+    }
+
     private void initializeMockRooms() {
         Room livingRoom = new Room("room-001", "Living Room", 0);
         livingRoom.addDevice(new Device("dev-001", "Main Light", "Switch", "Living Room", true));
@@ -158,6 +166,9 @@ public class MockRoomService {
      * Renames a device.
      */
     public boolean renameDevice(String roomId, String deviceId, String newName) {
+        if (newName == null || newName.isBlank()) {
+            return false;
+        }
         Room room = getRoomById(roomId);
         if (room != null) {
             Device device = room.getDevices().stream()
