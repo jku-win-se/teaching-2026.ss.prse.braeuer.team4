@@ -12,6 +12,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -110,7 +111,22 @@ public class DevicesController {
             default:
                 break;
         }
-        
+
+        // Action footer: Rename and Delete
+        HBox actionBar = new HBox(8);
+        actionBar.setAlignment(Pos.CENTER_RIGHT);
+
+        Button renameBtn = new Button("Rename");
+        renameBtn.setStyle("-fx-padding: 4 12; -fx-font-size: 11; -fx-text-fill: #2980b9; -fx-background-color: transparent; -fx-border-color: #2980b9; -fx-border-radius: 3;");
+        renameBtn.setOnAction(e -> handleRename(device, room, nameLabel));
+
+        Button deleteBtn = new Button("Delete");
+        deleteBtn.setStyle("-fx-padding: 4 12; -fx-font-size: 11; -fx-text-fill: #e74c3c; -fx-background-color: transparent; -fx-border-color: #e74c3c; -fx-border-radius: 3;");
+        deleteBtn.setOnAction(e -> handleDelete(device, room));
+
+        actionBar.getChildren().addAll(renameBtn, deleteBtn);
+        card.getChildren().add(actionBar);
+
         return card;
     }
     
@@ -333,6 +349,33 @@ public class DevicesController {
         card.getChildren().add(controls);
     }
     
+    /**
+     * Opens a rename dialog and applies the new name if valid.
+     */
+    private void handleRename(Device device, Room room, Label nameLabel) {
+        TextInputDialog dialog = new TextInputDialog(device.getName());
+        dialog.setTitle("Rename Device");
+        dialog.setHeaderText(null);
+        dialog.setContentText("New name:");
+        dialog.showAndWait().ifPresent(newName -> {
+            if (roomService.renameDevice(room.getId(), device.getId(), newName)) {
+                nameLabel.setText(newName);
+                logService.addLogEntry(device.getName(), room.getName(),
+                        "Renamed to " + newName, "User");
+            }
+        });
+    }
+
+    /**
+     * Removes the device from its room and refreshes the device list.
+     */
+    private void handleDelete(Device device, Room room) {
+        if (roomService.removeDeviceFromRoom(room.getId(), device.getId())) {
+            logService.addLogEntry(device.getName(), room.getName(), "Deleted", "User");
+            loadDevices();
+        }
+    }
+
     /**
      * Handles room filter change.
      */
