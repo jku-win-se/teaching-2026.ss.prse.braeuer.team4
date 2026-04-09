@@ -11,7 +11,9 @@ public class MockScheduleService {
     
     private static MockScheduleService instance;
     private final ObservableList<Schedule> schedules;
-    
+    private final MockRoomService roomService = MockRoomService.getInstance();
+    private final MockLogService logService = MockLogService.getInstance();
+
     private MockScheduleService() {
         this.schedules = FXCollections.observableArrayList();
         initializeMockSchedules();
@@ -23,7 +25,15 @@ public class MockScheduleService {
         }
         return instance;
     }
-    
+
+    /**
+     * Resets the singleton for unit testing.
+     * Must NOT be called from production code.
+     */
+    static synchronized void resetForTesting() {
+        instance = null;
+    }
+
     private void initializeMockSchedules() {
         schedules.add(new Schedule("sched-001", "Morning Lights", "Living Room Light", 
                                   "Turn On", "06:00 AM", "Daily", true));
@@ -129,6 +139,44 @@ public class MockScheduleService {
         return removed;
     }
     
+    /**
+     * Executes a schedule: applies its action to the target device and logs the change.
+     * Returns false if the schedule is not found, inactive, the device is missing,
+     * or the action is not supported.
+     */
+    public boolean executeSchedule(String scheduleId) {
+        Schedule schedule = getScheduleById(scheduleId);
+        if (schedule == null) return false;
+        if (!schedule.isActive()) return false;
+
+        at.jku.se.smarthome.model.Device device = roomService.getDeviceByName(schedule.getDevice());
+        if (device == null) return false;
+
+        boolean success = applyScheduleAction(device, schedule.getAction());
+        if (!success) return false;
+
+        logService.addLogEntry(device.getName(), device.getRoom(),
+                schedule.getAction(), "Schedule: " + schedule.getName());
+        return true;
+    }
+
+    private boolean applyScheduleAction(at.jku.se.smarthome.model.Device device, String action) {
+        if (action == null) return false;
+        switch (action) {
+            case "Turn On":  device.setState(true);  return true;
+            case "Turn Off": device.setState(false); return true;
+            case "Open":     device.setState(true);  return true;
+            case "Close":    device.setState(false); return true;
+            default:
+                if (action.matches("Set \\d+%")) {
+                    int brightness = Integer.parseInt(action.substring(4, action.length() - 1));
+                    device.setBrightness(brightness);
+                    return true;
+                }
+                return false;
+        }
+    }
+
     /**
      * Checks for conflicts.
      */

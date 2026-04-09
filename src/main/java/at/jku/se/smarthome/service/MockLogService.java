@@ -29,7 +29,15 @@ public class MockLogService {
         }
         return instance;
     }
-    
+
+    /**
+     * Resets the singleton for unit testing.
+     * Must NOT be called from production code.
+     */
+    static synchronized void resetForTesting() {
+        instance = null;
+    }
+
     private void initializeMockLogs() {
         LocalDateTime now = LocalDateTime.now();
         logs.add(new LogEntry(now.minusHours(2).format(formatter), 
