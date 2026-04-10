@@ -1,2 +1,4 @@
 # Ignore target folder containing build artifacts
 /target/
+/.env
+/smarthome-db.properties

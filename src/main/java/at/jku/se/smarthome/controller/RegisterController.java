@@ -1,6 +1,7 @@
 package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.service.MockUserService;
+import at.jku.se.smarthome.service.MockUserService.RegistrationStatus;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -59,15 +60,16 @@ public class RegisterController {
             showError("Passwords do not match");
             return;
         }
-        
-        if (userService.register(email, username, password, confirmPassword)) {
+
+        RegistrationStatus registrationStatus = userService.registerUser(email, username, password, confirmPassword);
+        if (registrationStatus == RegistrationStatus.SUCCESS) {
             errorLabel.setText("");
             showSuccess("Registration successful! Redirecting to login...");
             if (registerCallback != null) {
                 registerCallback.onBackToLogin();
             }
         } else {
-            showError("Registration failed. Email may already exist.");
+            showError(mapErrorMessage(registrationStatus));
         }
     }
     
@@ -93,5 +95,16 @@ public class RegisterController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private String mapErrorMessage(RegistrationStatus status) {
+        return switch (status) {
+            case INVALID_INPUT -> "All fields are required";
+            case PASSWORD_MISMATCH -> "Passwords do not match";
+            case DUPLICATE_EMAIL -> "Registration failed. Email may already exist.";
+            case DATABASE_NOT_CONFIGURED -> "Registration database is not configured. Add a local .env file or SMARTHOME_DB_* environment variables.";
+            case DATABASE_ERROR -> "Registration failed because the database could not be reached or initialized.";
+            case SUCCESS -> "";
+        };
     }
 }
