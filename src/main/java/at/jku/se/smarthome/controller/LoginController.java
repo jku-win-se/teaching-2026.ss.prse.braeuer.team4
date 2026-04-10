@@ -1,8 +1,11 @@
 package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.service.MockUserService;
+import at.jku.se.smarthome.service.MockUserService.LoginStatus;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -19,6 +22,9 @@ public class LoginController {
     
     @FXML
     private PasswordField passwordField;
+
+    @FXML
+    private Button loginButton;
     
     @FXML
     private Label errorLabel;
@@ -56,15 +62,29 @@ public class LoginController {
             showError("Email and password cannot be empty");
             return;
         }
-        
-        if (userService.login(email, password)) {
-            errorLabel.setText("");
-            if (loginCallback != null) {
-                loginCallback.onLoginSuccess();
+
+        setLoginFormDisabled(true);
+
+        Task<LoginStatus> loginTask = new Task<>() {
+            @Override
+            protected LoginStatus call() {
+                return userService.authenticate(email, password);
             }
-        } else {
-            showError("Authentication failed. Please try again.");
-        }
+        };
+
+        loginTask.setOnSucceeded(event -> {
+            setLoginFormDisabled(false);
+            handleLoginResult(email, loginTask.getValue());
+        });
+
+        loginTask.setOnFailed(event -> {
+            setLoginFormDisabled(false);
+            showError("Authentication temporarily unavailable. Please try again.");
+        });
+
+        Thread loginThread = new Thread(loginTask, "smarthome-login-task");
+        loginThread.setDaemon(true);
+        loginThread.start();
     }
     
     /**
@@ -98,5 +118,32 @@ public class LoginController {
         emailField.clear();
         passwordField.clear();
         errorLabel.setText("");
+    }
+
+    private void handleLoginResult(String email, LoginStatus status) {
+        switch (status) {
+            case SUCCESS -> {
+                errorLabel.setText("");
+                if (loginCallback != null) {
+                    loginCallback.onLoginSuccess();
+                }
+            }
+            case THROTTLED -> showError("Too many login attempts. Please wait "
+                    + userService.getRemainingThrottleSeconds(email)
+                    + " seconds and try again.");
+            case DATABASE_NOT_CONFIGURED -> showError("Authentication database is not configured. Check the local database settings.");
+            case DATABASE_ERROR -> showError("Authentication temporarily unavailable. Please try again.");
+            case INVALID_INPUT -> showError("Email and password cannot be empty");
+            case ACCOUNT_INACTIVE, AUTHENTICATION_FAILED -> showError("Authentication failed. Please try again.");
+            default -> showError("Authentication temporarily unavailable. Please try again.");
+        }
+    }
+
+    private void setLoginFormDisabled(boolean disabled) {
+        emailField.setDisable(disabled);
+        passwordField.setDisable(disabled);
+        if (loginButton != null) {
+            loginButton.setDisable(disabled);
+        }
     }
 }

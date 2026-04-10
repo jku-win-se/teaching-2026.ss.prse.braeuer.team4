@@ -40,6 +40,32 @@ class JdbcUserRegistrationStore implements UserRegistrationStore {
     }
 
     @Override
+    public Optional<PersistedUser> findByEmail(String normalizedEmail) throws StoreException {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT email, username, password_hash, role, status FROM users WHERE email = ?")) {
+                statement.setString(1, normalizedEmail);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (!resultSet.next()) {
+                        return Optional.empty();
+                    }
+
+                    return Optional.of(new PersistedUser(
+                            resultSet.getString("email"),
+                            resultSet.getString("username"),
+                            resultSet.getString("password_hash"),
+                            resultSet.getString("role"),
+                            resultSet.getString("status")
+                    ));
+                }
+            }
+        } catch (SQLException exception) {
+            throw new StoreException("Failed to load the user for authentication.", exception);
+        }
+    }
+
+    @Override
     public void save(PersistedUser user) throws StoreException {
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
@@ -57,6 +83,20 @@ class JdbcUserRegistrationStore implements UserRegistrationStore {
                 throw new DuplicateEmailException("A user with this e-mail already exists.", exception);
             }
             throw new StoreException("Failed to persist the registered user.", exception);
+        }
+    }
+
+    @Override
+    public void updateLastLogin(String normalizedEmail) throws StoreException {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE users SET last_login_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE email = ?")) {
+                statement.setString(1, normalizedEmail);
+                statement.executeUpdate();
+            }
+        } catch (SQLException exception) {
+            throw new StoreException("Failed to update the last-login timestamp.", exception);
         }
     }
 
