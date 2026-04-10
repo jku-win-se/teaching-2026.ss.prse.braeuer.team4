@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -47,6 +47,10 @@ public class MockEnergyService {
             instance = new MockEnergyService();
         }
         return instance;
+    }
+
+    public static synchronized void resetForTesting() {
+        instance = null;
     }
 
     public EnergySnapshot getSnapshot(AggregationPeriod period) {

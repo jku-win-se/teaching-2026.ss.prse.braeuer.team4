@@ -1,7 +1,7 @@
 package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.model.LogEntry;
-import at.jku.se.smarthome.service.MockLogService;
+import at.jku.se.smarthome.service.mock.MockLogService;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;

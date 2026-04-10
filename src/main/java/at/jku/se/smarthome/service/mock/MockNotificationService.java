@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -26,6 +26,10 @@ public class MockNotificationService {
             instance = new MockNotificationService();
         }
         return instance;
+    }
+
+    public static synchronized void resetForTesting() {
+        instance = null;
     }
     
     public ObservableList<NotificationEntry> getNotifications() {

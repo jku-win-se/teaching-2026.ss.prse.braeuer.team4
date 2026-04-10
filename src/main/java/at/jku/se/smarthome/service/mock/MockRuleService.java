@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Rule;
@@ -27,6 +27,14 @@ public class MockRuleService {
         }
         return instance;
     }
+
+    /**
+     * Resets the singleton for unit testing.
+     * Must NOT be called from production code.
+     */
+    public static synchronized void resetForTesting() {
+        instance = null;
+    }
     
     private void initializeMockRules() {
         rules.add(new Rule("rule-001", "Morning Routine", "Time", "Clock", "06:00 AM", 
@@ -39,13 +47,23 @@ public class MockRuleService {
     
     /**
      * Gets all rules.
+     *
+     * @return observable list of rules
      */
     public ObservableList<Rule> getRules() {
         return rules;
     }
     
     /**
-     * Adds a new rule.
+        * Adds a new rule.
+        *
+        * @param name display name of the rule
+        * @param triggerType trigger category
+        * @param sourceDevice source device or source label
+        * @param condition trigger condition expression
+        * @param action action to execute
+        * @param targetDevice target device name
+        * @return created rule instance
      */
     public Rule addRule(String name, String triggerType, String sourceDevice, String condition,
                        String action, String targetDevice) {
@@ -65,7 +83,16 @@ public class MockRuleService {
     }
     
     /**
-     * Updates a rule.
+        * Updates a rule.
+        *
+        * @param ruleId identifier of the rule to update
+        * @param name updated rule name
+        * @param triggerType updated trigger category
+        * @param sourceDevice updated source device or source label
+        * @param condition updated trigger condition expression
+        * @param action updated action text
+        * @param targetDevice updated target device name
+        * @return true when the rule exists and was updated, otherwise false
      */
     public boolean updateRule(String ruleId, String name, String triggerType, String sourceDevice,
                              String condition, String action, String targetDevice) {
@@ -87,7 +114,10 @@ public class MockRuleService {
     }
     
     /**
-     * Toggles a rule's enabled state.
+        * Toggles a rule's enabled state.
+        *
+        * @param ruleId identifier of the rule to toggle
+        * @return true when the rule exists and was toggled, otherwise false
      */
     public boolean toggleRule(String ruleId) {
         Rule rule = rules.stream()
@@ -105,13 +135,19 @@ public class MockRuleService {
     
     /**
      * Deletes a rule.
+     *
+     * @param ruleId identifier of the rule to delete
+     * @return true when the rule existed and was removed, otherwise false
      */
     public boolean deleteRule(String ruleId) {
         return rules.removeIf(r -> r.getId().equals(ruleId));
     }
 
     /**
-     * Executes a rule in the mock engine and emits in-app notifications.
+        * Executes a rule in the mock engine and emits in-app notifications.
+        *
+        * @param ruleId identifier of the rule to execute
+        * @return true when execution succeeded, otherwise false
      */
     public boolean executeRule(String ruleId) {
         Rule rule = rules.stream()
@@ -180,6 +216,9 @@ public class MockRuleService {
     
     /**
      * Detects conflicts between rules.
+     *
+     * @param ruleId identifier of the rule being validated
+     * @return true when a conflict exists, otherwise false
      */
     public boolean hasConflicts(String ruleId) {
         return false; // Simplified mock

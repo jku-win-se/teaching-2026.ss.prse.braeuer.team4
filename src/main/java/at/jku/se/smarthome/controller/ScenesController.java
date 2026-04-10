@@ -10,9 +10,9 @@ import java.util.stream.Collectors;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Scene;
-import at.jku.se.smarthome.service.MockRoomService;
-import at.jku.se.smarthome.service.MockSceneService;
-import at.jku.se.smarthome.service.MockUserService;
+import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.mock.MockSceneService;
+import at.jku.se.smarthome.service.mock.MockUserService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

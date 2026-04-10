@@ -32,6 +32,11 @@ public final class DatabaseConfig {
     }
 
     public static Optional<DatabaseSettings> load() {
+        DatabaseSettings systemPropertySettings = readFromSystemProperties();
+        if (systemPropertySettings != null) {
+            return Optional.of(systemPropertySettings);
+        }
+
         DatabaseSettings dotEnvSettings = readFromDotEnv();
         if (dotEnvSettings != null) {
             return Optional.of(dotEnvSettings);
@@ -56,6 +61,16 @@ public final class DatabaseConfig {
         return Optional.of(readSettings(properties.getProperty(PROPERTY_URL),
                 properties.getProperty(PROPERTY_USER),
                 properties.getProperty(PROPERTY_PASSWORD)));
+    }
+
+    private static DatabaseSettings readFromSystemProperties() {
+        return readSettings(
+                System.getProperty(PROPERTY_URL),
+                System.getProperty(PROPERTY_USER),
+                System.getProperty(PROPERTY_PASSWORD),
+                System.getProperty(ENV_SMARTHOME_DATABASE_URL),
+                System.getProperty(ENV_DATABASE_URL)
+        );
     }
 
     private static DatabaseSettings readFromDotEnv() {
@@ -100,7 +115,7 @@ public final class DatabaseConfig {
     private static DatabaseSettings readSettings(String url, String user, String password, String smartHomeDatabaseUrl, String databaseUrl) {
         String normalizedUrl = normalize(url);
         String normalizedUser = normalize(user);
-        String normalizedPassword = normalize(password);
+        String normalizedPassword = password == null ? null : password.trim();
 
         if (normalizedUrl != null || normalizedUser != null || normalizedPassword != null) {
             if (normalizedUrl == null || normalizedUser == null || normalizedPassword == null) {

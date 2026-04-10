@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -34,7 +34,7 @@ public class MockLogService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    static synchronized void resetForTesting() {
+    public static synchronized void resetForTesting() {
         instance = null;
     }
 
@@ -54,13 +54,20 @@ public class MockLogService {
     
     /**
      * Gets all log entries.
+     *
+     * @return observable list of log entries
      */
     public ObservableList<LogEntry> getLogs() {
         return logs;
     }
     
     /**
-     * Adds a new log entry with room information.
+        * Adds a new log entry with room information.
+        *
+        * @param device device name recorded in the log entry
+        * @param room room name recorded in the log entry
+        * @param action action description
+        * @param actor actor responsible for the action
      */
     public void addLogEntry(String device, String room, String action, String actor) {
         LogEntry entry = new LogEntry(
@@ -74,14 +81,21 @@ public class MockLogService {
     }
     
     /**
-     * Legacy addLogEntry without room (for backwards compatibility).
+     * Legacy addLogEntry without room information.
+     *
+     * @param device device name recorded in the log entry
+     * @param action action description
+     * @param actor actor responsible for the action
      */
     public void addLogEntry(String device, String action, String actor) {
         addLogEntry(device, "Unknown", action, actor);
     }
     
     /**
-     * Gets log entries filtered by room.
+        * Gets log entries filtered by room.
+        *
+        * @param room room name to filter by
+        * @return observable list of matching log entries
      */
     public ObservableList<LogEntry> getLogsByRoom(String room) {
         return FXCollections.observableArrayList(
@@ -92,7 +106,10 @@ public class MockLogService {
     }
     
     /**
-     * Gets log entries filtered by device.
+        * Gets log entries filtered by device.
+        *
+        * @param device device name to filter by
+        * @return observable list of matching log entries
      */
     public ObservableList<LogEntry> getLogsByDevice(String device) {
         return FXCollections.observableArrayList(
@@ -103,7 +120,10 @@ public class MockLogService {
     }
     
     /**
-     * Gets log entries filtered by actor (user or rule/automation).
+        * Gets log entries filtered by actor.
+        *
+        * @param actor actor name to filter by
+        * @return observable list of matching log entries
      */
     public ObservableList<LogEntry> getLogsByActor(String actor) {
         return FXCollections.observableArrayList(
@@ -114,7 +134,9 @@ public class MockLogService {
     }
     
     /**
-     * Gets all unique device names from logs.
+        * Gets all unique device names from logs.
+        *
+        * @return observable list of unique device names
      */
     public ObservableList<String> getUniqueDevices() {
         return FXCollections.observableArrayList(
@@ -127,7 +149,9 @@ public class MockLogService {
     }
     
     /**
-     * Exports logs to CSV format.
+        * Exports the current logs to CSV format.
+        *
+        * @return CSV representation of the current logs
      */
     public String exportToCSV() {
         StringBuilder csv = new StringBuilder();

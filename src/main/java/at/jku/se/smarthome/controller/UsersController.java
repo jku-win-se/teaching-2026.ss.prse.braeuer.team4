@@ -1,7 +1,7 @@
 package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.model.User;
-import at.jku.se.smarthome.service.MockUserService;
+import at.jku.se.smarthome.service.mock.MockUserService;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;

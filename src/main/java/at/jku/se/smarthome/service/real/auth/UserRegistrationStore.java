@@ -1,9 +1,9 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.real.auth;
 
 /**
  * Store abstraction for persisted user registration.
  */
-interface UserRegistrationStore {
+public interface UserRegistrationStore {
 
     boolean emailExists(String normalizedEmail) throws StoreException;
 
@@ -17,27 +17,27 @@ interface UserRegistrationStore {
     }
 
     class StoreException extends Exception {
-        StoreException(String message, Throwable cause) {
+        public StoreException(String message, Throwable cause) {
             super(message, cause);
         }
 
-        StoreException(String message) {
+        public StoreException(String message) {
             super(message);
         }
     }
 
     class StoreConfigurationException extends StoreException {
-        StoreConfigurationException(String message, Throwable cause) {
+        public StoreConfigurationException(String message, Throwable cause) {
             super(message, cause);
         }
 
-        StoreConfigurationException(String message) {
+        public StoreConfigurationException(String message) {
             super(message);
         }
     }
 
     class DuplicateEmailException extends StoreException {
-        DuplicateEmailException(String message, Throwable cause) {
+        public DuplicateEmailException(String message, Throwable cause) {
             super(message, cause);
         }
     }

@@ -1,7 +1,7 @@
 package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.model.IntegrationDevice;
-import at.jku.se.smarthome.service.MockIoTIntegrationService;
+import at.jku.se.smarthome.service.mock.MockIoTIntegrationService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;

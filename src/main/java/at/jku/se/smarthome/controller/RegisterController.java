@@ -1,7 +1,7 @@
 package at.jku.se.smarthome.controller;
 
-import at.jku.se.smarthome.service.MockUserService;
-import at.jku.se.smarthome.service.MockUserService.RegistrationStatus;
+import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.mock.MockUserService.RegistrationStatus;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
