@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.Objects;
 
 import at.jku.se.smarthome.model.NotificationEntry;
-import at.jku.se.smarthome.service.MockNotificationService;
-import at.jku.se.smarthome.service.MockSmartHomeService;
-import at.jku.se.smarthome.service.MockUserService;
+import at.jku.se.smarthome.service.mock.MockNotificationService;
+import at.jku.se.smarthome.service.mock.MockSmartHomeService;
+import at.jku.se.smarthome.service.mock.MockUserService;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;

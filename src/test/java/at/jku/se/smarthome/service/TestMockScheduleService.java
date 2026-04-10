@@ -1,25 +1,28 @@
 package at.jku.se.smarthome.service;
 
-import at.jku.se.smarthome.model.Device;
-import at.jku.se.smarthome.model.LogEntry;
-import javafx.collections.ObservableList;
+import java.time.LocalDateTime;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.LogEntry;
+import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.mock.MockScheduleService;
 
 /**
  * Tests for {@link MockScheduleService#executeSchedule} covering automated logging (FR-08).
+ * Also covers FR-09 recurring time-based execution through {@link MockScheduleService#processDueSchedules(LocalDateTime)}.
  *
  * Device names used in tests must match MockRoomService seed data:
  *   "Main Light"        – Switch, Living Room, starts ON
  *   "Bed Light"         – Switch, Bedroom, starts OFF
  *   "Dimmer Light"      – Dimmer, Living Room, starts ON
  *   "Temperature Control" – Thermostat, Bedroom, starts ON
- *
- * Note: the built-in mock schedules reference "Living Room Light" / "Bedroom Light"
- * which do not exist in MockRoomService seed data — executeSchedule correctly
- * returns false for those (device not found).
  */
 public class TestMockScheduleService {
 
@@ -54,8 +57,10 @@ public class TestMockScheduleService {
 
     @Test
     public void executeSchedule_deviceNotFound_returnsFalse() {
-        // Seed schedules target device names that don't exist in MockRoomService
-        assertFalse(scheduleService.executeSchedule("sched-001"));
+        scheduleService.addSchedule("Missing Device", "Does Not Exist", "Turn On", "07:00 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Missing Device").getId();
+
+        assertFalse(scheduleService.executeSchedule(schedId));
     }
 
     // -----------------------------------------------------------------------
@@ -98,12 +103,69 @@ public class TestMockScheduleService {
 
     @Test
     public void executeSchedule_setBrightness_setsDimmerLevel() {
-        scheduleService.addSchedule("Dim Scene", "Dimmer Light", "Set 40%", "18:00", "Daily", true);
+        scheduleService.addSchedule("Dim Scene", "Dimmer Light", "Set to 40%", "18:00", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Dim Scene").getId();
 
         assertTrue(scheduleService.executeSchedule(schedId));
         Device dimmer = roomService.getDeviceByName("Dimmer Light");
         assertEquals(40, dimmer.getBrightness());
+    }
+
+    @Test
+    public void executeSchedule_setTemperature_setsThermostatTemperature() {
+        scheduleService.addSchedule("Morning Warmup", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Morning Warmup").getId();
+
+        assertTrue(scheduleService.executeSchedule(schedId));
+        Device thermostat = roomService.getDeviceByName("Temperature Control");
+        assertEquals(22.0, thermostat.getTemperature(), 0.001);
+    }
+
+    // -----------------------------------------------------------------------
+    // Recurring execution (FR-09)
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void processDueSchedules_matchingDailyTime_executesOnlyOncePerMinute() {
+        scheduleService.addSchedule("Wake Up", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
+
+        Device bed = roomService.getDeviceByName("Bed Light");
+        int logsBefore = logService.getLogs().size();
+
+        assertEquals(1, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0)));
+        assertTrue(bed.getState());
+        assertEquals(logsBefore + 1, logService.getLogs().size());
+
+        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0, 45)));
+        assertEquals(logsBefore + 1, logService.getLogs().size());
+    }
+
+    @Test
+    public void processDueSchedules_weekdaysSchedule_skipsWeekend() {
+        scheduleService.addSchedule("Weekday Entry", "Main Light", "Turn Off", "08:15", "Weekdays", true);
+
+        Device main = roomService.getDeviceByName("Main Light");
+        main.setState(true);
+
+        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 11, 8, 15)));
+        assertTrue(main.getState());
+
+        assertEquals(1, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 8, 15)));
+        assertFalse(main.getState());
+    }
+
+    @Test
+    public void processDueSchedules_weeklySchedule_requiresConfiguredDay() {
+        scheduleService.addSchedule("Weekly Warmup", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
+
+        Device thermostat = roomService.getDeviceByName("Temperature Control");
+        thermostat.setTemperature(20.0);
+
+        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 9, 9, 0)));
+        assertEquals(20.0, thermostat.getTemperature(), 0.001);
+
+        assertEquals(1, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 9, 0)));
+        assertEquals(24.0, thermostat.getTemperature(), 0.001);
     }
 
     // -----------------------------------------------------------------------
@@ -138,8 +200,11 @@ public class TestMockScheduleService {
     @Test
     public void executeSchedule_failedExecution_doesNotLog() {
         // Device does not exist → executeSchedule returns false and must not log
+        scheduleService.addSchedule("Broken Schedule", "Does Not Exist", "Turn On", "06:00 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Broken Schedule").getId();
+
         int logsBefore = logService.getLogs().size();
-        assertFalse(scheduleService.executeSchedule("sched-001")); // device not found
+        assertFalse(scheduleService.executeSchedule(schedId));
         assertEquals(logsBefore, logService.getLogs().size());
     }
 }

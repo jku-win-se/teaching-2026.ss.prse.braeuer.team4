@@ -1,11 +1,14 @@
 package at.jku.se.smarthome.service;
 
-import at.jku.se.smarthome.model.Device;
-import at.jku.se.smarthome.model.Room;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.Room;
+import at.jku.se.smarthome.service.mock.MockRoomService;
 
 /**
  * Tests for FR-05: remove and rename existing devices via {@link MockRoomService}.

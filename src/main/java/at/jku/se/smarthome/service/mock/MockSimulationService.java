@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;

@@ -90,3 +90,75 @@ First generate an Implementation summary into the prompts/#9 folder"
 **Context**: Construction execution for secure login/logout
 
 ---
+
+## FR-09 Implementation Summary Request
+**Timestamp**: 2026-04-10T19:10:00Z
+**User Input**: "Please implement this issue #18 (FR-09):
+Generate an Implementation summary into issues/#18"
+**AI Response**: "Loaded the active AI-DLC state, mandatory common rules, enabled security extension, prior implementation-summary patterns, and the existing schedules code before drafting the FR-09 artifact."
+**Context**: Construction documentation request for recurring time-based schedules
+
+---
+
+## FR-09 Implementation Summary Completion
+**Timestamp**: 2026-04-10T19:15:00Z
+**User Input**: "Please implement this issue #18 (FR-09):
+Generate an Implementation summary into issues/#18"
+**AI Response**: "Generated issues/#18/IMPLEMENTATION_SUMMARY.md as a code-grounded FR-09 summary. Marked the slice as partially implemented because the schedule management UI and mock execution service exist, but there is no real time-driven execution loop, seeded schedules reference missing devices, and some UI action labels do not match the execution parser."
+**Context**: Construction documentation artifact created for FR-09
+
+---
+
+## FR-09 Implementation Approval
+**Timestamp**: 2026-04-10T19:18:00Z
+**User Input**: "Please implement as planned"
+**AI Response**: "Treated the message as approval to execute the FR-09 code slice, loaded the existing schedule runtime context, and prepared a focused implementation around recurring background execution, schedule parsing, action alignment, and targeted verification."
+**Context**: Construction approval for FR-09 execution
+
+---
+
+## FR-09 Implementation Completion
+**Timestamp**: 2026-04-10T19:25:00Z
+**User Input**: "Please implement as planned"
+**AI Response**: "Implemented FR-09 by adding minute-accurate recurring schedule dispatch in MockScheduleService, wiring scheduler lifecycle startup and shutdown into SmartHomeApp, aligning dimmer and thermostat action handling with the schedule UI, correcting seeded schedules to reference real devices, updating the schedules dialog guidance, and extending TestMockScheduleService to cover automatic due-time execution, recurrence filtering, and thermostat actions. Verified with Maven compile and a focused Maven test run for TestMockScheduleService."
+**Context**: Construction execution and verification for FR-09 recurring schedules
+
+---
+
+## FR-09 Persistent Plan Request
+**Timestamp**: 2026-04-10T19:35:00Z
+**User Input**: "Wait no, I wanted you to actually implement this feature with a database implementation, you just improved the mock service.
+
+Please start with a new implementation plan that really implements persistent schedules.
+Also please make a clear distinction between the former Mock services and the real services by putting them in seperate folders."
+**AI Response**: "Re-read the current schedule implementation, current tests, existing auth JDBC setup, and the current mixed service package layout before preparing a new persistence-first FR-09 implementation plan."
+**Context**: Construction replanning request for persistent schedule implementation
+
+---
+
+## FR-09 Persistent Plan Completion
+**Timestamp**: 2026-04-10T19:42:00Z
+**User Input**: "Wait no, I wanted you to actually implement this feature with a database implementation, you just improved the mock service.
+
+Please start with a new implementation plan that really implements persistent schedules.
+Also please make a clear distinction between the former Mock services and the real services by putting them in seperate folders."
+**AI Response**: "Created issues/#18/IMPLEMENTATION_PLAN.md with a new JDBC-backed FR-09 plan centered on persistent schedules, controller-facing service contracts, a `mock` versus `real` package split, a schedule schema script, and a migration sequence that moves controllers off direct `MockScheduleService` usage."
+**Context**: Construction planning artifact created for persistent FR-09 implementation
+
+---
+
+## FR-09 Persistent Implementation Approval
+**Timestamp**: 2026-04-10T17:20:00Z
+**User Input**: "implement as planned"
+**AI Response**: "Treated the message as approval to execute the persistence-first FR-09 plan, continued the package split, introduced the real schedule service path, and prepared the remaining controller and test rewiring needed to compile and verify the slice."
+**Context**: Construction approval for persistent FR-09 execution
+
+---
+
+## FR-09 Persistent Implementation Completion
+**Timestamp**: 2026-04-10T17:30:00Z
+**User Input**: "implement as planned"
+**AI Response**: "Implemented persistent FR-09 scheduling by splitting services into `service/api`, `service/mock`, and `service/real`, moving the JDBC auth classes into `service/real/auth`, adding `ScheduleService`, `ServiceRegistry`, `JdbcScheduleService`, and `db/init-schedules.sql`, extending `Schedule` with `deviceId`, rewiring `SchedulesController`, `VacationModeController`, and `SmartHomeApp` to the real schedule service, preserving mock-service test compatibility, and fixing visibility fallout from the package move. Verified with `mvn clean compile -DskipTests` and `mvn \"-Dtest=TestMockScheduleService,TestMockUserServiceLoginLogout,TestMockUserServiceRegistration\" test`."
+**Context**: Construction execution and verification for persistent FR-09 implementation
+
+---

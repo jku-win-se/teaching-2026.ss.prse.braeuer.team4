@@ -9,7 +9,9 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.mindrot.jbcrypt.BCrypt;
 
-import at.jku.se.smarthome.service.MockUserService.LoginStatus;
+import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.mock.MockUserService.LoginStatus;
+import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 
 /**
  * Focused FR-02 tests for secure login and logout behavior.

@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -6,6 +6,8 @@ import java.util.List;
 
 import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.model.VacationModeConfig;
+import at.jku.se.smarthome.service.api.ScheduleService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 
 /**
  * Mock vacation mode service for FR-21.
@@ -15,7 +17,6 @@ public class MockVacationModeService {
 
     private static MockVacationModeService instance;
 
-    private final MockScheduleService scheduleService = MockScheduleService.getInstance();
     private final MockRoomService roomService = MockRoomService.getInstance();
     private final MockLogService logService = MockLogService.getInstance();
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
@@ -52,14 +53,14 @@ public class MockVacationModeService {
         if (configuration.getScheduleId() == null) {
             return null;
         }
-        return scheduleService.getScheduleById(configuration.getScheduleId());
+        return getScheduleService().getScheduleById(configuration.getScheduleId());
     }
 
     public List<Schedule> getOverriddenSchedules() {
         Schedule selectedSchedule = getSelectedSchedule();
         String selectedScheduleId = selectedSchedule != null ? selectedSchedule.getId() : null;
 
-        return scheduleService.getSchedules().stream()
+        return getScheduleService().getSchedules().stream()
                 .filter(Schedule::isActive)
                 .filter(schedule -> selectedScheduleId == null || !schedule.getId().equals(selectedScheduleId))
                 .toList();
@@ -171,5 +172,9 @@ public class MockVacationModeService {
 
     private String formatDate(LocalDate date) {
         return date != null ? date.format(dateFormatter) : "-";
+    }
+
+    private ScheduleService getScheduleService() {
+        return ServiceRegistry.getScheduleService();
     }
 }

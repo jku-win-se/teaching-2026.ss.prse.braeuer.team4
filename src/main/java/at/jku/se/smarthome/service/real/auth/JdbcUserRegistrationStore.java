@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.real.auth;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +17,7 @@ import at.jku.se.smarthome.config.DatabaseSettings;
 /**
  * JDBC-backed registration store for the auth users table.
  */
-class JdbcUserRegistrationStore implements UserRegistrationStore {
+public class JdbcUserRegistrationStore implements UserRegistrationStore {
 
     private static final String DUPLICATE_EMAIL_SQL_STATE = "23505";
     private static final String INIT_SCRIPT_PATH = "/db/init-auth.sql";

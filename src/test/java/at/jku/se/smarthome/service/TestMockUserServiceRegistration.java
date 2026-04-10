@@ -8,6 +8,8 @@ import org.junit.Test;
 import org.mindrot.jbcrypt.BCrypt;
 
 import at.jku.se.smarthome.model.User;
+import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 
 /**
  * Tests for JDBC-backed registration behavior in {@link MockUserService}.

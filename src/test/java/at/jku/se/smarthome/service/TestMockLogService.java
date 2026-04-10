@@ -1,11 +1,14 @@
 package at.jku.se.smarthome.service;
 
-import at.jku.se.smarthome.model.LogEntry;
-import javafx.collections.ObservableList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import at.jku.se.smarthome.model.LogEntry;
+import at.jku.se.smarthome.service.mock.MockLogService;
+import javafx.collections.ObservableList;
 
 /**
  * Tests for {@link MockLogService} covering log entry storage, filtering, and export.

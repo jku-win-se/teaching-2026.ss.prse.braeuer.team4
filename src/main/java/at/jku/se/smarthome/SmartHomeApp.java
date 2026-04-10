@@ -5,6 +5,7 @@ import java.io.IOException;
 import at.jku.se.smarthome.controller.LoginController;
 import at.jku.se.smarthome.controller.MainController;
 import at.jku.se.smarthome.controller.RegisterController;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -49,6 +50,9 @@ public class SmartHomeApp extends Application {
         
         // Load main scene
         loadMainScene();
+
+        // Start recurring schedule processing after the JavaFX toolkit is fully available.
+        ServiceRegistry.getScheduleService().startRecurringExecution();
         
         // Show login scene first
         primaryStage.setScene(loginScene);
@@ -159,5 +163,10 @@ public class SmartHomeApp extends Application {
      */
     public static void main(String[] args) {
         launch(args);
+    }
+
+    @Override
+    public void stop() {
+        ServiceRegistry.getScheduleService().stopRecurringExecution();
     }
 }

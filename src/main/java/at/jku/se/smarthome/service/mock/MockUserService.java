@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.mindrot.jbcrypt.BCrypt;
 
 import at.jku.se.smarthome.model.User;
+import at.jku.se.smarthome.service.real.auth.JdbcUserRegistrationStore;
+import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -53,7 +55,7 @@ public class MockUserService {
         this(new JdbcUserRegistrationStore());
     }
 
-    MockUserService(UserRegistrationStore registrationStore) {
+    public MockUserService(UserRegistrationStore registrationStore) {
         this.users = FXCollections.observableArrayList();
         this.registrationStore = registrationStore;
         this.failedLoginAttempts = new HashMap<>();
@@ -331,7 +333,7 @@ public class MockUserService {
         this.currentSessionExpiresAt = 0;
     }
 
-    void expireSessionForTesting() {
+    public void expireSessionForTesting() {
         this.currentSessionExpiresAt = System.currentTimeMillis() - 1;
     }
 

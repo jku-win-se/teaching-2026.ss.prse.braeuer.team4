@@ -10,21 +10,28 @@ public class Schedule {
     
     private final SimpleStringProperty id;
     private final SimpleStringProperty name;
+    private final SimpleStringProperty deviceId;
     private final SimpleStringProperty device;
     private final SimpleStringProperty action;
     private final SimpleStringProperty time;
     private final SimpleStringProperty recurrence;
     private final SimpleBooleanProperty active;
     
-    public Schedule(String id, String name, String device, String action, 
+    public Schedule(String id, String name, String deviceId, String device, String action,
                    String time, String recurrence, boolean active) {
         this.id = new SimpleStringProperty(id);
         this.name = new SimpleStringProperty(name);
+        this.deviceId = new SimpleStringProperty(deviceId);
         this.device = new SimpleStringProperty(device);
         this.action = new SimpleStringProperty(action);
         this.time = new SimpleStringProperty(time);
         this.recurrence = new SimpleStringProperty(recurrence);
         this.active = new SimpleBooleanProperty(active);
+    }
+
+    public Schedule(String id, String name, String device, String action,
+                   String time, String recurrence, boolean active) {
+        this(id, name, device, device, action, time, recurrence, active);
     }
     
     public String getId() { return id.get(); }
@@ -33,6 +40,10 @@ public class Schedule {
     public String getName() { return name.get(); }
     public void setName(String name) { this.name.set(name); }
     public SimpleStringProperty nameProperty() { return name; }
+
+    public String getDeviceId() { return deviceId.get(); }
+    public void setDeviceId(String deviceId) { this.deviceId.set(deviceId); }
+    public SimpleStringProperty deviceIdProperty() { return deviceId; }
     
     public String getDevice() { return device.get(); }
     public void setDevice(String device) { this.device.set(device); }
