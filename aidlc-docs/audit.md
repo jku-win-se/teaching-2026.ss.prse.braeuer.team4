@@ -39,3 +39,28 @@
 **Context**: Awaiting user response after Reverse Engineering
 
 ---
+
+## Plan Refinement
+**Timestamp**: 2026-04-10T15:42:31Z
+**User Input**: "I had a talk with the project team and because this is just a university project, its perfectly fine to directly access the database from JavaFX. Even just JDBC access also works we dont necessarily need an ORM. Which option would be the easiest now given these new circumstances, please refine the Implementation plan."
+**AI Response**: "Reviewed the existing Hibernate-first auth persistence draft against the current JavaFX architecture and refined it to recommend a JDBC-first implementation with minimal dependencies, a thin service/repository boundary, a checked-in SQL schema script, and retained security basics such as bcrypt, prepared statements, and externalized credentials."
+**Context**: Focused refinement of prompts/#8/IMPLEMENTATION_PLAN.md after updated team constraints
+
+---
+
+## FR-01 Registration Implementation
+**Timestamp**: 2026-04-10T15:56:57Z
+**User Input**: "Yes this plan sounds goond now, please implement, the first part FR-01 only register"
+**AI Response**: "Implemented the FR-01 registration slice using a minimal JDBC-backed registration store behind MockUserService, added PostgreSQL and bcrypt dependencies, introduced optional local database configuration and schema bootstrap files, updated registration error handling in the JavaFX controller, and added focused unit tests covering registration success and failure paths. Verified with Maven compile and targeted Maven tests for TestMockUserServiceRegistration."
+**Context**: Construction work for registration-only persistence slice
+
+---
+
+## Registration Database Configuration
+**Timestamp**: 2026-04-10T16:04:36Z
+**User Input**: "This is the connection string for the postgresql instance. please put it in a secure .env file and exclude it in .gitignore.
+Also use the real service for registering now
+**AI Response**: "Updated the database configuration loader to read a local .env file, parse postgres:// connection strings into JDBC settings, created a git-ignored .env with the provided connection string, added .env.example, and kept the registration flow on the real JDBC-backed service path. Verified with Maven compile."
+**Context**: Secure local database configuration for live registration setup
+
+---
