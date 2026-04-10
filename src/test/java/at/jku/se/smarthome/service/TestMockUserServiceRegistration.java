@@ -101,11 +101,29 @@ public class TestMockUserServiceRegistration {
         }
 
         @Override
+        public java.util.Optional<PersistedUser> findByEmail(String normalizedEmail) throws StoreException {
+            if (configurationFailure) {
+                throw new StoreConfigurationException("Missing DB configuration");
+            }
+            if (savedUser == null || !savedUser.email().equals(normalizedEmail)) {
+                return java.util.Optional.empty();
+            }
+            return java.util.Optional.of(savedUser);
+        }
+
+        @Override
         public void save(PersistedUser user) throws StoreException {
             if (configurationFailure) {
                 throw new StoreConfigurationException("Missing DB configuration");
             }
             this.savedUser = user;
+        }
+
+        @Override
+        public void updateLastLogin(String normalizedEmail) throws StoreException {
+            if (configurationFailure) {
+                throw new StoreConfigurationException("Missing DB configuration");
+            }
         }
     }
 }

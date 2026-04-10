@@ -7,7 +7,11 @@ interface UserRegistrationStore {
 
     boolean emailExists(String normalizedEmail) throws StoreException;
 
+    java.util.Optional<PersistedUser> findByEmail(String normalizedEmail) throws StoreException;
+
     void save(PersistedUser user) throws StoreException;
+
+    void updateLastLogin(String normalizedEmail) throws StoreException;
 
     record PersistedUser(String email, String username, String passwordHash, String role, String status) {
     }

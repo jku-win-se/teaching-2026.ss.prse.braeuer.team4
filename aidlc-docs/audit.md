@@ -72,3 +72,21 @@ Also use the real service for registering now
 **Context**: Auth database seed assistance for owner user creation
 
 ---
+
+## FR-02 Login/Logout Implementation Request
+**Timestamp**: 2026-04-10T16:30:00Z
+**User Input**: "Please implement #9 FR-02 The system shall allow a registered user to log in and log out securely.
+First generate an Implementation summary into the prompts/#9 folder"
+**AI Response**: "Loaded the existing AI-DLC state, common rules, security extension, auth implementation context, and prior FR-01 registration work. Prepared a focused FR-02 implementation summary in prompts/#9 and aligned the code changes to extend the existing JDBC auth path rather than introducing a parallel authentication flow."
+**Context**: Construction planning for secure JDBC-backed login/logout slice
+
+---
+
+## FR-02 Login/Logout Implementation Completion
+**Timestamp**: 2026-04-10T17:05:00Z
+**User Input**: "Please implement #9 FR-02 The system shall allow a registered user to log in and log out securely.
+First generate an Implementation summary into the prompts/#9 folder"
+**AI Response**: "Implemented the FR-02 slice by extending the JDBC auth store with persisted user lookup and last-login updates, hardening MockUserService with typed login outcomes, throttling, session expiry, and explicit logout invalidation, moving login work off the JavaFX UI thread, and adding focused service tests for success, failure, throttling, logout, and session expiry."
+**Context**: Construction execution for secure login/logout
+
+---
