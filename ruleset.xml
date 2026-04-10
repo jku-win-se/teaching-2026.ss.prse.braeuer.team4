@@ -5,6 +5,17 @@
          name="pmd-ruleset"
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
 	<description>PMD Plugin preferences rule set</description>
+	<!--
+	  This is the provided source ruleset and is intentionally kept unchanged as the
+	  original cross-language specification. The Maven build does not execute this
+	  file directly because the repository is Java-only and PMD 7 cannot resolve the
+	  non-Java language rules declared here for Apex, ECMAScript, JSP, PLSQL, VF, VM,
+	  XSL, and similar categories.
+
+	  The executable Maven PMD configuration uses ruleset-effective-java.xml instead.
+	  That file is a derived Java-only subset of this provided ruleset and also omits
+	  a small number of Java rule IDs that no longer exist in PMD 7.
+	-->
 	<rule ref="category/java/bestpractices.xml/AbstractClassWithoutAbstractMethod"/>
 	<rule ref="category/java/design.xml/AbstractClassWithoutAnyMethod"/>
 	<rule ref="category/java/bestpractices.xml/AccessorClassGeneration"/>

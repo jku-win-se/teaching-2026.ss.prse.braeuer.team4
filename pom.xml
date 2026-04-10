@@ -94,7 +94,7 @@
 					<printFailingErrors>true</printFailingErrors>
 					<typeResolution>false</typeResolution>
 					<rulesets>
-						<ruleset>ruleset.xml</ruleset>
+						<ruleset>ruleset-effective-java.xml</ruleset>
 					</rulesets>
 					<skipEmptyReport>false</skipEmptyReport>
 				</configuration>
