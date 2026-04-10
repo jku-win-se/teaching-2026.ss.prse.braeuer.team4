@@ -106,6 +106,8 @@ public class MockScheduleService implements ScheduleService {
     
     /**
      * Gets all schedules.
+     *
+     * @return observable list of schedules
      */
     public ObservableList<Schedule> getSchedules() {
         return schedules;
@@ -113,6 +115,9 @@ public class MockScheduleService implements ScheduleService {
 
     /**
      * Gets a schedule by ID.
+     *
+     * @param scheduleId identifier of the schedule to retrieve
+     * @return matching schedule, or null when none exists
      */
     public Schedule getScheduleById(String scheduleId) {
         return schedules.stream()
@@ -122,7 +127,10 @@ public class MockScheduleService implements ScheduleService {
     }
 
     /**
-     * Gets a schedule by display name.
+        * Gets a schedule by display name.
+        *
+        * @param scheduleName display name of the schedule to retrieve
+        * @return matching schedule, or null when none exists
      */
     public Schedule getScheduleByName(String scheduleName) {
         return schedules.stream()
@@ -151,6 +159,17 @@ public class MockScheduleService implements ScheduleService {
         return schedule;
     }
 
+    /**
+     * Adds a new schedule by resolving the device identifier from the device name.
+     *
+     * @param name schedule name
+     * @param deviceName target device name
+     * @param action action to execute
+     * @param time schedule time pattern
+     * @param recurrence recurrence mode
+     * @param active whether the schedule starts active
+     * @return created schedule instance
+     */
     public Schedule addSchedule(String name, String deviceName, String action,
                                 String time, String recurrence, boolean active) {
         String deviceId = resolveDeviceId(deviceName);
@@ -181,6 +200,17 @@ public class MockScheduleService implements ScheduleService {
         return false;
     }
 
+    /**
+     * Updates a schedule by resolving the device identifier from the device name.
+     *
+     * @param schedId identifier of the schedule to update
+     * @param name updated schedule name
+     * @param deviceName updated target device name
+     * @param action updated action text
+     * @param time updated schedule time pattern
+     * @param recurrence updated recurrence mode
+     * @return true when the schedule exists and was updated, otherwise false
+     */
     public boolean updateSchedule(String schedId, String name, String deviceName,
                                   String action, String time, String recurrence) {
         String deviceId = resolveDeviceId(deviceName);
@@ -191,6 +221,9 @@ public class MockScheduleService implements ScheduleService {
     
     /**
      * Toggles a schedule's active state.
+        *
+        * @param schedId identifier of the schedule to toggle
+        * @return true when the schedule exists and was toggled, otherwise false
      */
     public boolean toggleSchedule(String schedId) {
         Schedule schedule = schedules.stream()
@@ -206,7 +239,10 @@ public class MockScheduleService implements ScheduleService {
     }
     
     /**
-     * Deletes a schedule.
+        * Deletes a schedule.
+        *
+        * @param schedId identifier of the schedule to delete
+        * @return true when the schedule existed and was removed, otherwise false
      */
     public boolean deleteSchedule(String schedId) {
         boolean removed = schedules.removeIf(s -> s.getId().equals(schedId));
@@ -224,6 +260,9 @@ public class MockScheduleService implements ScheduleService {
      * Executes a schedule: applies its action to the target device and logs the change.
      * Returns false if the schedule is not found, inactive, the device is missing,
      * or the action is not supported.
+        *
+        * @param scheduleId identifier of the schedule to execute
+        * @return true when execution succeeds, otherwise false
      */
     public boolean executeSchedule(String scheduleId) {
         Schedule schedule = getScheduleById(scheduleId);
@@ -247,6 +286,9 @@ public class MockScheduleService implements ScheduleService {
     /**
      * Executes all schedules due for the provided minute and returns the number of
      * schedules that successfully triggered.
+        *
+        * @param now point in time to evaluate
+        * @return number of schedules executed for the supplied minute
      */
     public int processDueSchedules(LocalDateTime now) {
         if (now == null) {
@@ -412,6 +454,9 @@ public class MockScheduleService implements ScheduleService {
 
     /**
      * Checks for conflicts.
+     *
+     * @param schedId identifier of the schedule being validated
+     * @return true when a conflict exists, otherwise false
      */
     public boolean hasConflicts(String schedId) {
         return false; // Simplified mock

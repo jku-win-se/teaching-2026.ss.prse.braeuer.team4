@@ -3,6 +3,9 @@ package at.jku.se.smarthome.controller;
 import java.io.IOException;
 import java.util.Objects;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import at.jku.se.smarthome.model.NotificationEntry;
 import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockSmartHomeService;
@@ -26,6 +29,8 @@ import javafx.util.Duration;
  * and manages the user session (login/logout).
  */
 public class MainController {
+
+    private static final Logger LOGGER = LogManager.getLogger(MainController.class);
     
     @FXML
     private Label userLabel;
@@ -335,8 +340,7 @@ public class MainController {
      * @param exception the exception that caused the error
      */
     private void showError(String message, Exception exception) {
-        System.err.println(message);
-        exception.printStackTrace();
+        LOGGER.error(message, exception);
         
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");

@@ -49,6 +49,10 @@ public class MockEnergyService {
         return instance;
     }
 
+    public static synchronized void resetForTesting() {
+        instance = null;
+    }
+
     public EnergySnapshot getSnapshot(AggregationPeriod period) {
         Map<String, Double> deviceData = getConsumptionByDevice(period);
         Map<String, Double> roomData = getConsumptionByRoom(period, deviceData);

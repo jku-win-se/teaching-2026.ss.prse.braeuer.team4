@@ -71,6 +71,13 @@ public final class JdbcScheduleService implements ScheduleService {
         return instance;
     }
 
+    public static synchronized void resetForTesting() {
+        if (instance != null) {
+            instance.stopRecurringExecution();
+        }
+        instance = null;
+    }
+
     @Override
     public ObservableList<Schedule> getSchedules() {
         return schedules;

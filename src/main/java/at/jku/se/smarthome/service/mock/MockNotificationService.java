@@ -27,6 +27,10 @@ public class MockNotificationService {
         }
         return instance;
     }
+
+    public static synchronized void resetForTesting() {
+        instance = null;
+    }
     
     public ObservableList<NotificationEntry> getNotifications() {
         return notifications;

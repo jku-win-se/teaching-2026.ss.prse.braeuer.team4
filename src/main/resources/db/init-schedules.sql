@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS scheduled_actions (
     time_pattern VARCHAR(255) NOT NULL,
     recurrence VARCHAR(32) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_triggered_at TIMESTAMPTZ,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_triggered_at TIMESTAMP WITH TIME ZONE,
     CONSTRAINT scheduled_actions_recurrence_chk CHECK (recurrence IN ('Daily', 'Weekdays', 'Weekends', 'Weekly'))
 );
 

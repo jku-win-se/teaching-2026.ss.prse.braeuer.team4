@@ -70,6 +70,10 @@ public class MockUserService {
         return instance;
     }
 
+    /**
+     * Resets the singleton for unit testing.
+     * Must NOT be called from production code.
+     */
     public static synchronized void resetForTesting() {
         instance = null;
     }
@@ -83,13 +87,25 @@ public class MockUserService {
     
     /**
      * Registers a new user.
+     *
+     * @param email email address for the new user
+     * @param username display name or login name
+     * @param password raw password value
+     * @param confirmPassword repeated password value
+     * @return true when registration succeeds, otherwise false
      */
     public boolean register(String email, String username, String password, String confirmPassword) {
         return registerUser(email, username, password, confirmPassword) == RegistrationStatus.SUCCESS;
     }
 
     /**
-     * Registers a new user and returns a status for UI feedback.
+        * Registers a new user and returns a status for UI feedback.
+        *
+        * @param email email address for the new user
+        * @param username display name or login name
+        * @param password raw password value
+        * @param confirmPassword repeated password value
+        * @return registration outcome status
      */
     public RegistrationStatus registerUser(String email, String username, String password, String confirmPassword) {
         String normalizedEmail = normalizeEmail(email);
@@ -134,13 +150,21 @@ public class MockUserService {
     
     /**
      * Authenticates a user.
+     *
+     * @param email email address used for login
+     * @param password raw password value
+     * @return true when authentication succeeds, otherwise false
      */
     public synchronized boolean login(String email, String password) {
         return authenticate(email, password) == LoginStatus.SUCCESS;
     }
 
     /**
-     * Authenticates a user and returns a detailed status for UI handling.
+        * Authenticates a user and returns a detailed status for UI handling.
+        *
+        * @param email email address used for login
+        * @param password raw password value
+        * @return authentication outcome status
      */
     public synchronized LoginStatus authenticate(String email, String password) {
         String normalizedEmail = normalizeEmail(email);
@@ -184,7 +208,9 @@ public class MockUserService {
     }
     
     /**
-     * Gets the current user's email.
+        * Gets the current user's email.
+        *
+        * @return current user email, or null when no session exists
      */
     public synchronized String getCurrentUserEmail() {
         invalidateExpiredSessionIfNeeded();
@@ -192,7 +218,9 @@ public class MockUserService {
     }
     
     /**
-     * Gets the current user's role.
+        * Gets the current user's role.
+        *
+        * @return current user role, or Guest when no session exists
      */
     public synchronized String getCurrentUserRole() {
         invalidateExpiredSessionIfNeeded();
@@ -200,7 +228,9 @@ public class MockUserService {
     }
 
     /**
-     * Gets the current user object.
+        * Gets the current user object.
+        *
+        * @return current user object, or null when no session exists
      */
     public synchronized User getCurrentUser() {
         invalidateExpiredSessionIfNeeded();
@@ -228,6 +258,8 @@ public class MockUserService {
 
     /**
      * Checks whether the current user is an owner.
+     *
+     * @return true when the current user is an owner, otherwise false
      */
     public synchronized boolean isOwner() {
         return "Owner".equalsIgnoreCase(getCurrentUserRole());
@@ -235,6 +267,8 @@ public class MockUserService {
 
     /**
      * Checks whether the current user can manage devices and rules.
+     *
+     * @return true when the current user can manage the system, otherwise false
      */
     public synchronized boolean canManageSystem() {
         return isOwner();
@@ -242,16 +276,29 @@ public class MockUserService {
     
     /**
      * Gets all users.
+     *
+     * @return observable list of users
      */
     public ObservableList<User> getUsers() {
         return users;
     }
 
+    /**
+     * Indicates whether a non-expired user session exists.
+     *
+     * @return true when a session is active, otherwise false
+     */
     public synchronized boolean hasActiveSession() {
         invalidateExpiredSessionIfNeeded();
         return currentUserEmail != null;
     }
 
+    /**
+     * Returns the remaining login throttle duration for the supplied email.
+     *
+     * @param email email address to inspect
+     * @return remaining throttle time in seconds, or zero when not throttled
+     */
     public synchronized long getRemainingThrottleSeconds(String email) {
         String normalizedEmail = normalizeEmail(email);
         if (normalizedEmail == null) {
@@ -269,7 +316,11 @@ public class MockUserService {
     }
     
     /**
-     * Invites a member.
+        * Invites a member.
+        *
+        * @param email email address of the invited user
+        * @param role role assigned to the invited user
+        * @return true when the invite was created, otherwise false
      */
     public boolean inviteUser(String email, String role) {
         if (users.stream().anyMatch(u -> u.getEmail().equals(email))) {
@@ -282,7 +333,10 @@ public class MockUserService {
     }
     
     /**
-     * Revokes access for a user.
+        * Revokes access for a user.
+        *
+        * @param email email address of the user to revoke
+        * @return true when access was revoked, otherwise false
      */
     public boolean revokeUser(String email) {
         User user = users.stream()
@@ -306,7 +360,10 @@ public class MockUserService {
     }
 
     /**
-     * Restores access for a previously revoked or pending member.
+        * Restores access for a previously revoked or pending member.
+        *
+        * @param email email address of the user to restore
+        * @return true when access was restored, otherwise false
      */
     public boolean restoreUser(String email) {
         User user = users.stream()
@@ -323,7 +380,7 @@ public class MockUserService {
     }
     
     /**
-     * Logs out the current user.
+        * Logs out the current user.
      */
     public synchronized void logout() {
         this.currentUserEmail = null;
@@ -333,6 +390,9 @@ public class MockUserService {
         this.currentSessionExpiresAt = 0;
     }
 
+    /**
+     * Forces the current session to expire for test scenarios.
+     */
     public void expireSessionForTesting() {
         this.currentSessionExpiresAt = System.currentTimeMillis() - 1;
     }

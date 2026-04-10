@@ -58,6 +58,10 @@ public class MockSimulationService {
         return instance;
     }
 
+    public static synchronized void resetForTesting() {
+        instance = null;
+    }
+
     public SimulationPlan buildPlan(SimulationConfiguration configuration) {
         ObservableList<SimulationDeviceState> simulatedDeviceStates = createSimulationSnapshot(configuration.startTime());
         List<SimulationEvent> events = new ArrayList<>();

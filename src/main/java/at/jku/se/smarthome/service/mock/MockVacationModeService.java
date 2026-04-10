@@ -34,6 +34,10 @@ public class MockVacationModeService {
         return instance;
     }
 
+    public static synchronized void resetForTesting() {
+        instance = null;
+    }
+
     public VacationModeConfig getConfiguration() {
         return configuration;
     }

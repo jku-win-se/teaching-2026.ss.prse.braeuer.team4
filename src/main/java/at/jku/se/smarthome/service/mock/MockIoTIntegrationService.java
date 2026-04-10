@@ -43,6 +43,10 @@ public class MockIoTIntegrationService {
         return instance;
     }
 
+    public static synchronized void resetForTesting() {
+        instance = null;
+    }
+
     public String getProtocolName() {
         return "MQTT";
     }
