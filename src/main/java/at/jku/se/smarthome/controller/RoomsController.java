@@ -108,8 +108,17 @@ public class RoomsController {
         dialog.setContentText("Room name:");
         
         dialog.showAndWait().ifPresent(roomName -> {
-            if (!roomName.isEmpty()) {
-                roomService.addRoom(roomName);
+            if (!roomName.trim().isEmpty()) {
+                Room newRoom = roomService.addRoom(roomName);
+                if (newRoom != null) {
+                    // Success, table will update automatically
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Failed to add room");
+                    alert.setContentText("Room name must be unique and non-empty.");
+                    alert.showAndWait();
+                }
             }
         });
     }
@@ -233,9 +242,17 @@ public class RoomsController {
         dialog.setContentText("Room name:");
         
         dialog.showAndWait().ifPresent(newName -> {
-            if (!newName.isEmpty() && !newName.equals(room.getName())) {
-                roomService.updateRoomName(room.getId(), newName);
-                roomsTable.refresh();
+            if (!newName.trim().isEmpty() && !newName.equals(room.getName())) {
+                boolean success = roomService.updateRoomName(room.getId(), newName);
+                if (success) {
+                    roomsTable.refresh();
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Failed to rename room");
+                    alert.setContentText("Room name must be unique and non-empty.");
+                    alert.showAndWait();
+                }
             }
         });
     }
@@ -247,14 +264,25 @@ public class RoomsController {
         if (!userService.canManageSystem()) {
             return;
         }
+        String contentText = "Are you sure you want to delete this room? This action cannot be undone.";
+        if (!room.getDevices().isEmpty()) {
+            contentText = "Do you really want to delete this room? It contains " + room.getDevices().size() + " device(s). This action cannot be undone.";
+        }
         Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
         confirmDialog.setTitle("Delete Room");
         confirmDialog.setHeaderText("Delete room: " + room.getName());
-        confirmDialog.setContentText("Are you sure you want to delete this room? This action cannot be undone.");
+        confirmDialog.setContentText(contentText);
         
         confirmDialog.showAndWait().ifPresent(response -> {
             if (response == javafx.scene.control.ButtonType.OK) {
-                roomService.deleteRoom(room.getId());
+                boolean success = roomService.deleteRoom(room.getId());
+                if (!success) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Failed to delete room");
+                    alert.setContentText("An unexpected error occurred.");
+                    alert.showAndWait();
+                }
             }
         });
     }
