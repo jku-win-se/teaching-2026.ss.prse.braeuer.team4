@@ -25,9 +25,10 @@ public class OperationFactory {
 	private static final Logger LOGGER = LogManager.getLogger(OperationFactory.class);
 
 	/**
-	 * 
-	 * @param action. The calculation operation to be performed.
-	 * @return Returns the respective implementation for the requested operation.
+	 * Returns the operation implementation for the requested calculator action.
+	 *
+	 * @param action calculation action to resolve
+	 * @return operation implementation for the requested action
 	 */
 	public static ICalculationOperation getOperation(CalcAction action) {
 

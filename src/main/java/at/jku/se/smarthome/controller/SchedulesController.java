@@ -5,10 +5,11 @@ import java.util.Optional;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.model.Schedule;
-import at.jku.se.smarthome.service.MockRoomService;
-import at.jku.se.smarthome.service.MockScheduleService;
-import at.jku.se.smarthome.service.MockUserService;
-import at.jku.se.smarthome.service.MockVacationModeService;
+import at.jku.se.smarthome.service.api.ScheduleService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -60,7 +61,7 @@ public class SchedulesController {
     @FXML
     private Label conflictWarning;
     
-    private final MockScheduleService scheduleService = MockScheduleService.getInstance();
+    private final ScheduleService scheduleService = ServiceRegistry.getScheduleService();
     private final MockRoomService roomService = MockRoomService.getInstance();
     private final MockUserService userService = MockUserService.getInstance();
     private final MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
@@ -107,7 +108,8 @@ public class SchedulesController {
         result.ifPresent(input -> {
             scheduleService.addSchedule(
                     input.name(),
-                    input.device(),
+                    input.device().getId(),
+                    input.device().getName(),
                     input.action(),
                     input.time(),
                     input.recurrence(),
@@ -126,12 +128,13 @@ public class SchedulesController {
             scheduleService.updateSchedule(
                     schedule.getId(),
                     input.name(),
-                    input.device(),
+                    input.device().getId(),
+                    input.device().getName(),
                     input.action(),
                     input.time(),
-                    input.recurrence()
+                    input.recurrence(),
+                    input.active()
             );
-            schedule.setActive(input.active());
             schedulesTable.refresh();
             updateConflictWarning();
         });
@@ -172,22 +175,33 @@ public class SchedulesController {
         TextField nameField = new TextField();
         nameField.setPromptText("Weekday Morning Lamp");
 
-        ComboBox<String> deviceCombo = new ComboBox<>();
+        ComboBox<Device> deviceCombo = new ComboBox<>();
         deviceCombo.setPrefWidth(220);
         for (Room room : roomService.getRooms()) {
             for (Device device : room.getDevices()) {
                 if (isSchedulableDevice(device)) {
-                    deviceCombo.getItems().add(device.getName());
+                    deviceCombo.getItems().add(device);
                 }
             }
         }
+        deviceCombo.setConverter(new javafx.util.StringConverter<>() {
+            @Override
+            public String toString(Device device) {
+                return device != null ? device.getName() : "";
+            }
+
+            @Override
+            public Device fromString(String string) {
+                return getDeviceByName(string);
+            }
+        });
 
         ComboBox<String> actionCombo = new ComboBox<>();
         actionCombo.setPrefWidth(220);
         actionCombo.setPromptText("Select a valid action");
 
         TextField timeField = new TextField();
-        timeField.setPromptText("07:00 Weekdays");
+        timeField.setPromptText("07:00 AM or Mon 07:00 AM");
 
         ComboBox<String> recurrenceCombo = new ComboBox<>();
         recurrenceCombo.getItems().addAll("Daily", "Weekdays", "Weekends", "Weekly");
@@ -197,7 +211,7 @@ public class SchedulesController {
 
         if (schedule != null) {
             nameField.setText(schedule.getName());
-            deviceCombo.setValue(schedule.getDevice());
+            deviceCombo.setValue(getDeviceById(schedule.getDeviceId()));
             updateActionOptions(deviceCombo, actionCombo, schedule.getAction());
             timeField.setText(schedule.getTime());
             recurrenceCombo.setValue(schedule.getRecurrence());
@@ -241,7 +255,7 @@ public class SchedulesController {
                 return new ScheduleInput(
                         nameField.getText().trim(),
                         deviceCombo.getValue(),
-                    actionCombo.getValue(),
+                        actionCombo.getValue(),
                         timeField.getText().trim(),
                         recurrenceCombo.getValue(),
                         activeCheckBox.isSelected()
@@ -257,41 +271,33 @@ public class SchedulesController {
         return !"sensor".equalsIgnoreCase(device.getType());
     }
 
-    private void updateActionOptions(ComboBox<String> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
+    private void updateActionOptions(ComboBox<Device> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
         actionCombo.getItems().clear();
 
-        Device selectedDevice = getDeviceByName(deviceCombo.getValue());
+        Device selectedDevice = deviceCombo.getValue();
         if (selectedDevice == null) {
             return;
         }
 
         switch (selectedDevice.getType().toLowerCase()) {
-            case "switch":
-                actionCombo.getItems().addAll("Turn On", "Turn Off");
-                break;
-            case "dimmer":
-                actionCombo.getItems().addAll(
-                        "Turn On",
-                        "Turn Off",
-                        "Set to 25%",
-                        "Set to 50%",
-                        "Set to 75%",
-                        "Set to 100%"
-                );
-                break;
-            case "thermostat":
-                actionCombo.getItems().addAll(
-                        "Set to 18°C",
-                        "Set to 20°C",
-                        "Set to 22°C",
-                        "Set to 24°C"
-                );
-                break;
-            case "cover/blind":
-                actionCombo.getItems().addAll("Open", "Close");
-                break;
-            default:
-                break;
+            case "switch" -> actionCombo.getItems().addAll("Turn On", "Turn Off");
+            case "dimmer" -> actionCombo.getItems().addAll(
+                    "Turn On",
+                    "Turn Off",
+                    "Set to 25%",
+                    "Set to 50%",
+                    "Set to 75%",
+                    "Set to 100%"
+            );
+            case "thermostat" -> actionCombo.getItems().addAll(
+                    "Set to 18°C",
+                    "Set to 20°C",
+                    "Set to 22°C",
+                    "Set to 24°C"
+            );
+            case "cover/blind" -> actionCombo.getItems().addAll("Open", "Close");
+            default -> {
+            }
         }
 
         if (preferredAction != null && actionCombo.getItems().contains(preferredAction)) {
@@ -316,6 +322,10 @@ public class SchedulesController {
         return null;
     }
 
+    private Device getDeviceById(String deviceId) {
+        return deviceId == null ? null : roomService.getDeviceById(deviceId);
+    }
+
     private void updateConflictWarning() {
         if (!vacationModeService.isEnabled()) {
             conflictWarning.setText("");
@@ -328,7 +338,7 @@ public class SchedulesController {
 
     private record ScheduleInput(
             String name,
-            String device,
+            Device device,
             String action,
             String time,
             String recurrence,

@@ -7,11 +7,11 @@ import java.util.List;
 
 import at.jku.se.smarthome.model.Rule;
 import at.jku.se.smarthome.model.SimulationDeviceState;
-import at.jku.se.smarthome.service.MockRuleService;
-import at.jku.se.smarthome.service.MockSimulationService;
-import at.jku.se.smarthome.service.MockSimulationService.SimulationConfiguration;
-import at.jku.se.smarthome.service.MockSimulationService.SimulationEvent;
-import at.jku.se.smarthome.service.MockSimulationService.SimulationPlan;
+import at.jku.se.smarthome.service.mock.MockRuleService;
+import at.jku.se.smarthome.service.mock.MockSimulationService;
+import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationConfiguration;
+import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationEvent;
+import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationPlan;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;

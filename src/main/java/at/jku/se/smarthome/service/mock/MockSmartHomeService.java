@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import at.jku.se.smarthome.model.Device;
 import javafx.collections.FXCollections;
@@ -42,7 +42,7 @@ public class MockSmartHomeService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    static synchronized void resetForTesting() {
+    public static synchronized void resetForTesting() {
         instance = null;
     }
 

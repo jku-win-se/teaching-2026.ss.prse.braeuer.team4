@@ -1,8 +1,8 @@
 package at.jku.se.smarthome.controller;
 
-import at.jku.se.smarthome.service.MockEnergyService;
-import at.jku.se.smarthome.service.MockEnergyService.AggregationPeriod;
-import at.jku.se.smarthome.service.MockEnergyService.EnergySnapshot;
+import at.jku.se.smarthome.service.mock.MockEnergyService;
+import at.jku.se.smarthome.service.mock.MockEnergyService.AggregationPeriod;
+import at.jku.se.smarthome.service.mock.MockEnergyService.EnergySnapshot;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;

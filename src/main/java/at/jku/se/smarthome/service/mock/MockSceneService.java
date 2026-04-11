@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +30,14 @@ public class MockSceneService {
         }
         return instance;
     }
+
+    /**
+     * Resets the singleton for unit testing.
+     * Must NOT be called from production code.
+     */
+    public static synchronized void resetForTesting() {
+        instance = null;
+    }
     
     private void initializeMockScenes() {
         Scene movieScene = new Scene("scene-001", "Movie Night", "Dim all lights and close shutters");
@@ -56,6 +64,8 @@ public class MockSceneService {
     
     /**
      * Gets all scenes.
+     *
+     * @return observable list of scenes
      */
     public ObservableList<Scene> getScenes() {
         return scenes;
@@ -63,13 +73,22 @@ public class MockSceneService {
     
     /**
      * Adds a new scene.
+     *
+     * @param name display name of the scene
+     * @param description summary of the scene behavior
+     * @return created scene instance
      */
     public Scene addScene(String name, String description) {
         return addScene(name, description, List.of());
     }
 
     /**
-     * Adds a new scene with explicit device states.
+        * Adds a new scene with explicit device states.
+        *
+        * @param name display name of the scene
+        * @param description summary of the scene behavior
+        * @param deviceStates configured device-state definitions
+        * @return created scene instance
      */
     public Scene addScene(String name, String description, List<String> deviceStates) {
         Scene scene = new Scene(
@@ -83,7 +102,10 @@ public class MockSceneService {
     }
     
     /**
-     * Activates a scene.
+        * Activates a scene.
+        *
+        * @param sceneId identifier of the scene to activate
+        * @return true when the scene exists and activation ran, otherwise false
      */
     public boolean activateScene(String sceneId) {
         Scene scene = scenes.stream()
@@ -126,13 +148,24 @@ public class MockSceneService {
     
     /**
      * Updates a scene.
+     *
+     * @param sceneId identifier of the scene to update
+     * @param name updated scene name
+     * @param description updated scene description
+     * @return true when the scene exists and was updated, otherwise false
      */
     public boolean updateScene(String sceneId, String name, String description) {
         return updateScene(sceneId, name, description, List.of());
     }
 
     /**
-     * Updates a scene and replaces its configured device states.
+        * Updates a scene and replaces its configured device states.
+        *
+        * @param sceneId identifier of the scene to update
+        * @param name updated scene name
+        * @param description updated scene description
+        * @param deviceStates replacement device-state definitions
+        * @return true when the scene exists and was updated, otherwise false
      */
     public boolean updateScene(String sceneId, String name, String description, List<String> deviceStates) {
         Scene scene = scenes.stream()
@@ -151,6 +184,9 @@ public class MockSceneService {
     
     /**
      * Deletes a scene.
+     *
+     * @param sceneId identifier of the scene to delete
+     * @return true when the scene existed and was removed, otherwise false
      */
     public boolean deleteScene(String sceneId) {
         return scenes.removeIf(s -> s.getId().equals(sceneId));

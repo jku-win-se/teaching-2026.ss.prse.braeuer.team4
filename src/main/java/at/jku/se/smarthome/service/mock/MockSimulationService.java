@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -56,6 +56,10 @@ public class MockSimulationService {
             instance = new MockSimulationService();
         }
         return instance;
+    }
+
+    public static synchronized void resetForTesting() {
+        instance = null;
     }
 
     public SimulationPlan buildPlan(SimulationConfiguration configuration) {

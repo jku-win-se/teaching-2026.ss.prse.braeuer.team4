@@ -5,10 +5,11 @@ import java.time.LocalDate;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.model.VacationModeConfig;
-import at.jku.se.smarthome.service.MockRoomService;
-import at.jku.se.smarthome.service.MockScheduleService;
-import at.jku.se.smarthome.service.MockUserService;
-import at.jku.se.smarthome.service.MockVacationModeService;
+import at.jku.se.smarthome.service.api.ScheduleService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -54,7 +55,7 @@ public class VacationModeController {
     @FXML
     private Button deactivateBtn;
     
-    private final MockScheduleService scheduleService = MockScheduleService.getInstance();
+    private final ScheduleService scheduleService = ServiceRegistry.getScheduleService();
     private final MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
     private final MockRoomService roomService = MockRoomService.getInstance();
     private final MockUserService userService = MockUserService.getInstance();

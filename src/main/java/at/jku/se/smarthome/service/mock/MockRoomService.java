@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service;
+package at.jku.se.smarthome.service.mock;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
@@ -31,19 +31,24 @@ public class MockRoomService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    static synchronized void resetForTesting() {
+    public static synchronized void resetForTesting() {
         instance = null;
     }
 
     /**
      * Gets all rooms.
+     *
+     * @return observable list of rooms
      */
     public ObservableList<Room> getRooms() {
         return rooms;
     }
     
     /**
-     * Adds a new room.
+        * Adds a new room.
+        *
+        * @param name display name for the new room
+        * @return created room instance
      */
     public Room addRoom(String name) {
         if (name == null || name.trim().isEmpty()) {
@@ -64,7 +69,11 @@ public class MockRoomService {
     }
     
     /**
-     * Updates a room name.
+        * Updates a room name.
+        *
+        * @param roomId identifier of the room to update
+        * @param newName replacement room name
+        * @return true when the room exists and was updated, otherwise false
      */
     public boolean updateRoomName(String roomId, String newName) {
         if (newName == null || newName.trim().isEmpty()) {
@@ -90,6 +99,9 @@ public class MockRoomService {
     
     /**
      * Deletes a room.
+     *
+     * @param roomId identifier of the room to remove
+     * @return true when the room existed and was removed, otherwise false
      */
     public boolean deleteRoom(String roomId) {
         Room room = getRoomById(roomId);
@@ -101,7 +113,10 @@ public class MockRoomService {
     }
     
     /**
-     * Gets a room by ID.
+        * Gets a room by ID.
+        *
+        * @param roomId identifier of the room to retrieve
+        * @return matching room, or null when none exists
      */
     public Room getRoomById(String roomId) {
         return rooms.stream()
@@ -111,7 +126,9 @@ public class MockRoomService {
     }
 
     /**
-     * Gets all devices across all rooms.
+        * Gets all devices across all rooms.
+        *
+        * @return observable list of all devices
      */
     public ObservableList<Device> getAllDevices() {
         ObservableList<Device> devices = FXCollections.observableArrayList();
@@ -122,7 +139,10 @@ public class MockRoomService {
     }
 
     /**
-     * Gets a device by its display name.
+        * Gets a device by its display name.
+        *
+        * @param deviceName display name of the device to retrieve
+        * @return matching device, or null when none exists
      */
     public Device getDeviceByName(String deviceName) {
         return getAllDevices().stream()
@@ -130,9 +150,27 @@ public class MockRoomService {
                 .findFirst()
                 .orElse(null);
     }
+
+    /**
+     * Gets a device by its identifier.
+     *
+     * @param deviceId identifier of the device to retrieve
+     * @return matching device, or null when none exists
+     */
+    public Device getDeviceById(String deviceId) {
+        return getAllDevices().stream()
+                .filter(device -> deviceId.equals(device.getId()))
+                .findFirst()
+                .orElse(null);
+    }
     
     /**
-     * Adds a device to a room.
+        * Adds a device to a room.
+        *
+        * @param roomId identifier of the target room
+        * @param deviceName display name for the new device
+        * @param deviceType type of the new device
+        * @return created device, or null when the room does not exist
      */
     public Device addDeviceToRoom(String roomId, String deviceName, String deviceType) {
         Room room = getRoomById(roomId);
@@ -151,7 +189,11 @@ public class MockRoomService {
     }
     
     /**
-     * Removes a device from a room.
+        * Removes a device from a room.
+        *
+        * @param roomId identifier of the room containing the device
+        * @param deviceId identifier of the device to remove
+        * @return true when the device existed and was removed, otherwise false
      */
     public boolean removeDeviceFromRoom(String roomId, String deviceId) {
         Room room = getRoomById(roomId);
@@ -162,7 +204,12 @@ public class MockRoomService {
     }
     
     /**
-     * Renames a device.
+        * Renames a device.
+        *
+        * @param roomId identifier of the room containing the device
+        * @param deviceId identifier of the device to rename
+        * @param newName replacement display name
+        * @return true when the device existed and was renamed, otherwise false
      */
     public boolean renameDevice(String roomId, String deviceId, String newName) {
         if (newName == null || newName.isBlank()) {

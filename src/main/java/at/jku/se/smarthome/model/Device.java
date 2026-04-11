@@ -40,92 +40,200 @@ public class Device {
         this.temperature = new SimpleDoubleProperty(20.0);
     }
     
-    // Getters and Setters for properties
-    
+    /**
+     * Returns the device identifier.
+     *
+     * @return unique device identifier
+     */
     public String getId() {
         return id.get();
     }
-    
+
+    /**
+     * Updates the device identifier.
+     *
+     * @param id new device identifier
+     */
     public void setId(String id) {
         this.id.set(id);
     }
-    
+
+    /**
+     * Exposes the JavaFX id property.
+     *
+     * @return id property
+     */
     public SimpleStringProperty idProperty() {
         return id;
     }
-    
+
+    /**
+     * Returns the device name.
+     *
+     * @return display name
+     */
     public String getName() {
         return name.get();
     }
-    
+
+    /**
+     * Updates the device name.
+     *
+     * @param name new display name
+     */
     public void setName(String name) {
         this.name.set(name);
     }
-    
+
+    /**
+     * Exposes the JavaFX name property.
+     *
+     * @return name property
+     */
     public SimpleStringProperty nameProperty() {
         return name;
     }
-    
+
+    /**
+     * Returns the device type.
+     *
+     * @return device type
+     */
     public String getType() {
         return type.get();
     }
-    
+
+    /**
+     * Updates the device type.
+     *
+     * @param type new device type
+     */
     public void setType(String type) {
         this.type.set(type);
     }
-    
+
+    /**
+     * Exposes the JavaFX type property.
+     *
+     * @return type property
+     */
     public SimpleStringProperty typeProperty() {
         return type;
     }
-    
+
+    /**
+     * Returns the room name assigned to the device.
+     *
+     * @return room name
+     */
     public String getRoom() {
         return room.get();
     }
-    
+
+    /**
+     * Updates the assigned room name.
+     *
+     * @param room new room name
+     */
     public void setRoom(String room) {
         this.room.set(room);
     }
-    
+
+    /**
+     * Exposes the JavaFX room property.
+     *
+     * @return room property
+     */
     public SimpleStringProperty roomProperty() {
         return room;
     }
-    
+
+    /**
+     * Returns whether the device is on or active.
+     *
+     * @return current power or active state
+     */
     public boolean getState() {
         return state.get();
     }
-    
+
+    /**
+     * Updates the device state.
+     *
+     * @param state new power or active state
+     */
     public void setState(boolean state) {
         this.state.set(state);
     }
-    
+
+    /**
+     * Exposes the JavaFX state property.
+     *
+     * @return state property
+     */
     public SimpleBooleanProperty stateProperty() {
         return state;
     }
-    
+
+    /**
+     * Returns the dimmer brightness value.
+     *
+     * @return brightness percentage
+     */
     public int getBrightness() {
         return brightness.get();
     }
-    
+
+    /**
+     * Updates the dimmer brightness value.
+     *
+     * @param brightness new brightness percentage
+     */
     public void setBrightness(int brightness) {
         this.brightness.set(brightness);
     }
-    
+
+    /**
+     * Exposes the JavaFX brightness property.
+     *
+     * @return brightness property
+     */
     public SimpleIntegerProperty brightnessProperty() {
         return brightness;
     }
-    
+
+    /**
+     * Returns the thermostat temperature value.
+     *
+     * @return configured temperature
+     */
     public double getTemperature() {
         return temperature.get();
     }
-    
+
+    /**
+     * Updates the thermostat temperature value.
+     *
+     * @param temperature new configured temperature
+     */
     public void setTemperature(double temperature) {
         this.temperature.set(temperature);
     }
-    
+
+    /**
+     * Exposes the JavaFX temperature property.
+     *
+     * @return temperature property
+     */
     public SimpleDoubleProperty temperatureProperty() {
         return temperature;
     }
-    
+
+    /**
+     * Returns a debug-friendly string representation of the device.
+     *
+     * @return formatted device summary
+     */
     @Override
     public String toString() {
         return "Device{" +

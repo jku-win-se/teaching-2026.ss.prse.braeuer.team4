@@ -2,9 +2,9 @@ package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
-import at.jku.se.smarthome.service.MockLogService;
-import at.jku.se.smarthome.service.MockRoomService;
-import at.jku.se.smarthome.service.MockSmartHomeService;
+import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.mock.MockSmartHomeService;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
