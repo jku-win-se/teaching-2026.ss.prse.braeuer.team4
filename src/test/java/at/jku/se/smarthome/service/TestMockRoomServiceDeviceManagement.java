@@ -26,17 +26,6 @@ public class TestMockRoomServiceDeviceManagement {
     public void setUp() {
         MockRoomService.resetForTesting();
         service = MockRoomService.getInstance();
-        // Create mock rooms for testing
-        Room livingRoom = service.addRoom("Living Room");
-        livingRoom.addDevice(new Device("dev-001", "Main Light", "Switch", "Living Room", true));
-        livingRoom.addDevice(new Device("dev-002", "Dimmer Light", "Dimmer", "Living Room", true));
-        
-        Room bedroom = service.addRoom("Bedroom");
-        bedroom.addDevice(new Device("dev-003", "Bed Light", "Switch", "Bedroom", false));
-        bedroom.addDevice(new Device("dev-004", "Temperature Control", "Thermostat", "Bedroom", true));
-        
-        Room kitchen = service.addRoom("Kitchen");
-        kitchen.addDevice(new Device("dev-005", "Ceiling Light", "Switch", "Kitchen", true));
     }
 
     // -----------------------------------------------------------------------

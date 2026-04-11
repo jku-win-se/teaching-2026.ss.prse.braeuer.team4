@@ -17,9 +17,35 @@ public class MockRoomService {
     
     private MockRoomService() {
         this.rooms = FXCollections.observableArrayList();
-        // initializeMockRooms(); // Removed hardcoded data
+        initializeMockRooms();
     }
-    
+
+    private void initializeMockRooms() {
+        Room livingRoom = new Room("room-001", "Living Room", 0);
+        livingRoom.addDevice(new Device("dev-001", "Main Light", "Switch", "Living Room", true));
+        livingRoom.addDevice(new Device("dev-002", "Dimmer Light", "Dimmer", "Living Room", true));
+        rooms.add(livingRoom);
+
+        Room bedroom = new Room("room-002", "Bedroom", 0);
+        bedroom.addDevice(new Device("dev-003", "Bed Light", "Switch", "Bedroom", false));
+        bedroom.addDevice(new Device("dev-004", "Temperature Control", "Thermostat", "Bedroom", true));
+        rooms.add(bedroom);
+
+        Room kitchen = new Room("room-003", "Kitchen", 0);
+        kitchen.addDevice(new Device("dev-005", "Ceiling Light", "Switch", "Kitchen", true));
+        rooms.add(kitchen);
+
+        Room bathroom = new Room("room-004", "Bathroom", 0);
+        bathroom.addDevice(new Device("dev-006", "Exhaust Fan", "Switch", "Bathroom", false));
+        rooms.add(bathroom);
+
+        Room hallway = new Room("room-005", "Hallway", 0);
+        hallway.addDevice(new Device("dev-007", "Motion Sensor", "Sensor", "Hallway", true));
+        hallway.addDevice(new Device("dev-008", "Hallway Blind", "Cover/Blind", "Hallway", false));
+        rooms.add(hallway);
+    }
+
+
     public static synchronized MockRoomService getInstance() {
         if (instance == null) {
             instance = new MockRoomService();
