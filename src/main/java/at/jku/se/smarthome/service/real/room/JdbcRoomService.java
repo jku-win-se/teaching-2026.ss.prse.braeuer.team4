@@ -1,0 +1,349 @@
+package at.jku.se.smarthome.service.real.room;
+
+import at.jku.se.smarthome.config.DatabaseConfig;
+import at.jku.se.smarthome.config.DatabaseSettings;
+import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.Room;
+import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.mock.MockUserService;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
+/**
+ * JDBC-backed RoomService implementation. Persists rooms and devices to the configured database.
+ */
+public final class JdbcRoomService implements RoomService {
+
+    private static final String INIT_SCRIPT_PATH = "/db/init-rooms.sql";
+    private static JdbcRoomService instance;
+
+    private final ObservableList<Room> rooms = FXCollections.observableArrayList();
+    private final MockLogService logService = MockLogService.getInstance();
+    private final MockUserService userService = MockUserService.getInstance();
+    private volatile boolean schemaReady;
+
+    private JdbcRoomService() {
+        refreshRooms();
+    }
+
+    public static synchronized JdbcRoomService getInstance() {
+        if (instance == null) {
+            instance = new JdbcRoomService();
+        }
+        return instance;
+    }
+
+    public static synchronized void resetForTesting() {
+        instance = null;
+    }
+
+    @Override
+    public ObservableList<Room> getRooms() {
+        return rooms;
+    }
+
+    @Override
+    public Room getRoomById(String roomId) {
+        return rooms.stream()
+                .filter(r -> r.getId().equals(roomId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public Room addRoom(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return null;
+        }
+        String trimmed = name.trim();
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            String id = UUID.randomUUID().toString();
+            try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO rooms (id, name) VALUES (?, ?)")) {
+                stmt.setString(1, id);
+                stmt.setString(2, trimmed);
+                stmt.executeUpdate();
+            }
+            Room room = new Room(id, trimmed, 0);
+            rooms.add(room);
+            logService.addLogEntry("", trimmed, "Room created", userService.getCurrentUserEmail());
+            return room;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to persist room.", e);
+        }
+    }
+
+    @Override
+    public boolean updateRoomName(String roomId, String newName) {
+        if (newName == null || newName.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = newName.trim();
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement("UPDATE rooms SET name = ? WHERE id = ?")) {
+                stmt.setString(1, trimmed);
+                stmt.setString(2, roomId);
+                if (stmt.executeUpdate() == 0) {
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to update room.", e);
+        }
+
+        Room room = getRoomById(roomId);
+        if (room != null) {
+            String old = room.getName();
+            room.setName(trimmed);
+            // update device room names in-memory
+            room.getDevices().forEach(d -> d.setRoom(trimmed));
+            logService.addLogEntry("", trimmed, "Room renamed from " + old, userService.getCurrentUserEmail());
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean deleteRoom(String roomId) {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            // delete devices first
+            try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM devices WHERE room_id = ?")) {
+                stmt.setString(1, roomId);
+                stmt.executeUpdate();
+            }
+            try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM rooms WHERE id = ?")) {
+                stmt.setString(1, roomId);
+                if (stmt.executeUpdate() == 0) {
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to delete room.", e);
+        }
+
+        Room room = getRoomById(roomId);
+        if (room != null) {
+            logService.addLogEntry("", room.getName(), "Room deleted", userService.getCurrentUserEmail());
+            rooms.remove(room);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public ObservableList<Device> getAllDevices() {
+        ObservableList<Device> devices = FXCollections.observableArrayList();
+        for (Room room : rooms) {
+            devices.addAll(room.getDevices());
+        }
+        return devices;
+    }
+
+    @Override
+    public Device getDeviceById(String deviceId) {
+        return getAllDevices().stream()
+                .filter(d -> d.getId().equals(deviceId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public Device getDeviceByName(String deviceName) {
+        return getAllDevices().stream()
+                .filter(d -> d.getName().equals(deviceName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public Device addDeviceToRoom(String roomId, String deviceName, String deviceType) {
+        if (deviceName == null || deviceName.trim().isEmpty() || deviceType == null || deviceType.trim().isEmpty()) {
+            return null;
+        }
+        Room room = getRoomById(roomId);
+        if (room == null) {
+            return null;
+        }
+        String normalizedType = normalizeDeviceType(deviceType);
+        if (normalizedType == null) {
+            return null; // invalid type
+        }
+
+        String id = UUID.randomUUID().toString();
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO devices (id, name, type, room_id, state, brightness, temperature) VALUES (?, ?, ?, ?, ?, ?, ?)") ) {
+                stmt.setString(1, id);
+                stmt.setString(2, deviceName.trim());
+                stmt.setString(3, normalizedType);
+                stmt.setString(4, roomId);
+                stmt.setBoolean(5, true);
+                stmt.setInt(6, 100);
+                stmt.setDouble(7, 20.0);
+                stmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to persist device.", e);
+        }
+
+        Device device = new Device(id, deviceName.trim(), normalizedType, room.getName(), true);
+        room.addDevice(device);
+        logService.addLogEntry(device.getName(), room.getName(), "Device created", userService.getCurrentUserEmail());
+        return device;
+    }
+
+    @Override
+    public boolean removeDeviceFromRoom(String roomId, String deviceId) {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM devices WHERE id = ? AND room_id = ?")) {
+                stmt.setString(1, deviceId);
+                stmt.setString(2, roomId);
+                if (stmt.executeUpdate() == 0) {
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to delete device.", e);
+        }
+
+        Room room = getRoomById(roomId);
+        if (room != null) {
+            boolean removed = room.getDevices().removeIf(d -> d.getId().equals(deviceId));
+            return removed;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean renameDevice(String roomId, String deviceId, String newName) {
+        if (newName == null || newName.isBlank()) {
+            return false;
+        }
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement("UPDATE devices SET name = ? WHERE id = ? AND room_id = ?")) {
+                stmt.setString(1, newName.trim());
+                stmt.setString(2, deviceId);
+                stmt.setString(3, roomId);
+                if (stmt.executeUpdate() == 0) {
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to rename device.", e);
+        }
+
+        Room room = getRoomById(roomId);
+        if (room != null) {
+            Device device = room.getDevices().stream().filter(d -> d.getId().equals(deviceId)).findFirst().orElse(null);
+            if (device != null) {
+                device.setName(newName.trim());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void refreshRooms() {
+        List<Room> loaded = new ArrayList<>();
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement("SELECT id, name FROM rooms ORDER BY name")) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        String roomId = rs.getString("id");
+                        String name = rs.getString("name");
+                        Room room = new Room(roomId, name, 0);
+                        // load devices for room
+                        try (PreparedStatement devStmt = connection.prepareStatement("SELECT id, name, type, state, brightness, temperature FROM devices WHERE room_id = ? ORDER BY name")) {
+                            devStmt.setString(1, roomId);
+                            try (ResultSet drs = devStmt.executeQuery()) {
+                                while (drs.next()) {
+                                    Device device = new Device(
+                                            drs.getString("id"),
+                                            drs.getString("name"),
+                                            drs.getString("type"),
+                                            name,
+                                            drs.getBoolean("state")
+                                    );
+                                    device.setBrightness(drs.getInt("brightness"));
+                                    device.setTemperature(drs.getDouble("temperature"));
+                                    room.addDevice(device);
+                                }
+                            }
+                        }
+                        loaded.add(room);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load rooms from the database.", e);
+        }
+
+        rooms.setAll(loaded);
+    }
+
+    private String normalizeDeviceType(String deviceType) {
+        if (deviceType == null) return null;
+        String t = deviceType.trim().toLowerCase(Locale.ENGLISH);
+        return switch (t) {
+            case "switch", "schalter" -> "Switch";
+            case "dimmer" -> "Dimmer";
+            case "thermostat" -> "Thermostat";
+            case "sensor" -> "Sensor";
+            case "blind", "blinds", "shutter", "shutters", "cover", "cover/blind", "coverblind" -> "Cover/Blind";
+            default -> null;
+        };
+    }
+
+    private Connection openConnection() throws SQLException {
+        DatabaseSettings settings = DatabaseConfig.load()
+                .orElseThrow(() -> new IllegalStateException("Room database is not configured."));
+        return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
+    }
+
+    private void ensureSchema(Connection connection) {
+        if (schemaReady) return;
+        synchronized (this) {
+            if (schemaReady) return;
+            try (Statement stmt = connection.createStatement()) {
+                for (String sql : loadInitScript().split(";")) {
+                    String s = sql.trim();
+                    if (!s.isEmpty()) stmt.execute(s);
+                }
+                schemaReady = true;
+            } catch (SQLException e) {
+                throw new IllegalStateException("Failed to initialize rooms schema.", e);
+            }
+        }
+    }
+
+    private String loadInitScript() {
+        try (InputStream in = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
+            if (in == null) throw new IllegalStateException("Room schema script not found at " + INIT_SCRIPT_PATH);
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read room schema script.", e);
+        }
+    }
+}
+

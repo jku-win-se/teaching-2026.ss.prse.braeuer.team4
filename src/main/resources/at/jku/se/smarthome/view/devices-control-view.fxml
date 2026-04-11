@@ -26,6 +26,7 @@
             <Label text="Filter by Room:" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
             <ComboBox fx:id="roomFilterCombo" prefWidth="150"/>
             <Button text="Clear Filter" styleClass="btn-secondary" onAction="#handleClearRoomFilter"/>
+            <Button fx:id="addDeviceBtn" text="Add Device" styleClass="btn-primary" onAction="#handleAddDevice" />
         </HBox>
         
         <!-- Devices Grid -->

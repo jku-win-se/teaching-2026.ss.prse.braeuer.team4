@@ -3,13 +3,21 @@ package at.jku.se.smarthome.controller;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.service.mock.MockLogService;
-import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.mock.MockUserService;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.Dialog;
+import javafx.scene.layout.GridPane;
+import javafx.geometry.Insets;
+import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockSmartHomeService;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
@@ -30,9 +38,13 @@ public class DevicesController {
     @FXML
     private ComboBox<String> roomFilterCombo;
     
-    private final MockRoomService roomService = MockRoomService.getInstance();
+    @FXML
+    private Button addDeviceBtn;
+    
+    private final RoomService roomService = ServiceRegistry.getRoomService();
     private final MockLogService logService = MockLogService.getInstance();
     private final MockSmartHomeService smartHomeService = MockSmartHomeService.getInstance();
+    private final MockUserService userService = MockUserService.getInstance();
     private String selectedRoomFilter = null;
     
     @FXML
@@ -47,6 +59,10 @@ public class DevicesController {
         
         // Initial load of all devices
         loadDevices();
+
+        if (!userService.canManageSystem()) {
+            if (addDeviceBtn != null) addDeviceBtn.setDisable(true);
+        }
     }
     
     /**
@@ -353,6 +369,8 @@ public class DevicesController {
      * Opens a rename dialog and applies the new name if valid.
      */
     private void handleRename(Device device, Room room, Label nameLabel) {
+        if (!userService.canManageSystem()) return;
+
         TextInputDialog dialog = new TextInputDialog(device.getName());
         dialog.setTitle("Rename Device");
         dialog.setHeaderText(null);
@@ -361,7 +379,7 @@ public class DevicesController {
             if (roomService.renameDevice(room.getId(), device.getId(), newName)) {
                 nameLabel.setText(newName);
                 logService.addLogEntry(device.getName(), room.getName(),
-                        "Renamed to " + newName, "User");
+                        "Renamed to " + newName, userService.getCurrentUserEmail());
             }
         });
     }
@@ -370,9 +388,125 @@ public class DevicesController {
      * Removes the device from its room and refreshes the device list.
      */
     private void handleDelete(Device device, Room room) {
-        if (roomService.removeDeviceFromRoom(room.getId(), device.getId())) {
-            logService.addLogEntry(device.getName(), room.getName(), "Deleted", "User");
-            loadDevices();
+        if (!userService.canManageSystem()) return;
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Delete Device");
+        confirmation.setHeaderText("Delete device: " + device.getName());
+        confirmation.setContentText("This will remove the device from the room and delete its persisted record.");
+
+        confirmation.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                if (roomService.removeDeviceFromRoom(room.getId(), device.getId())) {
+                    logService.addLogEntry(device.getName(), room.getName(), "Deleted", userService.getCurrentUserEmail());
+                    loadDevices();
+                }
+            }
+        });
+    }
+
+    @FXML
+    private void handleAddDevice() {
+        if (!userService.canManageSystem()) return;
+
+        Dialog<DeviceInput> dialog = new Dialog<>();
+        dialog.setTitle("Add Device");
+        dialog.setHeaderText("Create a new device and assign it to a room");
+
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(10));
+
+        ComboBox<Room> roomCombo = new ComboBox<>();
+        roomCombo.setPrefWidth(240);
+        for (Room r : roomService.getRooms()) roomCombo.getItems().add(r);
+        roomCombo.setConverter(new javafx.util.StringConverter<>() {
+            @Override
+            public String toString(Room room) { return room != null ? room.getName() : ""; }
+            @Override
+            public Room fromString(String string) { return null; }
+        });
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Device name");
+
+        ComboBox<String> typeCombo = new ComboBox<>();
+        typeCombo.getItems().addAll("Switch", "Dimmer", "Thermostat", "Sensor", "Cover/Blind");
+        typeCombo.setPrefWidth(160);
+
+        grid.add(new Label("Room:"), 0, 0);
+        grid.add(roomCombo, 1, 0);
+        grid.add(new Label("Name:"), 0, 1);
+        grid.add(nameField, 1, 1);
+        grid.add(new Label("Type:"), 0, 2);
+        grid.add(typeCombo, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
+        saveButton.disableProperty().bind(
+                nameField.textProperty().isEmpty()
+                        .or(typeCombo.valueProperty().isNull())
+                        .or(roomCombo.valueProperty().isNull())
+        );
+
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == saveButtonType) {
+                return new DeviceInput(roomCombo.getValue(), nameField.getText().trim(), typeCombo.getValue());
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(input -> {
+            Room r = input.room();
+            try {
+                Device d = roomService.addDeviceToRoom(r.getId(), input.name(), input.type());
+                if (d != null) {
+                    logService.addLogEntry(d.getName(), r.getName(), "Device created", userService.getCurrentUserEmail());
+                    loadDevices();
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Add Device");
+                    alert.setHeaderText("Could not create device");
+                    alert.setContentText("Device could not be created. Please check input and try again.");
+                    alert.showAndWait();
+                }
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Add Device");
+                alert.setHeaderText("Error creating device");
+                alert.setContentText(ex.getMessage());
+                alert.showAndWait();
+            }
+        });
+    }
+
+    private record DeviceInput(Room room, String name, String type) { }
+
+    private void updateActionOptions(ComboBox<Device> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
+        actionCombo.getItems().clear();
+
+        Device selectedDevice = deviceCombo.getValue();
+        if (selectedDevice == null) {
+            return;
+        }
+
+        switch (selectedDevice.getType().toLowerCase()) {
+            case "switch" -> actionCombo.getItems().addAll("Turn On", "Turn Off");
+            case "dimmer" -> actionCombo.getItems().addAll("Turn On", "Turn Off", "Set to 25%", "Set to 50%", "Set to 75%", "Set to 100%");
+            case "thermostat" -> actionCombo.getItems().addAll("Set to 18°C", "Set to 20°C", "Set to 22°C", "Set to 24°C");
+            case "cover/blind" -> actionCombo.getItems().addAll("Open", "Close");
+            default -> { }
+        }
+
+        if (preferredAction != null && actionCombo.getItems().contains(preferredAction)) {
+            actionCombo.setValue(preferredAction);
+        } else if (!actionCombo.getItems().isEmpty()) {
+            actionCombo.setValue(actionCombo.getItems().get(0));
         }
     }
 

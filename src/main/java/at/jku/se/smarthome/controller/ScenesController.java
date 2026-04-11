@@ -10,7 +10,8 @@ import java.util.stream.Collectors;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Scene;
-import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockSceneService;
 import at.jku.se.smarthome.service.mock.MockUserService;
 import javafx.application.Platform;
@@ -44,7 +45,7 @@ public class ScenesController {
     private GridPane scenesGrid;
     
     private final MockSceneService sceneService = MockSceneService.getInstance();
-    private final MockRoomService roomService = MockRoomService.getInstance();
+    private final RoomService roomService = ServiceRegistry.getRoomService();
     private final MockUserService userService = MockUserService.getInstance();
     private boolean refreshingDeviceOptions;
     
