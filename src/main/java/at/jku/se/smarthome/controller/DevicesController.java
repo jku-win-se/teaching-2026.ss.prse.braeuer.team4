@@ -68,7 +68,7 @@ public class DevicesController {
     /**
      * Loads and displays devices based on filter.
      */
-    private void loadDevices() {
+    void loadDevices() {
         devicesContainer.getChildren().clear();
         
         for (Room room : roomService.getRooms()) {
@@ -87,7 +87,7 @@ public class DevicesController {
     /**
      * Creates a device control card based on device type.
      */
-    private VBox createDeviceCard(Device device, Room room) {
+    VBox createDeviceCard(Device device, Room room) {
         VBox card = new VBox(10);
         card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #ffffff;");
         
@@ -149,7 +149,7 @@ public class DevicesController {
     /**
      * Creates controls for Switch devices.
      */
-    private void createSwitchControls(VBox card, Device device, Room room) {
+    void createSwitchControls(VBox card, Device device, Room room) {
         HBox controls = new HBox(10);
         controls.setAlignment(Pos.CENTER_LEFT);
         
@@ -175,7 +175,7 @@ public class DevicesController {
         card.getChildren().add(controls);
     }
 
-    private void applyLargeSwitchButtonStyle(ToggleButton toggleButton, boolean enabled) {
+    void applyLargeSwitchButtonStyle(ToggleButton toggleButton, boolean enabled) {
         toggleButton.setStyle(enabled
                 ? "-fx-padding: 8 20; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #27ae60; -fx-text-fill: #ffffff; -fx-border-color: #1e8449; -fx-border-radius: 4; -fx-background-radius: 4;"
                 : "-fx-padding: 8 20; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #ecf0f1; -fx-text-fill: #2c3e50; -fx-border-color: #bdc3c7; -fx-border-radius: 4; -fx-background-radius: 4;");
@@ -184,7 +184,7 @@ public class DevicesController {
     /**
      * Creates controls for Dimmer devices.
      */
-    private void createDimmerControls(VBox card, Device device, Room room) {
+    void createDimmerControls(VBox card, Device device, Room room) {
         VBox controls = new VBox(8);
         
         HBox sliderBox = new HBox(10);
@@ -237,7 +237,7 @@ public class DevicesController {
     /**
      * Creates controls for Thermostat devices.
      */
-    private void createThermostatControls(VBox card, Device device, Room room) {
+    void createThermostatControls(VBox card, Device device, Room room) {
         HBox controls = new HBox(10);
         controls.setAlignment(Pos.CENTER_LEFT);
         
@@ -279,7 +279,7 @@ public class DevicesController {
     /**
      * Creates controls for Sensor devices.
      */
-    private void createSensorControls(VBox card, Device device, Room room) {
+    void createSensorControls(VBox card, Device device, Room room) {
         VBox controls = new VBox(8);
         
         HBox readingBox = new HBox(10);
@@ -330,7 +330,7 @@ public class DevicesController {
     /**
      * Creates controls for Cover/Blind devices.
      */
-    private void createCoverControls(VBox card, Device device, Room room) {
+    void createCoverControls(VBox card, Device device, Room room) {
         HBox controls = new HBox(10);
         controls.setAlignment(Pos.CENTER_LEFT);
         
@@ -368,7 +368,7 @@ public class DevicesController {
     /**
      * Opens a rename dialog and applies the new name if valid.
      */
-    private void handleRename(Device device, Room room, Label nameLabel) {
+    void handleRename(Device device, Room room, Label nameLabel) {
         if (!userService.canManageSystem()) return;
 
         TextInputDialog dialog = new TextInputDialog(device.getName());
@@ -387,7 +387,7 @@ public class DevicesController {
     /**
      * Removes the device from its room and refreshes the device list.
      */
-    private void handleDelete(Device device, Room room) {
+    void handleDelete(Device device, Room room) {
         if (!userService.canManageSystem()) return;
 
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
@@ -406,7 +406,7 @@ public class DevicesController {
     }
 
     @FXML
-    private void handleAddDevice() {
+    void handleAddDevice() {
         if (!userService.canManageSystem()) return;
 
         Dialog<DeviceInput> dialog = new Dialog<>();
@@ -487,7 +487,7 @@ public class DevicesController {
 
     private record DeviceInput(Room room, String name, String type) { }
 
-    private void updateActionOptions(ComboBox<Device> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
+    void updateActionOptions(ComboBox<Device> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
         actionCombo.getItems().clear();
 
         Device selectedDevice = deviceCombo.getValue();
@@ -514,7 +514,7 @@ public class DevicesController {
      * Handles room filter change.
      */
     @FXML
-    private void handleRoomFilterChange() {
+    void handleRoomFilterChange() {
         String selected = roomFilterCombo.getValue();
         selectedRoomFilter = selected != null && !selected.equals("All Rooms") ? selected : null;
         loadDevices();
@@ -524,7 +524,7 @@ public class DevicesController {
      * Clears the room filter.
      */
     @FXML
-    private void handleClearRoomFilter() {
+    void handleClearRoomFilter() {
         roomFilterCombo.setValue("All Rooms");
         selectedRoomFilter = null;
         loadDevices();

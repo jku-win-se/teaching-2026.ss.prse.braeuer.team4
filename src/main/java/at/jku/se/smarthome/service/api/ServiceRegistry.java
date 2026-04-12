@@ -55,6 +55,14 @@ public final class ServiceRegistry {
         scheduleService = testScheduleService;
     }
 
+    /**
+     * Overrides the room service for tests or alternate runtime wiring.
+     * <p>
+     * Use this to inject a mock or test-specific RoomService implementation so
+     * that UI/controllers pick up the replacement via {@link #getRoomService()}.
+     *
+     * @param testRoomService replacement room service instance
+     */
     public static synchronized void setRoomServiceForTesting(RoomService testRoomService) {
         roomService = testRoomService;
     }
@@ -66,6 +74,12 @@ public final class ServiceRegistry {
         scheduleService = null;
     }
 
+    /**
+     * Clears the cached room service so it is re-created on next access.
+     *
+     * This is intended for test lifecycle management where the singleton
+     * service instance must be reset between test cases.
+     */
     public static synchronized void resetRoomServiceForTesting() {
         roomService = null;
     }

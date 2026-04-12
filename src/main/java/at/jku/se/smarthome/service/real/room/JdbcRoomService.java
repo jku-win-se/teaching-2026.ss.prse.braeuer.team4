@@ -41,6 +41,14 @@ public final class JdbcRoomService implements RoomService {
         refreshRooms();
     }
 
+    /**
+     * Returns the singleton instance of the JDBC room service.
+     * <p>
+     * The instance is lazily created on first access and will load existing
+     * rooms/devices from the configured database.
+     *
+     * @return singleton JdbcRoomService instance
+     */
     public static synchronized JdbcRoomService getInstance() {
         if (instance == null) {
             instance = new JdbcRoomService();
@@ -48,16 +56,35 @@ public final class JdbcRoomService implements RoomService {
         return instance;
     }
 
+    /**
+     * Resets the singleton instance for test isolation.
+     * <p>
+     * Tests should call this between test cases to ensure a fresh instance is
+     * created on next {@link #getInstance()} and no state is shared.
+     */
     public static synchronized void resetForTesting() {
         instance = null;
     }
 
     @Override
+    /**
+     * Returns an observable list of rooms. The list is suitable for direct
+     * JavaFX UI binding and is kept in sync with persisted changes performed
+     * through this service.
+     *
+     * @return observable list of rooms
+     */
     public ObservableList<Room> getRooms() {
         return rooms;
     }
 
     @Override
+    /**
+     * Finds a room by its identifier from the in-memory view.
+     *
+     * @param roomId unique room identifier
+     * @return matching Room or null when not found
+     */
     public Room getRoomById(String roomId) {
         return rooms.stream()
                 .filter(r -> r.getId().equals(roomId))
@@ -66,6 +93,15 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Creates and persists a new room with the provided display name.
+     * <p>
+     * The returned Room is also added to the observable in-memory list so UI
+     * bindings update automatically.
+     *
+     * @param name display name of the room
+     * @return created Room instance or null when name is invalid
+     */
     public Room addRoom(String name) {
         if (name == null || name.trim().isEmpty()) {
             return null;
@@ -89,6 +125,14 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Updates the persisted name of the specified room and refreshes the
+     * in-memory Room object and its devices.
+     *
+     * @param roomId identifier of the room to update
+     * @param newName new display name
+     * @return true when the update succeeded, otherwise false
+     */
     public boolean updateRoomName(String roomId, String newName) {
         if (newName == null || newName.trim().isEmpty()) {
             return false;
@@ -120,6 +164,13 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Deletes the room and all devices assigned to it from the database and
+     * removes the Room from the in-memory list.
+     *
+     * @param roomId identifier of the room to delete
+     * @return true when the room existed and was removed, otherwise false
+     */
     public boolean deleteRoom(String roomId) {
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
@@ -148,6 +199,13 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Returns a flat observable list of all devices across all rooms. The
+     * returned list is a snapshot (new ObservableList) composed from the
+     * per-room device lists.
+     *
+     * @return observable list of all devices
+     */
     public ObservableList<Device> getAllDevices() {
         ObservableList<Device> devices = FXCollections.observableArrayList();
         for (Room room : rooms) {
@@ -157,6 +215,12 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Finds a device by its identifier across all rooms.
+     *
+     * @param deviceId unique device identifier
+     * @return matching Device or null when not found
+     */
     public Device getDeviceById(String deviceId) {
         return getAllDevices().stream()
                 .filter(d -> d.getId().equals(deviceId))
@@ -165,6 +229,12 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Finds a device by its display name across all rooms.
+     *
+     * @param deviceName device display name
+     * @return matching Device or null when not found
+     */
     public Device getDeviceByName(String deviceName) {
         return getAllDevices().stream()
                 .filter(d -> d.getName().equals(deviceName))
@@ -173,6 +243,16 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Adds a new device to the specified room and persists it to the database.
+     * The deviceType is validated and normalized. The created Device is added
+     * to the in-memory Room device list and returned.
+     *
+     * @param roomId identifier of the room
+     * @param deviceName display name for the device
+     * @param deviceType device type (e.g. SWITCH, DIMMER, THERMOSTAT, SENSOR, BLIND)
+     * @return created Device or null when inputs are invalid
+     */
     public Device addDeviceToRoom(String roomId, String deviceName, String deviceType) {
         if (deviceName == null || deviceName.trim().isEmpty() || deviceType == null || deviceType.trim().isEmpty()) {
             return null;
@@ -211,6 +291,14 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Removes the specified device from the database and the in-memory room
+     * device list.
+     *
+     * @param roomId identifier of the room
+     * @param deviceId identifier of the device to remove
+     * @return true when the device existed and was removed, otherwise false
+     */
     public boolean removeDeviceFromRoom(String roomId, String deviceId) {
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
@@ -234,6 +322,14 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Renames a device both in the database and in the in-memory representation.
+     *
+     * @param roomId identifier of the room
+     * @param deviceId identifier of the device to rename
+     * @param newName new display name for the device
+     * @return true when the device existed and was updated, otherwise false
+     */
     public boolean renameDevice(String roomId, String deviceId, String newName) {
         if (newName == null || newName.isBlank()) {
             return false;
