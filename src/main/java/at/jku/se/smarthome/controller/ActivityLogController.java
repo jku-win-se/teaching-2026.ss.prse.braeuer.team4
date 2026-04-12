@@ -1,7 +1,8 @@
 package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.model.LogEntry;
-import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.api.LogService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -42,7 +43,7 @@ public class ActivityLogController {
     @FXML
     private ComboBox<String> deviceFilter;
     
-    private final MockLogService logService = MockLogService.getInstance();
+    private final LogService logService = ServiceRegistry.getLogService();
     
     @FXML
     private void initialize() {

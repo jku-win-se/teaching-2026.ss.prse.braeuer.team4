@@ -230,6 +230,55 @@ public class MockRoomService {
     }
     
     /**
+     * Updates the on/off state of a device (in-memory only).
+     *
+     * @param deviceId unique device identifier
+     * @param state new power state
+     * @return true when the device existed and was updated, otherwise false
+     */
+    public boolean updateDeviceState(String deviceId, boolean state) {
+        Device device = getDeviceById(deviceId);
+        if (device != null) {
+            device.setState(state);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Updates the brightness of a device (in-memory only).
+     *
+     * @param deviceId unique device identifier
+     * @param brightness brightness level 0–100
+     * @return true when the device existed and was updated, otherwise false
+     */
+    public boolean updateDeviceBrightness(String deviceId, int brightness) {
+        Device device = getDeviceById(deviceId);
+        if (device != null) {
+            device.setBrightness(brightness);
+            device.setState(brightness > 0);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Updates the temperature/sensor value of a device (in-memory only).
+     *
+     * @param deviceId unique device identifier
+     * @param temperature new temperature or sensor value
+     * @return true when the device existed and was updated, otherwise false
+     */
+    public boolean updateDeviceTemperature(String deviceId, double temperature) {
+        Device device = getDeviceById(deviceId);
+        if (device != null) {
+            device.setTemperature(temperature);
+            return true;
+        }
+        return false;
+    }
+
+    /**
         * Renames a device.
         *
         * @param roomId identifier of the room containing the device

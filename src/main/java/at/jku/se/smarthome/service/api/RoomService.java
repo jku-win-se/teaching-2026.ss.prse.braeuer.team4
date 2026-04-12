@@ -103,5 +103,33 @@ public interface RoomService {
      * @return true when the device existed and was updated, otherwise false
      */
     boolean renameDevice(String roomId, String deviceId, String newName);
+
+    /**
+     * Updates the on/off state of a device and persists the change.
+     *
+     * @param deviceId unique device identifier
+     * @param state new power state
+     * @return true when the device existed and was updated, otherwise false
+     */
+    boolean updateDeviceState(String deviceId, boolean state);
+
+    /**
+     * Updates the brightness of a dimmer device and persists the change.
+     * Also sets state to true when brightness &gt; 0, and false when brightness == 0.
+     *
+     * @param deviceId unique device identifier
+     * @param brightness brightness level 0–100
+     * @return true when the device existed and was updated, otherwise false
+     */
+    boolean updateDeviceBrightness(String deviceId, int brightness);
+
+    /**
+     * Updates the temperature or sensor reading of a device and persists the change.
+     *
+     * @param deviceId unique device identifier
+     * @param temperature new temperature or sensor value
+     * @return true when the device existed and was updated, otherwise false
+     */
+    boolean updateDeviceTemperature(String deviceId, double temperature);
 }
 
