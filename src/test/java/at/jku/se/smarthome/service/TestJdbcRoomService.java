@@ -19,6 +19,12 @@ import at.jku.se.smarthome.service.mock.MockLogService;
 import at.jku.se.smarthome.service.mock.MockUserService;
 import at.jku.se.smarthome.service.real.room.JdbcRoomService;
 
+/**
+ * Integration-style unit tests for the JDBC-backed {@link at.jku.se.smarthome.service.real.room.JdbcRoomService}.
+ *
+ * Exercises add, rename and remove device operations against an in-memory H2 database to
+ * validate persistence and in-memory view synchronization.
+ */
 public class TestJdbcRoomService {
 
     private static final String URL_PROPERTY = "smarthome.db.url";

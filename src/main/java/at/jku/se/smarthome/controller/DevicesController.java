@@ -47,7 +47,13 @@ public class DevicesController {
     private final MockUserService userService = MockUserService.getInstance();
     private String selectedRoomFilter = null;
     
-    @FXML
+    /**
+     * Initializes the controller after FXML loading.
+     * <p>
+     * Populates the room filter, sets up UI handlers and loads the initial
+     * device view. Disables the add button for users without management
+     * permissions.
+     */
     private void initialize() {
         // Populate room filter combo
         roomFilterCombo.getItems().add("All Rooms");
@@ -175,6 +181,12 @@ public class DevicesController {
         card.getChildren().add(controls);
     }
 
+    /**
+     * Applies the large visual style used for prominent switch toggle buttons.
+     *
+     * @param toggleButton the toggle button to style
+     * @param enabled whether the style represents the enabled/on state
+     */
     void applyLargeSwitchButtonStyle(ToggleButton toggleButton, boolean enabled) {
         toggleButton.setStyle(enabled
                 ? "-fx-padding: 8 20; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #27ae60; -fx-text-fill: #ffffff; -fx-border-color: #1e8449; -fx-border-radius: 4; -fx-background-radius: 4;"
@@ -405,6 +417,19 @@ public class DevicesController {
         });
     }
 
+    /**
+     * Handles the UI flow to add a new device.
+     *
+     * Presents a dialog to the user to select a room, enter a device name and
+     * choose a device type. If the current user is not authorized
+     * ({@code userService.canManageSystem()}), this method returns immediately
+     * and no dialog is shown.
+     * <p>
+     * On successful creation the device is persisted via {@code RoomService}
+     * and the UI is refreshed via {@link #loadDevices()}.
+     *
+     * @see at.jku.se.smarthome.service.api.RoomService#addDeviceToRoom(String, String, String)
+     */
     @FXML
     void handleAddDevice() {
         if (!userService.canManageSystem()) return;
@@ -487,6 +512,20 @@ public class DevicesController {
 
     private record DeviceInput(Room room, String name, String type) { }
 
+    /**
+     * Updates the action options shown for a selected device.
+     * <p>
+     * This method reads the currently selected {@code Device} from {@code deviceCombo}
+     * and fills {@code actionCombo} with type-specific actions. If {@code preferredAction}
+     * is non-null and present in the resulting list, it will be selected. Otherwise,
+     * the first available action is selected when the list is not empty.
+     * <p>
+     * Typical callers: UI initialization and device selection change handlers.
+     *
+     * @param deviceCombo the ComboBox containing Device entries (selected device is used)
+     * @param actionCombo the ComboBox to be populated with human-readable action labels
+     * @param preferredAction optional preferred action to select if present
+     */
     void updateActionOptions(ComboBox<Device> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
         actionCombo.getItems().clear();
 
