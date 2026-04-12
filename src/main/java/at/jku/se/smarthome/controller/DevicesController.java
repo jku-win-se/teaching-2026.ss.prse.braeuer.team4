@@ -209,11 +209,16 @@ public class DevicesController {
         Label brightnessLabel = new Label("Brightness: " + (int)device.getBrightness() + "%");
         brightnessLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e; -fx-min-width: 100;");
         
-        brightnessSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            roomService.updateDeviceBrightness(device.getId(), newVal.intValue());
-            brightnessLabel.setText("Brightness: " + newVal.intValue() + "%");
-            logService.addLogEntry(device.getName(), room.getName(),
-                "Set brightness to " + newVal.intValue() + "%", "User");
+        brightnessSlider.valueProperty().addListener((obs, oldVal, newVal) ->
+            brightnessLabel.setText("Brightness: " + newVal.intValue() + "%"));
+
+        brightnessSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
+            if (!isChanging) {
+                int value = (int) brightnessSlider.getValue();
+                roomService.updateDeviceBrightness(device.getId(), value);
+                logService.addLogEntry(device.getName(), room.getName(),
+                    "Set brightness to " + value + "%", "User");
+            }
         });
         
         sliderBox.getChildren().addAll(brightnessSlider, brightnessLabel);
