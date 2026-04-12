@@ -2,7 +2,8 @@ package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
-import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockUserService;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -48,7 +49,7 @@ public class RoomsController {
     @FXML
     private Label selectedRoomLabel;
     
-    private final MockRoomService roomService = MockRoomService.getInstance();
+    private final RoomService roomService = ServiceRegistry.getRoomService();
     private final MockUserService userService = MockUserService.getInstance();
     private Room selectedRoom;
     

@@ -7,7 +7,7 @@ import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.mock.MockUserService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import javafx.fxml.FXML;
@@ -62,7 +62,7 @@ public class SchedulesController {
     private Label conflictWarning;
     
     private final ScheduleService scheduleService = ServiceRegistry.getScheduleService();
-    private final MockRoomService roomService = MockRoomService.getInstance();
+    private final RoomService roomService = ServiceRegistry.getRoomService();
     private final MockUserService userService = MockUserService.getInstance();
     private final MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
     
