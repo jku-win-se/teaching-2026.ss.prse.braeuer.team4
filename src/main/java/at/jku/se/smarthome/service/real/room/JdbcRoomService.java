@@ -359,6 +359,72 @@ public final class JdbcRoomService implements RoomService {
         return false;
     }
 
+    @Override
+    public boolean updateDeviceState(String deviceId, boolean state) {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "UPDATE devices SET state = ? WHERE id = ?")) {
+                stmt.setBoolean(1, state);
+                stmt.setString(2, deviceId);
+                if (stmt.executeUpdate() == 0) return false;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to update device state.", e);
+        }
+        Device device = getDeviceById(deviceId);
+        if (device != null) {
+            device.setState(state);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean updateDeviceBrightness(String deviceId, int brightness) {
+        boolean newState = brightness > 0;
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "UPDATE devices SET brightness = ?, state = ? WHERE id = ?")) {
+                stmt.setInt(1, brightness);
+                stmt.setBoolean(2, newState);
+                stmt.setString(3, deviceId);
+                if (stmt.executeUpdate() == 0) return false;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to update device brightness.", e);
+        }
+        Device device = getDeviceById(deviceId);
+        if (device != null) {
+            device.setBrightness(brightness);
+            device.setState(newState);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean updateDeviceTemperature(String deviceId, double temperature) {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "UPDATE devices SET temperature = ? WHERE id = ?")) {
+                stmt.setDouble(1, temperature);
+                stmt.setString(2, deviceId);
+                if (stmt.executeUpdate() == 0) return false;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to update device temperature.", e);
+        }
+        Device device = getDeviceById(deviceId);
+        if (device != null) {
+            device.setTemperature(temperature);
+            return true;
+        }
+        return false;
+    }
+
     private void refreshRooms() {
         List<Room> loaded = new ArrayList<>();
         try (Connection connection = openConnection()) {
