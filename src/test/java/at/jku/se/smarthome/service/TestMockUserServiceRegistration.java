@@ -114,6 +114,14 @@ public class TestMockUserServiceRegistration {
         }
 
         @Override
+        public java.util.List<PersistedUser> findAllUsers() throws StoreException {
+            if (configurationFailure) {
+                throw new StoreConfigurationException("Missing DB configuration");
+            }
+            return savedUser == null ? java.util.List.of() : java.util.List.of(savedUser);
+        }
+
+        @Override
         public void save(PersistedUser user) throws StoreException {
             if (configurationFailure) {
                 throw new StoreConfigurationException("Missing DB configuration");

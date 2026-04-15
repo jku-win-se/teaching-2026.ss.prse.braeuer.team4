@@ -1,15 +1,5 @@
 package at.jku.se.smarthome.service.real.room;
 
-import at.jku.se.smarthome.config.DatabaseConfig;
-import at.jku.se.smarthome.config.DatabaseSettings;
-import at.jku.se.smarthome.model.Device;
-import at.jku.se.smarthome.model.Room;
-import at.jku.se.smarthome.service.api.RoomService;
-import at.jku.se.smarthome.service.mock.MockLogService;
-import at.jku.se.smarthome.service.mock.MockUserService;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +14,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import at.jku.se.smarthome.config.DatabaseConfig;
+import at.jku.se.smarthome.config.DatabaseSettings;
+import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.Room;
+import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.api.UserService;
+import at.jku.se.smarthome.service.mock.MockLogService;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
 /**
  * JDBC-backed RoomService implementation. Persists rooms and devices to the configured database.
  */
@@ -34,7 +35,7 @@ public final class JdbcRoomService implements RoomService {
 
     private final ObservableList<Room> rooms = FXCollections.observableArrayList();
     private final MockLogService logService = MockLogService.getInstance();
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     private volatile boolean schemaReady;
 
     private JdbcRoomService() {

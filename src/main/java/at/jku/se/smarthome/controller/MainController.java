@@ -7,9 +7,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import at.jku.se.smarthome.model.NotificationEntry;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.api.UserService;
 import at.jku.se.smarthome.service.mock.MockNotificationService;
-import at.jku.se.smarthome.service.mock.MockSmartHomeService;
-import at.jku.se.smarthome.service.mock.MockUserService;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
@@ -80,9 +80,8 @@ public class MainController {
     @FXML
     private Button settingsBtn;
     
-    private final MockSmartHomeService service = MockSmartHomeService.getInstance();
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     private MainCallback mainCallback;
     private int observedNotificationCount;
     
@@ -143,7 +142,7 @@ public class MainController {
      */
     private void updateUserLabel() {
         String email = userService.getCurrentUserEmail();
-        String displayName = email != null ? email : service.getCurrentUser();
+        String displayName = email != null ? email : "Guest";
         userLabel.setText("Welcome, " + displayName + " (" + userService.getCurrentUserRole() + ")");
     }
 
@@ -306,7 +305,6 @@ public class MainController {
      */
     @FXML
     private void handleLogout() {
-        service.logout();
         userService.logout();
         if (mainCallback != null) {
             mainCallback.onLogout();

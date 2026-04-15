@@ -1,4 +1,5 @@
 package at.jku.se.smarthome.service.api;
+import at.jku.se.smarthome.service.real.auth.JdbcUserService;
 import at.jku.se.smarthome.service.real.log.JdbcLogService;
 import at.jku.se.smarthome.service.real.room.JdbcRoomService;
 import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
@@ -11,6 +12,7 @@ public final class ServiceRegistry {
     private static volatile ScheduleService scheduleService;
     private static volatile RoomService roomService;
     private static volatile LogService logService;
+    private static volatile UserService userService;
 
     private ServiceRegistry() {
     }
@@ -91,6 +93,31 @@ public final class ServiceRegistry {
      */
     public static synchronized void setRoomServiceForTesting(RoomService testRoomService) {
         roomService = testRoomService;
+    }
+
+    /**
+     * Returns the active user service instance.
+     *
+     * @return lazily initialized user service
+     */
+    public static UserService getUserService() {
+        if (userService == null) {
+            synchronized (ServiceRegistry.class) {
+                if (userService == null) {
+                    userService = JdbcUserService.getInstance();
+                }
+            }
+        }
+        return userService;
+    }
+
+    /**
+     * Overrides the user service for tests or alternate runtime wiring.
+     *
+     * @param testUserService replacement user service instance
+     */
+    public static synchronized void setUserServiceForTesting(UserService testUserService) {
+        userService = testUserService;
     }
 
     /**

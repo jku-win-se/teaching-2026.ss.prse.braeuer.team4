@@ -31,11 +31,11 @@ import at.jku.se.smarthome.config.DatabaseConfig;
 import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Schedule;
-import at.jku.se.smarthome.service.api.ScheduleService;
-import at.jku.se.smarthome.service.mock.MockLogService;
-import at.jku.se.smarthome.service.mock.MockNotificationService;
+import at.jku.se.smarthome.service.api.LogService;
 import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -56,7 +56,7 @@ public final class JdbcScheduleService implements ScheduleService {
     private final ObservableList<Schedule> schedules = FXCollections.observableArrayList();
     // Use the application-wide RoomService via ServiceRegistry instead of directly referencing the mock.
     private final RoomService roomService = ServiceRegistry.getRoomService();
-    private final MockLogService logService = MockLogService.getInstance();
+    private final LogService logService = ServiceRegistry.getLogService();
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new HashMap<>();
     private volatile boolean schemaReady;

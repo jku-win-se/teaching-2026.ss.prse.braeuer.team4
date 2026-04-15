@@ -38,6 +38,7 @@
 - [x] CONSTRUCTION - FR-09 persistent schedule implementation plan generated
 - [x] CONSTRUCTION - FR-09 persistent schedule implementation
 - [x] CONSTRUCTION - FR-09 persistent schedule verification
+- [x] CONSTRUCTION - FR-46 schedule service update
 - [ ] OPERATIONS - Not started
 
 ## Reverse Engineering Status

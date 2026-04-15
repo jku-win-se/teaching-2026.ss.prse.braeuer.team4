@@ -3,24 +3,25 @@ package at.jku.se.smarthome.controller;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.service.api.LogService;
-import at.jku.se.smarthome.service.mock.MockUserService;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.Dialog;
-import javafx.scene.layout.GridPane;
-import javafx.geometry.Insets;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.api.UserService;
+import at.jku.se.smarthome.service.real.auth.JdbcUserService;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -42,7 +43,7 @@ public class DevicesController {
     
     private final RoomService roomService = ServiceRegistry.getRoomService();
     private final LogService logService = ServiceRegistry.getLogService();
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = JdbcUserService.getInstance();
     private String selectedRoomFilter = null;
     
     /**
