@@ -1,7 +1,8 @@
 package at.jku.se.smarthome.controller;
 
-import at.jku.se.smarthome.service.mock.MockUserService;
-import at.jku.se.smarthome.service.mock.MockUserService.LoginStatus;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.api.UserService;
+import at.jku.se.smarthome.service.api.UserService.LoginStatus;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -29,7 +30,7 @@ public class LoginController {
     @FXML
     private Label errorLabel;
     
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     private LoginCallback loginCallback;
     
     /**

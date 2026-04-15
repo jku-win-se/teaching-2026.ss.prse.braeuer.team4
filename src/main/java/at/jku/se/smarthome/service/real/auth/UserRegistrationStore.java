@@ -9,6 +9,8 @@ public interface UserRegistrationStore {
 
     java.util.Optional<PersistedUser> findByEmail(String normalizedEmail) throws StoreException;
 
+    java.util.List<PersistedUser> findAllUsers() throws StoreException;
+
     void save(PersistedUser user) throws StoreException;
 
     void updateLastLogin(String normalizedEmail) throws StoreException;
