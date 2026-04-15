@@ -2,7 +2,6 @@ package at.jku.se.smarthome.service.mock;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Rule;
-import at.jku.se.smarthome.service.rule.RuleEvaluator;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -16,8 +15,6 @@ public class MockRuleService {
     private final MockRoomService roomService = MockRoomService.getInstance();
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
     private final MockLogService logService = MockLogService.getInstance();
-    private final RuleEvaluator ruleEvaluator = new RuleEvaluator();
-    
     private MockRuleService() {
         this.rules = FXCollections.observableArrayList();
         initializeMockRules();
@@ -164,12 +161,6 @@ public class MockRuleService {
 
         if (!rule.isEnabled()) {
             notificationService.addNotification("Rule execution failed: " + rule.getName() + " is inactive", "error");
-            return false;
-        }
-
-        Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
-        if (!ruleEvaluator.evaluate(rule, sourceDevice)) {
-            notificationService.addNotification("Rule condition not met: " + rule.getName(), "info");
             return false;
         }
 
