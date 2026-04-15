@@ -9,7 +9,7 @@ import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.service.api.LogService;
 import at.jku.se.smarthome.service.api.UserService;
-import at.jku.se.smarthome.service.real.auth.JdbcUserService;
+
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
@@ -52,7 +52,7 @@ public class DevicesController {
     
     private final RoomService roomService = ServiceRegistry.getRoomService();
     private final LogService logService = ServiceRegistry.getLogService();
-    private final UserService userService = JdbcUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     private final Map<Room, ChangeListener<String>> roomNameListeners = new IdentityHashMap<>();
     private final ListChangeListener<Room> roomListListener = change -> {
         while (change.next()) {
@@ -150,20 +150,7 @@ public class DevicesController {
                 break;
         }
 
-        // Action footer: Rename and Delete
-        HBox actionBar = new HBox(8);
-        actionBar.setAlignment(Pos.CENTER_RIGHT);
 
-        Button renameBtn = new Button("Rename");
-        renameBtn.setStyle("-fx-padding: 4 12; -fx-font-size: 11; -fx-text-fill: #2980b9; -fx-background-color: transparent; -fx-border-color: #2980b9; -fx-border-radius: 3;");
-        renameBtn.setOnAction(e -> handleRename(device, room, nameLabel));
-
-        Button deleteBtn = new Button("Delete");
-        deleteBtn.setStyle("-fx-padding: 4 12; -fx-font-size: 11; -fx-text-fill: #e74c3c; -fx-background-color: transparent; -fx-border-color: #e74c3c; -fx-border-radius: 3;");
-        deleteBtn.setOnAction(e -> handleDelete(device, room));
-
-        actionBar.getChildren().addAll(renameBtn, deleteBtn);
-        card.getChildren().add(actionBar);
 
         return card;
     }
