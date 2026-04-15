@@ -8,7 +8,8 @@ import java.util.Set;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.service.api.LogService;
-import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.api.UserService;
+import at.jku.se.smarthome.service.real.auth.JdbcUserService;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.scene.control.ButtonType;
@@ -58,7 +59,7 @@ public class DevicesController {
     
     private final RoomService roomService = ServiceRegistry.getRoomService();
     private final LogService logService = ServiceRegistry.getLogService();
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = JdbcUserService.getInstance();
     private final Map<Room, ChangeListener<String>> roomNameListeners = new IdentityHashMap<>();
     private final ListChangeListener<Room> roomListListener = change -> {
         while (change.next()) {
