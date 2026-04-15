@@ -272,17 +272,21 @@ public class DevicesController {
         plusBtn.setPrefWidth(40);
         
         minusBtn.setOnAction(e -> {
-            roomService.updateDeviceTemperature(device.getId(), device.getTemperature() - 1);
-            tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
-            logService.addLogEntry(device.getName(), room.getName(),
-                "Set temperature to " + String.format("%.1f°C", device.getTemperature()), "User");
+            if (device.getTemperature() > 5) {
+                roomService.updateDeviceTemperature(device.getId(), device.getTemperature() - 1);
+                tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
+                logService.addLogEntry(device.getName(), room.getName(),
+                    "Set temperature to " + String.format("%.1f°C", device.getTemperature()), "User");
+            }
         });
 
         plusBtn.setOnAction(e -> {
-            roomService.updateDeviceTemperature(device.getId(), device.getTemperature() + 1);
-            tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
-            logService.addLogEntry(device.getName(), room.getName(),
-                "Set temperature to " + String.format("%.1f°C", device.getTemperature()), "User");
+            if (device.getTemperature() < 35) {
+                roomService.updateDeviceTemperature(device.getId(), device.getTemperature() + 1);
+                tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
+                logService.addLogEntry(device.getName(), room.getName(),
+                    "Set temperature to " + String.format("%.1f°C", device.getTemperature()), "User");
+            }
         });
         
         device.temperatureProperty().addListener((obs, oldVal, newVal) -> 
