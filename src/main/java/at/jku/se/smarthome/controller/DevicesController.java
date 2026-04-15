@@ -2,7 +2,7 @@ package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
-import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.api.LogService;
 import at.jku.se.smarthome.service.mock.MockUserService;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar;
@@ -11,7 +11,6 @@ import javafx.scene.layout.GridPane;
 import javafx.geometry.Insets;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.mock.MockSmartHomeService;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -42,8 +41,7 @@ public class DevicesController {
     private Button addDeviceBtn;
     
     private final RoomService roomService = ServiceRegistry.getRoomService();
-    private final MockLogService logService = MockLogService.getInstance();
-    private final MockSmartHomeService smartHomeService = MockSmartHomeService.getInstance();
+    private final LogService logService = ServiceRegistry.getLogService();
     private final MockUserService userService = MockUserService.getInstance();
     private String selectedRoomFilter = null;
     
@@ -165,7 +163,7 @@ public class DevicesController {
         applyLargeSwitchButtonStyle(toggleBtn, device.getState());
         
         toggleBtn.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            smartHomeService.toggleDevice(device.getId());
+            roomService.updateDeviceState(device.getId(), newVal);
             toggleBtn.setText(newVal ? "ON" : "OFF");
             applyLargeSwitchButtonStyle(toggleBtn, newVal);
             logService.addLogEntry(device.getName(), room.getName(),
@@ -211,11 +209,16 @@ public class DevicesController {
         Label brightnessLabel = new Label("Brightness: " + (int)device.getBrightness() + "%");
         brightnessLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e; -fx-min-width: 100;");
         
-        brightnessSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            smartHomeService.setBrightness(device.getId(), newVal.intValue());
-            brightnessLabel.setText("Brightness: " + newVal.intValue() + "%");
-            logService.addLogEntry(device.getName(), room.getName(),
-                "Set brightness to " + newVal.intValue() + "%", "User");
+        brightnessSlider.valueProperty().addListener((obs, oldVal, newVal) ->
+            brightnessLabel.setText("Brightness: " + newVal.intValue() + "%"));
+
+        brightnessSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
+            if (!isChanging) {
+                int value = (int) brightnessSlider.getValue();
+                roomService.updateDeviceBrightness(device.getId(), value);
+                logService.addLogEntry(device.getName(), room.getName(),
+                    "Set brightness to " + value + "%", "User");
+            }
         });
         
         sliderBox.getChildren().addAll(brightnessSlider, brightnessLabel);
@@ -229,7 +232,7 @@ public class DevicesController {
         toggleBtn.setPrefWidth(60);
         
         toggleBtn.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            smartHomeService.toggleDevice(device.getId());
+            roomService.updateDeviceState(device.getId(), newVal);
             toggleBtn.setText(newVal ? "ON" : "OFF");
             logService.addLogEntry(device.getName(), room.getName(),
                 "Turned " + (newVal ? "ON" : "OFF"), "User");
@@ -268,14 +271,14 @@ public class DevicesController {
         plusBtn.setPrefWidth(40);
         
         minusBtn.setOnAction(e -> {
-            smartHomeService.setTemperature(device.getId(), device.getTemperature() - 1);
+            roomService.updateDeviceTemperature(device.getId(), device.getTemperature() - 1);
             tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
             logService.addLogEntry(device.getName(), room.getName(),
                 "Set temperature to " + String.format("%.1f°C", device.getTemperature()), "User");
         });
 
         plusBtn.setOnAction(e -> {
-            smartHomeService.setTemperature(device.getId(), device.getTemperature() + 1);
+            roomService.updateDeviceTemperature(device.getId(), device.getTemperature() + 1);
             tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
             logService.addLogEntry(device.getName(), room.getName(),
                 "Set temperature to " + String.format("%.1f°C", device.getTemperature()), "User");
@@ -324,7 +327,7 @@ public class DevicesController {
         injectBtn.setOnAction(e -> {
             try {
                 double value = Double.parseDouble(testValueField.getText());
-                smartHomeService.injectSensorValue(device.getId(), value);
+                roomService.updateDeviceTemperature(device.getId(), value);
                 testValueField.clear();
                 logService.addLogEntry(device.getName(), room.getName(),
                     "Test value injected: " + value, "User");
@@ -362,14 +365,14 @@ public class DevicesController {
         Button openBtn = new Button("Open");
         openBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
         openBtn.setOnAction(e -> {
-            smartHomeService.openBlind(device.getId());
+            roomService.updateDeviceState(device.getId(), true);
             logService.addLogEntry(device.getName(), room.getName(), "Opened", "User");
         });
 
         Button closeBtn = new Button("Close");
         closeBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
         closeBtn.setOnAction(e -> {
-            smartHomeService.closeBlind(device.getId());
+            roomService.updateDeviceState(device.getId(), false);
             logService.addLogEntry(device.getName(), room.getName(), "Closed", "User");
         });
         

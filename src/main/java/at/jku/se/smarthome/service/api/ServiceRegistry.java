@@ -1,5 +1,4 @@
 package at.jku.se.smarthome.service.api;
-
 import at.jku.se.smarthome.service.real.room.JdbcRoomService;
 import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 
@@ -10,6 +9,7 @@ public final class ServiceRegistry {
 
     private static volatile ScheduleService scheduleService;
     private static volatile RoomService roomService;
+    private static volatile LogService logService;
 
     private ServiceRegistry() {
     }
@@ -44,6 +44,31 @@ public final class ServiceRegistry {
             }
         }
         return roomService;
+    }
+
+    /**
+     * Returns the active log service instance.
+     *
+     * @return lazily initialized log service
+     */
+    public static LogService getLogService() {
+        if (logService == null) {
+            synchronized (ServiceRegistry.class) {
+                if (logService == null) {
+                    logService = JdbcLogService.getInstance();
+                }
+            }
+        }
+        return logService;
+    }
+
+    /**
+     * Overrides the log service for tests or alternate runtime wiring.
+     *
+     * @param testLogService replacement log service instance
+     */
+    public static synchronized void setLogServiceForTesting(LogService testLogService) {
+        logService = testLogService;
     }
 
     /**
