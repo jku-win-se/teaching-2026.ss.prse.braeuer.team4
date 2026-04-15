@@ -74,6 +74,7 @@ public class DevicesController {
      * device view. Disables the add button for users without management
      * permissions.
      */
+
     @FXML
     private void initialize() {
         configureAddDeviceVisibility();
