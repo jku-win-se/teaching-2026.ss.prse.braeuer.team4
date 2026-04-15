@@ -2,13 +2,14 @@ package at.jku.se.smarthome.service.mock;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
+import at.jku.se.smarthome.service.api.RoomService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 /**
  * Mock Room Service providing room management functionality.
  */
-public class MockRoomService {
+public class MockRoomService implements RoomService {
     
     private static MockRoomService instance;
     private final ObservableList<Room> rooms;

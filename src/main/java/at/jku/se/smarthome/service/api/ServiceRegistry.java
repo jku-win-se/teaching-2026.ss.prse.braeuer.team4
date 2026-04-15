@@ -1,7 +1,7 @@
 package at.jku.se.smarthome.service.api;
 
-import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 import at.jku.se.smarthome.service.real.room.JdbcRoomService;
+import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 
 /**
  * Resolves shared service implementations used across the application.
