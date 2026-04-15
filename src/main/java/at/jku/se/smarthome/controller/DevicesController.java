@@ -12,17 +12,10 @@ import at.jku.se.smarthome.service.api.UserService;
 import at.jku.se.smarthome.service.real.auth.JdbcUserService;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.Dialog;
-import javafx.scene.layout.GridPane;
 import javafx.geometry.Insets;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.api.UserService;
-import at.jku.se.smarthome.service.real.auth.JdbcUserService;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -74,8 +67,6 @@ public class DevicesController {
         loadDevices();
     };
     private String selectedRoomFilterId = null;
-    private final UserService userService = JdbcUserService.getInstance();
-    private String selectedRoomFilter = null;
     
     /**
      * Initializes the controller after FXML loading.
