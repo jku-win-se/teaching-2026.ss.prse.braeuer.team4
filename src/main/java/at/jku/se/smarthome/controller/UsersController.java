@@ -1,7 +1,8 @@
 package at.jku.se.smarthome.controller;
 
 import at.jku.se.smarthome.model.User;
-import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.api.UserService;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -42,7 +43,7 @@ public class UsersController {
     @FXML
     private ComboBox<String> statusFilterCombo;
     
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     private FilteredList<User> filteredUsers;
     
     @FXML

@@ -1,4 +1,4 @@
-package at.jku.se.smarthome.service.mock;
+package at.jku.se.smarthome.service.real.auth;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -9,20 +9,19 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import at.jku.se.smarthome.model.User;
 import at.jku.se.smarthome.service.api.UserService;
-import at.jku.se.smarthome.service.real.auth.JdbcUserRegistrationStore;
-import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 /**
- * Mock User Service providing user management functionality.
+ * JDBC-backed user service implementation.
  */
-public class MockUserService extends UserService {
+public final class JdbcUserService extends UserService {
 
     private static final long SESSION_TIMEOUT_MILLIS = 30 * 60 * 1000L;
     private static final int THROTTLE_THRESHOLD = 3;
-    
-    private static MockUserService instance;
+
+    private static volatile JdbcUserService instance;
+
     private final ObservableList<User> users;
     private final UserRegistrationStore registrationStore;
     private final Map<String, Integer> failedLoginAttempts;
@@ -32,63 +31,31 @@ public class MockUserService extends UserService {
     private String currentUserRole;
     private String currentUserStatus;
     private long currentSessionExpiresAt;
-    
-    private MockUserService() {
+
+    private JdbcUserService() {
         this(new JdbcUserRegistrationStore());
     }
 
-    public MockUserService(UserRegistrationStore registrationStore) {
+    public JdbcUserService(UserRegistrationStore registrationStore) {
         this.users = FXCollections.observableArrayList();
         this.registrationStore = registrationStore;
         this.failedLoginAttempts = new HashMap<>();
         this.blockedUntilByEmail = new HashMap<>();
-        initializeMockUsers();
+        loadPersistedUsers();
+        initializeDefaultUsers();
     }
-    
-    public static synchronized MockUserService getInstance() {
+
+    public static synchronized JdbcUserService getInstance() {
         if (instance == null) {
-            instance = new MockUserService();
+            instance = new JdbcUserService();
         }
         return instance;
     }
 
-    /**
-     * Resets the singleton for unit testing.
-     * Must NOT be called from production code.
-     */
     public static synchronized void resetForTesting() {
         instance = null;
     }
-    
-    private void initializeMockUsers() {
-        users.add(new User("owner@smarthome.com", "owner", "password123", "Owner", "Active"));
-        users.add(new User("member@smarthome.com", "member", "password123", "Member", "Active"));
-        users.add(new User("guest@smarthome.com", "guest", "password123", "Member", "Inactive"));
-        users.add(new User("test", "test", "test", "Member", "Active"));
-    }
-    
-    /**
-     * Registers a new user.
-     *
-     * @param email email address for the new user
-     * @param username display name or login name
-     * @param password raw password value
-     * @param confirmPassword repeated password value
-     * @return true when registration succeeds, otherwise false
-     */
-    public boolean register(String email, String username, String password, String confirmPassword) {
-        return registerUser(email, username, password, confirmPassword) == RegistrationStatus.SUCCESS;
-    }
 
-    /**
-        * Registers a new user and returns a status for UI feedback.
-        *
-        * @param email email address for the new user
-        * @param username display name or login name
-        * @param password raw password value
-        * @param confirmPassword repeated password value
-        * @return registration outcome status
-     */
     @Override
     public RegistrationStatus registerUser(String email, String username, String password, String confirmPassword) {
         String normalizedEmail = normalizeEmail(email);
@@ -130,25 +97,7 @@ public class MockUserService extends UserService {
             return RegistrationStatus.DATABASE_ERROR;
         }
     }
-    
-    /**
-     * Authenticates a user.
-     *
-     * @param email email address used for login
-     * @param password raw password value
-     * @return true when authentication succeeds, otherwise false
-     */
-    public synchronized boolean login(String email, String password) {
-        return authenticate(email, password) == LoginStatus.SUCCESS;
-    }
 
-    /**
-        * Authenticates a user and returns a detailed status for UI handling.
-        *
-        * @param email email address used for login
-        * @param password raw password value
-        * @return authentication outcome status
-     */
     @Override
     public synchronized LoginStatus authenticate(String email, String password) {
         String normalizedEmail = normalizeEmail(email);
@@ -190,18 +139,13 @@ public class MockUserService extends UserService {
             return LoginStatus.DATABASE_ERROR;
         }
     }
-    
-    /**
-        * Gets the current user's email.
-        *
-        * @return current user email, or null when no session exists
-     */
+
     @Override
     public synchronized String getCurrentUserEmail() {
         invalidateExpiredSessionIfNeeded();
         return currentUserEmail;
     }
-    
+
     @Override
     protected String getCurrentUserRoleInternal() {
         invalidateExpiredSessionIfNeeded();
@@ -209,15 +153,6 @@ public class MockUserService extends UserService {
     }
 
     @Override
-    public synchronized String getCurrentUserRole() {
-        return super.getCurrentUserRole();
-    }
-
-    /**
-        * Gets the current user object.
-        *
-        * @return current user object, or null when no session exists
-     */
     public synchronized User getCurrentUser() {
         invalidateExpiredSessionIfNeeded();
         if (currentUserEmail == null) {
@@ -242,51 +177,17 @@ public class MockUserService extends UserService {
         );
     }
 
-    /**
-     * Checks whether the current user is an owner.
-     *
-     * @return true when the current user is an owner, otherwise false
-     */
-    public synchronized boolean isOwner() {
-        return "Owner".equalsIgnoreCase(getCurrentUserRole());
-    }
-
-    /**
-     * Checks whether the current user can manage devices and rules.
-     *
-     * @return true when the current user can manage the system, otherwise false
-     */
-    public synchronized boolean canManageSystem() {
-        return isOwner();
-    }
-    
-    /**
-     * Gets all users.
-     *
-     * @return observable list of users
-     */
     @Override
     public ObservableList<User> getUsers() {
         return users;
     }
 
-    /**
-     * Indicates whether a non-expired user session exists.
-     *
-     * @return true when a session is active, otherwise false
-     */
     @Override
     public synchronized boolean hasActiveSession() {
         invalidateExpiredSessionIfNeeded();
         return currentUserEmail != null;
     }
 
-    /**
-     * Returns the remaining login throttle duration for the supplied email.
-     *
-     * @param email email address to inspect
-     * @return remaining throttle time in seconds, or zero when not throttled
-     */
     @Override
     public synchronized long getRemainingThrottleSeconds(String email) {
         String normalizedEmail = normalizeEmail(email);
@@ -303,31 +204,18 @@ public class MockUserService extends UserService {
         long remainingMillis = Math.max(0, blockedUntil - now);
         return Math.max(1, (remainingMillis + 999) / 1000);
     }
-    
-    /**
-        * Invites a member.
-        *
-        * @param email email address of the invited user
-        * @param role role assigned to the invited user
-        * @return true when the invite was created, otherwise false
-     */
+
     @Override
     public boolean inviteUser(String email, String role) {
         if (users.stream().anyMatch(u -> u.getEmail().equals(email))) {
             return false;
         }
-        
-        User newUser = new User(email, email.split("@")[0], "temporary", role, "Pending");
+
+        User newUser = new User(email, email.contains("@") ? email.split("@")[0] : email, "temporary", role, "Pending");
         users.add(newUser);
         return true;
     }
-    
-    /**
-        * Revokes access for a user.
-        *
-        * @param email email address of the user to revoke
-        * @return true when access was revoked, otherwise false
-     */
+
     @Override
     public boolean revokeUser(String email) {
         User user = users.stream()
@@ -350,12 +238,6 @@ public class MockUserService extends UserService {
         return true;
     }
 
-    /**
-        * Restores access for a previously revoked or pending member.
-        *
-        * @param email email address of the user to restore
-        * @return true when access was restored, otherwise false
-     */
     @Override
     public boolean restoreUser(String email) {
         User user = users.stream()
@@ -370,10 +252,7 @@ public class MockUserService extends UserService {
         user.setStatus("Active");
         return true;
     }
-    
-    /**
-        * Logs out the current user.
-     */
+
     @Override
     public synchronized void logout() {
         this.currentUserEmail = null;
@@ -383,11 +262,33 @@ public class MockUserService extends UserService {
         this.currentSessionExpiresAt = 0;
     }
 
-    /**
-     * Forces the current session to expire for test scenarios.
-     */
-    public void expireSessionForTesting() {
-        this.currentSessionExpiresAt = System.currentTimeMillis() - 1;
+    private void initializeDefaultUsers() {
+        if (users.stream().noneMatch(user -> "owner@smarthome.com".equalsIgnoreCase(user.getEmail()))) {
+            users.add(new User("owner@smarthome.com", "owner", "password123", "Owner", "Active"));
+        }
+        if (users.stream().noneMatch(user -> "member@smarthome.com".equalsIgnoreCase(user.getEmail()))) {
+            users.add(new User("member@smarthome.com", "member", "password123", "Member", "Active"));
+        }
+        if (users.stream().noneMatch(user -> "guest@smarthome.com".equalsIgnoreCase(user.getEmail()))) {
+            users.add(new User("guest@smarthome.com", "guest", "password123", "Member", "Inactive"));
+        }
+        if (users.stream().noneMatch(user -> "test".equalsIgnoreCase(user.getEmail()))) {
+            users.add(new User("test", "test", "test", "Member", "Active"));
+        }
+    }
+
+    private void loadPersistedUsers() {
+        try {
+            registrationStore.findAllUsers().forEach(persisted -> users.add(new User(
+                    persisted.email(),
+                    persisted.username(),
+                    persisted.passwordHash(),
+                    persisted.role(),
+                    persisted.status()
+            )));
+        } catch (UserRegistrationStore.StoreException exception) {
+            // Persisted users cannot be loaded. Continue with in-memory defaults.
+        }
     }
 
     private String normalizeEmail(String email) {
@@ -470,15 +371,12 @@ public class MockUserService extends UserService {
         if (failedAttempts < THROTTLE_THRESHOLD) {
             return 0;
         }
-
         if (failedAttempts == THROTTLE_THRESHOLD) {
             return 2_000L;
         }
-
         if (failedAttempts == THROTTLE_THRESHOLD + 1) {
             return 5_000L;
         }
-
         return 15_000L;
     }
 

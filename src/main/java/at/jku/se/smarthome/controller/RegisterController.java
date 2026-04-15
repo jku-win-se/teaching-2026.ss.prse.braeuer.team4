@@ -1,7 +1,8 @@
 package at.jku.se.smarthome.controller;
 
-import at.jku.se.smarthome.service.mock.MockUserService;
-import at.jku.se.smarthome.service.mock.MockUserService.RegistrationStatus;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.api.UserService;
+import at.jku.se.smarthome.service.api.UserService.RegistrationStatus;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -28,7 +29,7 @@ public class RegisterController {
     @FXML
     private Label errorLabel;
     
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     private RegisterCallback registerCallback;
     
     public interface RegisterCallback {

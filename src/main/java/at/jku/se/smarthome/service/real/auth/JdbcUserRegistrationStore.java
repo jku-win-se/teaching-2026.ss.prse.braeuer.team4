@@ -87,6 +87,31 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
     }
 
     @Override
+    public java.util.List<PersistedUser> findAllUsers() throws StoreException {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT email, username, password_hash, role, status FROM users")) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    java.util.List<PersistedUser> users = new java.util.ArrayList<>();
+                    while (resultSet.next()) {
+                        users.add(new PersistedUser(
+                                resultSet.getString("email"),
+                                resultSet.getString("username"),
+                                resultSet.getString("password_hash"),
+                                resultSet.getString("role"),
+                                resultSet.getString("status")
+                        ));
+                    }
+                    return users;
+                }
+            }
+        } catch (SQLException exception) {
+            throw new StoreException("Failed to load persisted user records.", exception);
+        }
+    }
+
+    @Override
     public void updateLastLogin(String normalizedEmail) throws StoreException {
         try (Connection connection = openConnection()) {
             ensureSchema(connection);

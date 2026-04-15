@@ -8,7 +8,7 @@ import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.RoomService;
-import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.api.UserService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -63,7 +63,7 @@ public class SchedulesController {
     
     private final ScheduleService scheduleService = ServiceRegistry.getScheduleService();
     private final RoomService roomService = ServiceRegistry.getRoomService();
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     private final MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
     
     @FXML
