@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 
 import at.jku.se.smarthome.model.LogEntry;
+import at.jku.se.smarthome.service.api.LogService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -12,7 +13,7 @@ import javafx.collections.ObservableList;
  * Mock Log Service providing activity logging functionality.
  * Records all manual and automated state changes with detailed information.
  */
-public class MockLogService {
+public class MockLogService implements LogService {
     
     private static MockLogService instance;
     private final ObservableList<LogEntry> logs;
