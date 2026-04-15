@@ -1,9 +1,16 @@
 package at.jku.se.smarthome.controller;
 
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.service.api.LogService;
 import at.jku.se.smarthome.service.mock.MockUserService;
+import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.Dialog;
@@ -30,6 +37,8 @@ import javafx.scene.layout.VBox;
  * Logs all state changes to activity log (FR-08).
  */
 public class DevicesController {
+
+    private static final String ALL_ROOMS_OPTION = "All Rooms";
     
     @FXML
     private VBox devicesContainer;
@@ -43,7 +52,20 @@ public class DevicesController {
     private final RoomService roomService = ServiceRegistry.getRoomService();
     private final LogService logService = ServiceRegistry.getLogService();
     private final MockUserService userService = MockUserService.getInstance();
-    private String selectedRoomFilter = null;
+    private final Map<Room, ChangeListener<String>> roomNameListeners = new IdentityHashMap<>();
+    private final ListChangeListener<Room> roomListListener = change -> {
+        while (change.next()) {
+            if (change.wasRemoved()) {
+                change.getRemoved().forEach(this::detachRoomNameListener);
+            }
+            if (change.wasAdded()) {
+                change.getAddedSubList().forEach(this::attachRoomNameListener);
+            }
+        }
+        refreshRoomFilterOptions();
+        loadDevices();
+    };
+    private String selectedRoomFilterId = null;
     
     /**
      * Initializes the controller after FXML loading.
@@ -52,21 +74,15 @@ public class DevicesController {
      * device view. Disables the add button for users without management
      * permissions.
      */
+    @FXML
     private void initialize() {
-        // Populate room filter combo
-        roomFilterCombo.getItems().add("All Rooms");
-        for (Room room : roomService.getRooms()) {
-            roomFilterCombo.getItems().add(room.getName());
-        }
-        roomFilterCombo.setValue("All Rooms");
+        configureAddDeviceVisibility();
         roomFilterCombo.setOnAction(e -> handleRoomFilterChange());
+        observeRooms();
+        refreshRoomFilterOptions();
         
         // Initial load of all devices
         loadDevices();
-
-        if (!userService.canManageSystem()) {
-            if (addDeviceBtn != null) addDeviceBtn.setDisable(true);
-        }
     }
     
     /**
@@ -77,7 +93,7 @@ public class DevicesController {
         
         for (Room room : roomService.getRooms()) {
             // Check room filter
-            if (selectedRoomFilter != null && !room.getName().equals(selectedRoomFilter)) {
+            if (selectedRoomFilterId != null && !room.getId().equals(selectedRoomFilterId)) {
                 continue;
             }
             
@@ -196,6 +212,10 @@ public class DevicesController {
      */
     void createDimmerControls(VBox card, Device device, Room room) {
         VBox controls = new VBox(8);
+        final boolean[] syncingBrightnessFromModel = {false};
+        final boolean[] syncingStateFromModel = {false};
+        final int[] committedBrightness = {device.getBrightness()};
+        final int[] lastNonZeroBrightness = {Math.max(1, device.getBrightness())};
         
         HBox sliderBox = new HBox(10);
         sliderBox.setAlignment(Pos.CENTER_LEFT);
@@ -206,18 +226,38 @@ public class DevicesController {
         brightnessSlider.setShowTickMarks(true);
         brightnessSlider.setMajorTickUnit(10);
         
-        Label brightnessLabel = new Label("Brightness: " + (int)device.getBrightness() + "%");
+        Label brightnessLabel = new Label();
         brightnessLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #34495e; -fx-min-width: 100;");
+        updateBrightnessLabel(brightnessLabel, device.getBrightness());
         
-        brightnessSlider.valueProperty().addListener((obs, oldVal, newVal) ->
-            brightnessLabel.setText("Brightness: " + newVal.intValue() + "%"));
+        brightnessSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            updateBrightnessLabel(brightnessLabel, newVal.intValue());
+            if (!syncingBrightnessFromModel[0] && !brightnessSlider.isValueChanging()) {
+                commitDimmerBrightnessChange(device, room, brightnessSlider, committedBrightness);
+            }
+        });
 
         brightnessSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
-            if (!isChanging) {
-                int value = (int) brightnessSlider.getValue();
-                roomService.updateDeviceBrightness(device.getId(), value);
-                logService.addLogEntry(device.getName(), room.getName(),
-                    "Set brightness to " + value + "%", "User");
+            if (!isChanging && !syncingBrightnessFromModel[0]) {
+                commitDimmerBrightnessChange(device, room, brightnessSlider, committedBrightness);
+            }
+        });
+
+        device.brightnessProperty().addListener((obs, oldVal, newVal) -> {
+            int brightness = newVal.intValue();
+            committedBrightness[0] = brightness;
+            if (brightness > 0) {
+                lastNonZeroBrightness[0] = brightness;
+            }
+
+            syncingBrightnessFromModel[0] = true;
+            try {
+                if ((int) Math.round(brightnessSlider.getValue()) != brightness) {
+                    brightnessSlider.setValue(brightness);
+                }
+                updateBrightnessLabel(brightnessLabel, brightness);
+            } finally {
+                syncingBrightnessFromModel[0] = false;
             }
         });
         
@@ -232,16 +272,31 @@ public class DevicesController {
         toggleBtn.setPrefWidth(60);
         
         toggleBtn.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            roomService.updateDeviceState(device.getId(), newVal);
-            toggleBtn.setText(newVal ? "ON" : "OFF");
-            logService.addLogEntry(device.getName(), room.getName(),
-                "Turned " + (newVal ? "ON" : "OFF"), "User");
+            if (syncingStateFromModel[0]) {
+                return;
+            }
+
+            boolean updated = newVal
+                    ? roomService.updateDeviceBrightness(device.getId(), Math.max(1, lastNonZeroBrightness[0]))
+                    : roomService.updateDeviceBrightness(device.getId(), 0);
+
+            if (updated) {
+                logService.addLogEntry(device.getName(), room.getName(),
+                    "Turned " + (newVal ? "ON" : "OFF"), "User");
+            }
         });
         
-        Label stateLabel = new Label("State: " + (device.getState() ? "ON" : "OFF"));
+        Label stateLabel = new Label();
         stateLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #34495e;");
-        device.stateProperty().addListener((obs, oldVal, newVal) -> 
-            stateLabel.setText("State: " + (newVal ? "ON" : "OFF")));
+        updateDimmerStateControls(toggleBtn, stateLabel, device.getState());
+        device.stateProperty().addListener((obs, oldVal, newVal) -> {
+            syncingStateFromModel[0] = true;
+            try {
+                updateDimmerStateControls(toggleBtn, stateLabel, newVal);
+            } finally {
+                syncingStateFromModel[0] = false;
+            }
+        });
         
         stateBox.getChildren().addAll(toggleBtn, stateLabel);
         
@@ -558,7 +613,18 @@ public class DevicesController {
     @FXML
     void handleRoomFilterChange() {
         String selected = roomFilterCombo.getValue();
-        selectedRoomFilter = selected != null && !selected.equals("All Rooms") ? selected : null;
+        if (selected == null || ALL_ROOMS_OPTION.equals(selected)) {
+            clearRoomFilterSelection();
+        } else {
+            selectedRoomFilterId = roomService.getRooms().stream()
+                    .filter(room -> room.getName().equals(selected))
+                    .map(Room::getId)
+                    .findFirst()
+                    .orElse(null);
+            if (selectedRoomFilterId == null) {
+                clearRoomFilterSelection();
+            }
+        }
         loadDevices();
     }
     
@@ -567,8 +633,94 @@ public class DevicesController {
      */
     @FXML
     void handleClearRoomFilter() {
-        roomFilterCombo.setValue("All Rooms");
-        selectedRoomFilter = null;
+        clearRoomFilterSelection();
         loadDevices();
+    }
+
+    private void configureAddDeviceVisibility() {
+        if (addDeviceBtn == null) {
+            return;
+        }
+
+        boolean canManageSystem = userService.canManageSystem();
+        addDeviceBtn.setVisible(canManageSystem);
+        addDeviceBtn.setManaged(canManageSystem);
+        addDeviceBtn.setDisable(!canManageSystem);
+    }
+
+    private void observeRooms() {
+        roomService.getRooms().forEach(this::attachRoomNameListener);
+        roomService.getRooms().addListener(roomListListener);
+    }
+
+    private void attachRoomNameListener(Room room) {
+        if (room == null || roomNameListeners.containsKey(room)) {
+            return;
+        }
+
+        ChangeListener<String> listener = (obs, oldName, newName) -> {
+            refreshRoomFilterOptions();
+            loadDevices();
+        };
+        room.nameProperty().addListener(listener);
+        roomNameListeners.put(room, listener);
+    }
+
+    private void detachRoomNameListener(Room room) {
+        ChangeListener<String> listener = roomNameListeners.remove(room);
+        if (listener != null) {
+            room.nameProperty().removeListener(listener);
+        }
+    }
+
+    private void refreshRoomFilterOptions() {
+        Set<String> roomOptions = new LinkedHashSet<>();
+        roomOptions.add(ALL_ROOMS_OPTION);
+        for (Room room : roomService.getRooms()) {
+            roomOptions.add(room.getName());
+        }
+
+        roomFilterCombo.getItems().setAll(roomOptions);
+
+        if (selectedRoomFilterId != null) {
+            Room selectedRoom = roomService.getRoomById(selectedRoomFilterId);
+            if (selectedRoom != null && roomOptions.contains(selectedRoom.getName())) {
+                roomFilterCombo.setValue(selectedRoom.getName());
+                return;
+            }
+            clearRoomFilterSelection();
+            return;
+        }
+
+        if (roomFilterCombo.getValue() == null || !roomOptions.contains(roomFilterCombo.getValue())) {
+            roomFilterCombo.setValue(ALL_ROOMS_OPTION);
+        }
+    }
+
+    private void clearRoomFilterSelection() {
+        selectedRoomFilterId = null;
+        roomFilterCombo.setValue(ALL_ROOMS_OPTION);
+    }
+
+    private void updateBrightnessLabel(Label brightnessLabel, int brightness) {
+        brightnessLabel.setText("Brightness: " + brightness + "%");
+    }
+
+    private void updateDimmerStateControls(ToggleButton toggleBtn, Label stateLabel, boolean isOn) {
+        toggleBtn.setSelected(isOn);
+        toggleBtn.setText(isOn ? "ON" : "OFF");
+        stateLabel.setText("State: " + (isOn ? "ON" : "OFF"));
+    }
+
+    private void commitDimmerBrightnessChange(Device device, Room room, Slider brightnessSlider, int[] committedBrightness) {
+        int value = (int) Math.round(brightnessSlider.getValue());
+        if (value == committedBrightness[0]) {
+            return;
+        }
+
+        if (roomService.updateDeviceBrightness(device.getId(), value)) {
+            logService.addLogEntry(device.getName(), room.getName(),
+                "Set brightness to " + value + "%", "User");
+        }
     }
 }
