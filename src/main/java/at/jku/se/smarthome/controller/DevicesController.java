@@ -326,6 +326,11 @@ public class DevicesController {
         testValueField.setPrefWidth(150);
         testValueField.setStyle("-fx-padding: 5;");
         
+        Label errorLabel = new Label();
+        errorLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 11;");
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+
         Button injectBtn = new Button("Inject");
         injectBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
         injectBtn.setOnAction(e -> {
@@ -333,16 +338,19 @@ public class DevicesController {
                 double value = Double.parseDouble(testValueField.getText());
                 roomService.updateDeviceTemperature(device.getId(), value);
                 testValueField.clear();
+                errorLabel.setVisible(false);
+                errorLabel.setManaged(false);
                 logService.addLogEntry(device.getName(), room.getName(),
                     "Test value injected: " + value, "User");
             } catch (NumberFormatException ex) {
-                // Invalid input - silently ignore
+                errorLabel.setText("Invalid input — please enter a numeric value (e.g., 25.5)");
+                errorLabel.setVisible(true);
+                errorLabel.setManaged(true);
             }
         });
-        
+
         injectBox.getChildren().addAll(injectLabel, testValueField, injectBtn);
-        
-        controls.getChildren().addAll(readingBox, injectBox);
+        controls.getChildren().addAll(readingBox, injectBox, errorLabel);
         card.getChildren().add(controls);
     }
     
@@ -369,15 +377,19 @@ public class DevicesController {
         Button openBtn = new Button("Open");
         openBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
         openBtn.setOnAction(e -> {
-            roomService.updateDeviceState(device.getId(), true);
-            logService.addLogEntry(device.getName(), room.getName(), "Opened", "User");
+            if (!device.getState()) {
+                roomService.updateDeviceState(device.getId(), true);
+                logService.addLogEntry(device.getName(), room.getName(), "Opened", "User");
+            }
         });
 
         Button closeBtn = new Button("Close");
         closeBtn.setStyle("-fx-padding: 5 15; -fx-font-size: 11;");
         closeBtn.setOnAction(e -> {
-            roomService.updateDeviceState(device.getId(), false);
-            logService.addLogEntry(device.getName(), room.getName(), "Closed", "User");
+            if (device.getState()) {
+                roomService.updateDeviceState(device.getId(), false);
+                logService.addLogEntry(device.getName(), room.getName(), "Closed", "User");
+            }
         });
         
         controls.getChildren().addAll(positionLabel, statusLabel, openBtn, closeBtn);
