@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.mindrot.jbcrypt.BCrypt;
 
 import at.jku.se.smarthome.service.mock.MockUserService;
-import at.jku.se.smarthome.service.mock.MockUserService.LoginStatus;
+import at.jku.se.smarthome.service.api.UserService.LoginStatus;
 import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 
 /**
@@ -139,6 +139,11 @@ public class TestMockUserServiceLoginLogout {
                 return Optional.empty();
             }
             return Optional.of(persistedUser);
+        }
+
+        @Override
+        public java.util.List<PersistedUser> findAllUsers() {
+            return persistedUser == null ? java.util.List.of() : java.util.List.of(persistedUser);
         }
 
         @Override
