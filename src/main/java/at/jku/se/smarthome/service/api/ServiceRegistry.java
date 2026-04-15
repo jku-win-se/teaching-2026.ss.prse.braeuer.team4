@@ -1,4 +1,5 @@
 package at.jku.se.smarthome.service.api;
+import at.jku.se.smarthome.service.real.log.JdbcLogService;
 import at.jku.se.smarthome.service.real.room.JdbcRoomService;
 import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 
