@@ -133,20 +133,7 @@ public class DevicesController {
                 break;
         }
 
-        // Action footer: Rename and Delete
-        HBox actionBar = new HBox(8);
-        actionBar.setAlignment(Pos.CENTER_RIGHT);
 
-        Button renameBtn = new Button("Rename");
-        renameBtn.setStyle("-fx-padding: 4 12; -fx-font-size: 11; -fx-text-fill: #2980b9; -fx-background-color: transparent; -fx-border-color: #2980b9; -fx-border-radius: 3;");
-        renameBtn.setOnAction(e -> handleRename(device, room, nameLabel));
-
-        Button deleteBtn = new Button("Delete");
-        deleteBtn.setStyle("-fx-padding: 4 12; -fx-font-size: 11; -fx-text-fill: #e74c3c; -fx-background-color: transparent; -fx-border-color: #e74c3c; -fx-border-radius: 3;");
-        deleteBtn.setOnAction(e -> handleDelete(device, room));
-
-        actionBar.getChildren().addAll(renameBtn, deleteBtn);
-        card.getChildren().add(actionBar);
 
         return card;
     }
