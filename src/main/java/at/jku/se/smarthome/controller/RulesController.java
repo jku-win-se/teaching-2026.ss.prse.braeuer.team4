@@ -8,7 +8,7 @@ import at.jku.se.smarthome.model.Rule;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockRuleService;
-import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.api.UserService;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -60,7 +60,7 @@ public class RulesController {
     
     private final MockRuleService ruleService = MockRuleService.getInstance();
     private final RoomService roomService = ServiceRegistry.getRoomService();
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     
     @FXML
     private void initialize() {

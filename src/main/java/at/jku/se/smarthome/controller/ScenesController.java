@@ -13,7 +13,7 @@ import at.jku.se.smarthome.model.Scene;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockSceneService;
-import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.api.UserService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -46,7 +46,7 @@ public class ScenesController {
     
     private final MockSceneService sceneService = MockSceneService.getInstance();
     private final RoomService roomService = ServiceRegistry.getRoomService();
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     private boolean refreshingDeviceOptions;
     
     @FXML
