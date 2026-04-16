@@ -1,6 +1,7 @@
 package at.jku.se.smarthome.controller;
 
-import at.jku.se.smarthome.service.mock.MockUserService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.api.UserService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -20,7 +21,7 @@ public class SettingsController {
     @FXML
     private PasswordField confirmPasswordField;
     
-    private final MockUserService userService = MockUserService.getInstance();
+    private final UserService userService = ServiceRegistry.getUserService();
     
     @FXML
     private void initialize() {
