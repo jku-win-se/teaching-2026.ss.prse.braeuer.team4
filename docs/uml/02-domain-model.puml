@@ -1,0 +1,147 @@
+@startuml 02-domain-model
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #455A64
+skinparam classHeaderBackgroundColor #E3F2FD
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+
+title SmartHome App — Domain Model
+
+class Room {
+  - id : String
+  - name : String
+  - devices : ObservableList<Device>
+  --
+  + addDevice(device : Device)
+  + removeDevice(device : Device)
+  + getDevices() : ObservableList<Device>
+}
+
+class Device {
+  - id : String
+  - name : String
+  - type : String
+  - state : boolean
+  - brightness : int
+  - temperature : double
+  - roomId : String
+  --
+  + isOn() : boolean
+  + getBrightness() : int
+  + getTemperature() : double
+}
+
+class User {
+  - email : String
+  - role : String
+  - status : String
+  --
+  + getEmail() : String
+  + getRole() : String
+  + isActive() : boolean
+}
+
+class Schedule {
+  - id : String
+  - name : String
+  - time : String
+  - recurrence : String
+  - deviceId : String
+  - action : String
+  - enabled : boolean
+  --
+  + isEnabled() : boolean
+  + getTime() : String
+}
+
+class Rule {
+  - id : String
+  - name : String
+  - triggerType : String
+  - condition : String
+  - action : String
+  - enabled : boolean
+  --
+  + isEnabled() : boolean
+  + getTriggerType() : String
+}
+
+class Scene {
+  - id : String
+  - name : String
+  - deviceStates : Map<String, Object>
+  --
+  + getName() : String
+  + getDeviceStates() : Map
+}
+
+class LogEntry {
+  - timestamp : LocalDateTime
+  - deviceName : String
+  - roomName : String
+  - action : String
+  - actor : String
+  --
+  + getTimestamp() : LocalDateTime
+  + getAction() : String
+}
+
+class NotificationEntry {
+  - message : String
+  - type : String
+  - severity : String
+  - timestamp : LocalDateTime
+  --
+  + getMessage() : String
+  + getSeverity() : String
+}
+
+class VacationModeConfig {
+  - enabled : boolean
+  - startDate : LocalDate
+  - endDate : LocalDate
+  - scheduleId : String
+  --
+  + isEnabled() : boolean
+  + getDateRange() : String
+}
+
+class SimulationDeviceState {
+  - deviceId : String
+  - timestamp : LocalDateTime
+  - state : boolean
+  - brightness : int
+  - temperature : double
+  --
+  + getSnapshot() : Map
+}
+
+' Relationships
+Room "1" *-- "0..*" Device : contains >
+User "1" ..> "0..*" LogEntry : generates >
+Device "1" ..> "0..*" LogEntry : referenced in >
+Schedule "0..*" ..> "1" Device : targets >
+Rule "0..*" ..> "1" Device : acts on >
+Scene "1" o-- "0..*" Device : captures state of >
+VacationModeConfig "0..1" ..> "0..1" Schedule : delegates to >
+SimulationDeviceState "0..*" ..> "1" Device : snapshots >
+
+note right of Device
+  Types: switch · dimmer
+  thermostat · sensor · cover
+end note
+
+note right of User
+  Roles: Owner · Member
+  Status: Active · Inactive
+end note
+
+note right of Rule
+  Trigger types:
+  Time · Device State · Sensor Threshold
+end note
+
+@enduml

@@ -1,0 +1,32 @@
+@startuml pres-03-sequence
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam roundCorner 10
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBackgroundColor #E3F2FD
+skinparam sequenceParticipantBorderColor #1565C0
+skinparam sequenceLifeLineBorderColor #90A4AE
+
+title Sequence: User Controls a Device
+
+actor "User" as U
+participant "DevicesController" as DC
+participant "RoomService" as RS
+participant "LogService" as LS
+database "PostgreSQL" as DB
+
+U -> DC : toggles device
+DC -> RS : updateDeviceState(id, newState)
+RS -> DB : UPDATE devices
+DB --> RS : OK
+RS --> DC : ObservableList auto-updates UI
+
+DC -> LS : addLogEntry(device, action, actor)
+LS -> DB : INSERT INTO activity_logs
+DB --> LS : OK
+
+DC --> U : UI reflects new state
+
+@enduml

@@ -1,0 +1,117 @@
+@startuml 06-mvc-wiring
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam packageBackgroundColor #FAFAFA
+
+title SmartHome App — MVC Controller / View Wiring
+
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+skinparam note {
+  BackgroundColor #FFFDE7
+}
+
+package "Entry Point" {
+  class SmartHomeApp {
+    + start(stage)
+    - showLogin()
+    - showRegister()
+    - showMain()
+  }
+}
+
+package "Auth Flow" #FFF8E1 {
+  class LoginController {
+    + handleLogin()
+    + handleRegisterClick()
+  }
+  class RegisterController {
+    + handleRegister()
+    + setRegisterCallback()
+  }
+  file "login-view.fxml" as LF
+  file "register-view.fxml" as RF
+  LF .right. LoginController
+  RF .right. RegisterController
+}
+
+package "Main Shell" #E8F5E9 {
+  class MainController {
+    + applyRoleAccess()
+    + showDevices()
+    + showRooms()
+    + showRules()
+    + showSchedules()
+    + showScenes()
+    + showUsers()
+    + showVacationMode()
+    + handleLogout()
+  }
+  file "main-shell.fxml" as MF
+  MF .right. MainController
+}
+
+package "Feature Controllers (Owner + Member)" #E3F2FD {
+  class DevicesController
+  class RoomsController
+  class ActivityLogController
+  file "devices-control-view.fxml" as DVF
+  file "rooms-view.fxml" as RVF
+  file "activity-log-view.fxml" as ALF
+  DVF .right. DevicesController
+  RVF .right. RoomsController
+  ALF .right. ActivityLogController
+}
+
+package "Feature Controllers (Owner Only)" #FCE4EC {
+  class RulesController
+  class SchedulesController
+  class ScenesController
+  class UsersController
+  class VacationModeController
+  class SimulationController
+  class IoTSettingsController
+  file "automation-view.fxml" as AVF
+  file "schedules-view.fxml" as SVF
+  file "scenes-view.fxml" as SCVF
+  file "users-view.fxml" as UVF
+  file "vacation-mode-view.fxml" as VMF
+  file "simulation-view.fxml" as SIMF
+  file "iot-settings-view.fxml" as IOTF
+  AVF .right. RulesController
+  SVF .right. SchedulesController
+  SCVF .right. ScenesController
+  UVF .right. UsersController
+  VMF .right. VacationModeController
+  SIMF .right. SimulationController
+  IOTF .right. IoTSettingsController
+}
+
+SmartHomeApp --> LoginController : loads
+SmartHomeApp --> RegisterController : loads
+SmartHomeApp --> MainController : loads after login
+
+MainController --> DevicesController : embeds
+MainController --> RoomsController : embeds
+MainController --> ActivityLogController : embeds
+MainController --> RulesController : embeds (owner)
+MainController --> SchedulesController : embeds (owner)
+MainController --> ScenesController : embeds (owner)
+MainController --> UsersController : embeds (owner)
+MainController --> VacationModeController : embeds (owner)
+MainController --> SimulationController : embeds (owner)
+MainController --> IoTSettingsController : embeds (owner)
+
+note bottom of MainController
+  applyRoleAccess() hides
+  owner-only nav buttons
+  for Member users
+end note
+
+@enduml

@@ -1,0 +1,68 @@
+@startuml 05-sequence-rule-execution
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam sequenceMessageAlign center
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBackgroundColor #E3F2FD
+
+title SmartHome App — Sequence: Rule Execution
+
+actor "User (Owner)" as User
+participant "RulesController" as RC #E3F2FD
+participant "MockRuleService" as MRS #FCE4EC
+participant "RuleEvaluator" as RE #FFF9C4
+participant "JdbcRoomService" as RS #E8F5E9
+participant "JdbcLogService" as LS #E8F5E9
+database "PostgreSQL" as DB #EFEBE9
+
+User -> RC : clicks "Execute Rule"
+activate RC
+
+RC -> MRS : executeRule(ruleId)
+activate MRS
+
+MRS -> MRS : find rule by id
+MRS -> RE : evaluate(rule, LocalTime.now(), device)
+activate RE
+
+alt Trigger type = Time
+  RE -> RE : parseTime(rule.condition)
+  RE -> RE : compare with LocalTime.now()
+else Trigger type = Device State
+  RE -> RE : evaluateStateCondition(device, expr)
+else Trigger type = Sensor Threshold
+  RE -> RE : evaluateSensorThreshold(device, expr)
+end
+
+RE --> MRS : true / false
+deactivate RE
+
+alt condition matches
+  MRS -> RS : updateDeviceState(deviceId, action)
+  activate RS
+  RS -> DB : UPDATE devices SET state = ?
+  DB --> RS : OK
+  RS --> MRS : (void)
+  deactivate RS
+
+  MRS -> LS : addLogEntry(device, room, "Rule: " + ruleName, "System")
+  activate LS
+  LS -> DB : INSERT INTO activity_logs
+  DB --> LS : OK
+  LS --> MRS : (void)
+  deactivate LS
+else condition not met
+  MRS -> MRS : log "Rule condition not met, skipping"
+end
+
+MRS --> RC : (void)
+deactivate MRS
+
+RC -> RC : loadRules() / refresh UI
+RC --> User : rule result shown in UI
+deactivate RC
+
+@enduml

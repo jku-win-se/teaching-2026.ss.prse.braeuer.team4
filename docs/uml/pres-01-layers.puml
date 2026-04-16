@@ -1,0 +1,44 @@
+@startuml pres-01-layers
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam roundCorner 12
+skinparam padding 8
+
+title System Architecture
+
+package "  UI Layer  " #BBDEFB {
+  [JavaFX Views (FXML)] as V
+  [Controllers] as C
+}
+
+package "  Service Layer  " #C8E6C9 {
+  [Service Interfaces] as SI
+  [Mock Implementations] as Mock
+  [JDBC Implementations] as JDBC
+}
+
+package "  Domain Model  " #FFF9C4 {
+  [Room · Device · User\nSchedule · Rule · Scene] as M
+}
+
+package "  Database  " #EFEBE9 {
+  database "PostgreSQL" as DB
+}
+
+V --> C
+C --> SI : via ServiceRegistry
+SI <|.. Mock : testing
+SI <|.. JDBC : production
+C --> M : reads / updates
+JDBC --> DB
+
+note right of Mock
+  Used in tests
+end note
+note right of JDBC
+  Used in production
+end note
+
+@enduml

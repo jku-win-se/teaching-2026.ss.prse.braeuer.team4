@@ -1,0 +1,58 @@
+@startuml pres-02-domain
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam roundCorner 10
+skinparam classBackgroundColor #E3F2FD
+skinparam classBorderColor #1565C0
+skinparam classHeaderBackgroundColor #BBDEFB
+skinparam arrowColor #455A64
+
+title Domain Model
+
+class Room {
+  id, name
+}
+
+class Device {
+  id, name
+  type, state
+  brightness, temperature
+}
+
+class User {
+  email
+  role: Owner | Member
+  status: Active | Inactive
+}
+
+class Schedule {
+  name, time
+  recurrence, action
+}
+
+class Rule {
+  name, triggerType
+  condition, action
+}
+
+class Scene {
+  name
+  deviceStates
+}
+
+class LogEntry {
+  timestamp
+  device, room
+  action, actor
+}
+
+Room "1" *-- "0..*" Device : contains
+User "1" ..> "0..*" LogEntry : generates
+Device "1" ..> "0..*" LogEntry : referenced in
+Schedule "0..*" --> "1" Device : targets
+Rule "0..*" --> "1" Device : acts on
+Scene o-- Device : captures state of
+
+@enduml

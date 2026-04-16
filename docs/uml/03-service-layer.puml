@@ -1,0 +1,203 @@
+@startuml 03-service-layer
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #546E7A
+skinparam classHeaderBackgroundColor #F3E5F5
+skinparam abstractClassBackgroundColor #FFF9C4
+skinparam interfaceBackgroundColor #E8F5E9
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+
+title SmartHome App — Service Layer
+
+' ─── Service Registry ───────────────────────────────────────────────────────
+class ServiceRegistry <<singleton>> {
+  - instance : ServiceRegistry
+  - userService : UserService
+  - roomService : RoomService
+  - scheduleService : ScheduleService
+  - logService : LogService
+  --
+  + {static} getUserService() : UserService
+  + {static} getRoomService() : RoomService
+  + {static} getScheduleService() : ScheduleService
+  + {static} getLogService() : LogService
+  + {static} setUserServiceForTesting(s)
+  + {static} setRoomServiceForTesting(s)
+  + {static} setScheduleServiceForTesting(s)
+  + {static} setLogServiceForTesting(s)
+  + {static} resetForTesting()
+}
+
+' ─── Service APIs ────────────────────────────────────────────────────────────
+abstract class UserService {
+  + register(email, password, confirm) : RegistrationStatus
+  + login(email, password) : LoginStatus
+  + logout()
+  + getCurrentUserEmail() : String
+  + getCurrentUserRole() : String
+  + isOwner() : boolean
+  + hasActiveSession() : boolean
+  + getRemainingThrottleSeconds() : long
+  + inviteUser(email, role) : RegistrationStatus
+  + revokeUser(email)
+  + restoreUser(email)
+  --
+  <<enum>> LoginStatus
+  <<enum>> RegistrationStatus
+}
+
+interface RoomService {
+  + getRooms() : ObservableList<Room>
+  + getRoomById(id) : Room
+  + addRoom(name) : Room
+  + updateRoomName(id, name)
+  + deleteRoom(id)
+  + getAllDevices() : List<Device>
+  + getDeviceById(id) : Device
+  + addDeviceToRoom(roomId, name, type) : Device
+  + removeDeviceFromRoom(roomId, deviceId)
+  + renameDevice(id, name)
+  + updateDeviceState(id, state)
+  + updateDeviceBrightness(id, brightness)
+  + updateDeviceTemperature(id, temperature)
+}
+
+interface ScheduleService {
+  + getSchedules() : ObservableList<Schedule>
+  + addSchedule(name, time, recurrence, deviceId, action) : Schedule
+  + updateSchedule(id, ...)
+  + toggleSchedule(id)
+  + deleteSchedule(id)
+  + executeSchedule(id)
+  + hasConflicts(time, recurrence, excludeId) : boolean
+  + startRecurringExecution()
+  + stopRecurringExecution()
+}
+
+interface LogService {
+  + getLogs() : List<LogEntry>
+  + addLogEntry(device, room, action, actor)
+  + getLogsByRoom(room) : List<LogEntry>
+  + getLogsByDevice(device) : List<LogEntry>
+  + getLogsByActor(actor) : List<LogEntry>
+  + getUniqueDevices() : List<String>
+  + exportToCSV(path)
+}
+
+' ─── Mock Implementations ────────────────────────────────────────────────────
+class MockUserService <<in-memory>> {
+  - users : List<User>
+  - currentUser : User
+  --
+  + resetForTesting()
+}
+
+class MockRoomService <<in-memory>> {
+  - rooms : ObservableList<Room>
+  --
+  + resetForTesting()
+}
+
+class MockScheduleService <<in-memory>> {
+  - schedules : ObservableList<Schedule>
+  --
+  + resetForTesting()
+}
+
+class MockLogService <<in-memory, singleton>> {
+  - logs : List<LogEntry>
+  --
+  + resetForTesting()
+}
+
+' ─── JDBC Implementations ────────────────────────────────────────────────────
+class JdbcUserService <<singleton, BCrypt>> {
+  - users : ObservableList<User>
+  - failedAttempts : Map<String, Integer>
+  - blockedUntil : Map<String, Instant>
+  - sessionExpiresAt : Instant
+  --
+  - hashPassword(raw) : String
+  - checkThrottle(email)
+  - initSchema()
+}
+
+class JdbcRoomService <<singleton>> {
+  - rooms : ObservableList<Room>
+  --
+  - refreshRooms()
+  - initSchema()
+}
+
+class JdbcScheduleService <<singleton, ScheduledExecutor>> {
+  - schedules : ObservableList<Schedule>
+  - scheduler : ScheduledExecutorService
+  - lastProcessedMinute : Map<String, String>
+  --
+  - checkAndExecuteSchedules()
+  - initSchema()
+}
+
+class JdbcLogService <<singleton>> {
+  --
+  - initSchema()
+  - buildFilterQuery(room, device, actor)
+}
+
+' ─── Additional Mock Services ────────────────────────────────────────────────
+class MockRuleService
+class MockSceneService
+class MockEnergyService
+class MockNotificationService <<singleton>>
+class MockVacationModeService
+class MockSimulationService
+class MockIoTIntegrationService
+
+' ─── Config ──────────────────────────────────────────────────────────────────
+class DatabaseConfig <<utility>> {
+  + {static} getSettings() : DatabaseSettings
+  - loadFromDotEnv()
+  - loadFromSystemProperties()
+  - loadFromEnvVars()
+  - loadFromPropertiesFile()
+}
+
+class RuleEvaluator <<stateless>> {
+  + evaluate(rule, currentTime, device) : boolean
+  - parseTime(expr) : LocalTime
+  - evaluateStateCondition(device, expr) : boolean
+  - evaluateSensorThreshold(device, expr) : boolean
+}
+
+' ─── Inheritance / Implementation ────────────────────────────────────────────
+UserService <|-- MockUserService
+UserService <|-- JdbcUserService
+
+RoomService <|.. MockRoomService
+RoomService <|.. JdbcRoomService
+
+ScheduleService <|.. MockScheduleService
+ScheduleService <|.. JdbcScheduleService
+
+LogService <|.. MockLogService
+LogService <|.. JdbcLogService
+
+' ─── Registry wires services ─────────────────────────────────────────────────
+ServiceRegistry --> UserService : returns
+ServiceRegistry --> RoomService : returns
+ServiceRegistry --> ScheduleService : returns
+ServiceRegistry --> LogService : returns
+
+' ─── Cross-service dependencies ──────────────────────────────────────────────
+JdbcScheduleService --> RoomService : uses
+JdbcScheduleService --> LogService : uses
+JdbcScheduleService --> MockNotificationService : uses
+JdbcUserService --> DatabaseConfig : reads
+JdbcRoomService --> DatabaseConfig : reads
+JdbcScheduleService --> DatabaseConfig : reads
+JdbcLogService --> DatabaseConfig : reads
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml 04-sequence-device-control
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam sequenceMessageAlign center
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBackgroundColor #E3F2FD
+skinparam sequenceLifeLineBorderColor #90A4AE
+
+title SmartHome App — Sequence: Device State Update
+
+actor "User (Owner)" as User
+participant "DevicesController" as DC #E3F2FD
+participant "ServiceRegistry" as SR #FFF9C4
+participant "JdbcRoomService" as RS #E8F5E9
+participant "JdbcLogService" as LS #E8F5E9
+participant "MockNotificationService" as NS #FCE4EC
+database "PostgreSQL" as DB #EFEBE9
+
+User -> DC : toggles device switch (UI)
+activate DC
+
+DC -> SR : getRoomService()
+SR --> DC : JdbcRoomService instance
+
+DC -> RS : updateDeviceState(deviceId, newState)
+activate RS
+
+RS -> DB : UPDATE devices SET state = ? WHERE id = ?
+DB --> RS : OK
+
+RS -> RS : refreshRooms()
+RS -> DB : SELECT rooms + devices
+DB --> RS : updated data
+
+RS -> RS : update ObservableList<Device>
+note right of RS
+  JavaFX ObservableList notifies
+  bound UI nodes automatically
+end note
+RS --> DC : (void)
+deactivate RS
+
+DC -> SR : getLogService()
+SR --> DC : JdbcLogService instance
+
+DC -> LS : addLogEntry(deviceName, roomName, action, actor)
+activate LS
+LS -> DB : INSERT INTO activity_logs (...)
+DB --> LS : OK
+LS --> DC : (void)
+deactivate LS
+
+DC -> NS : addNotification("Device updated", INFO)
+activate NS
+NS -> NS : queue.add(notification)
+NS --> DC : (void)
+deactivate NS
+
+DC --> User : UI auto-refreshes via ObservableList binding
+deactivate DC
+
+@enduml

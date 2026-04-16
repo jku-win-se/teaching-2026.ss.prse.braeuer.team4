@@ -1,0 +1,79 @@
+@startuml 01-architecture-overview
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title SmartHome App — Architecture Overview
+
+package "Presentation Layer" #E8F4FD {
+  component [JavaFX FXML Views\n(15 views)] as FXML
+  component [Controllers\nLoginController\nMainController\nDevicesController\nRoomsController\nRulesController\n+ 10 more] as Controllers
+}
+
+package "Service Layer — API" #FFF3E0 {
+  component [UserService\n(abstract)] as UserSvc
+  component [RoomService\n(interface)] as RoomSvc
+  component [ScheduleService\n(interface)] as SchedSvc
+  component [LogService\n(interface)] as LogSvc
+}
+
+package "Service Layer — Implementations" #F3E5F5 {
+  package "Mock (In-Memory / Testing)" #FCE4EC {
+    component [MockUserService] as MUser
+    component [MockRoomService] as MRoom
+    component [MockScheduleService] as MSched
+    component [MockLogService] as MLog
+    component [MockRuleService\nMockSceneService\nMockEnergyService\nMockNotificationService\n+ 3 more] as MOther
+  }
+  package "JDBC (PostgreSQL / Production)" #E8F5E9 {
+    component [JdbcUserService\n(BCrypt + Throttling)] as JUser
+    component [JdbcRoomService] as JRoom
+    component [JdbcScheduleService\n(ScheduledExecutor)] as JSched
+    component [JdbcLogService\n(CSV export)] as JLog
+  }
+}
+
+component [ServiceRegistry\n(Singleton Locator)] as Registry #FFEB3B
+
+package "Domain Model" #E0F2F1 {
+  component [Device · Room · User\nSchedule · Rule · Scene\nLogEntry · NotificationEntry\nVacationModeConfig] as Model
+}
+
+package "Config & Database" #EFEBE9 {
+  component [DatabaseConfig\n(env / .env / properties)] as DBConf
+  database [PostgreSQL\n(users, rooms, schedules, logs)] as DB
+}
+
+' Wiring
+FXML --> Controllers : binds
+Controllers --> Registry : resolves services via
+Registry --> UserSvc
+Registry --> RoomSvc
+Registry --> SchedSvc
+Registry --> LogSvc
+
+UserSvc <|.. MUser : mock impl
+UserSvc <|.. JUser : prod impl
+RoomSvc <|.. MRoom : mock impl
+RoomSvc <|.. JRoom : prod impl
+SchedSvc <|.. MSched : mock impl
+SchedSvc <|.. JSched : prod impl
+LogSvc <|.. MLog : mock impl
+LogSvc <|.. JLog : prod impl
+
+Controllers ..> Model : reads / updates
+JUser --> DBConf : reads config
+JRoom --> DBConf : reads config
+JSched --> DBConf : reads config
+JLog --> DBConf : reads config
+DBConf --> DB : connects
+
+note bottom of Registry
+  Production: returns Jdbc* services
+  Testing: inject Mock* via
+  setXxxServiceForTesting()
+end note
+
+@enduml
