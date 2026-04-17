@@ -1,7 +1,6 @@
 package at.jku.se.smarthome.controller;
 
 import java.io.IOException;
-import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,66 +29,97 @@ import javafx.util.Duration;
  */
 public class MainController {
 
+    /** Logger for navigation and runtime errors. */
     private static final Logger LOGGER = LogManager.getLogger(MainController.class);
+    /** Notification type label used for failed actions. */
+    private static final String TYPE_ERROR = "error";
     
+    /** Label showing current user and role. */
     @FXML
     private Label userLabel;
     
+    /** Button used to log out the current user. */
     @FXML
     private Button logoutButton;
     
+    /** Main content placeholder for feature views. */
     @FXML
     private StackPane contentArea;
 
+    /** Container used to render toast notifications. */
     @FXML
     private VBox toastContainer;
     
+    /** Navigation button for room management. */
     @FXML
     private Button roomsBtn;
 
+    /** Navigation button for devices control. */
     @FXML
     private Button devicesBtn;
 
+    /** Navigation button for schedules management. */
     @FXML
     private Button schedulesBtn;
     
+    /** Navigation button for automation rules. */
     @FXML
     private Button automationBtn;
 
+    /** Navigation button for scenes management. */
     @FXML
     private Button scenesBtn;
     
+    /** Navigation button for energy analytics. */
     @FXML
     private Button energyBtn;
 
+    /** Navigation button for activity log view. */
     @FXML
     private Button activityLogBtn;
 
+    /** Navigation button for user management. */
     @FXML
     private Button usersBtn;
 
+    /** Navigation button for vacation mode. */
     @FXML
     private Button vacationModeBtn;
 
+    /** Navigation button for simulation tools. */
     @FXML
     private Button simulationBtn;
 
+    /** Navigation button for IoT settings. */
     @FXML
     private Button iotSettingsBtn;
     
+    /** Navigation button for app settings. */
     @FXML
     private Button settingsBtn;
     
+    /** Notification service used for toast updates. */
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    /** User/session service used for access checks. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Optional shell callback for logout handling. */
     private MainCallback mainCallback;
+    /** Tracks notification count to avoid replaying existing entries. */
     private int observedNotificationCount;
+
+    /** Creates a main controller instance. */
+    public MainController() {
+        this.observedNotificationCount = 0;
+    }
     
     /**
      * Callback interface for main controller events.
      */
     @FunctionalInterface
     public interface MainCallback {
+        /**
+         * Executes logout flow in the shell controller.
+         */
         void onLogout();
     }
     
@@ -106,11 +136,14 @@ public class MainController {
      * Initializes the controller after FXML has been loaded.
      */
     @FXML
-    private void initialize() {
+    public void initialize() {
         initializeToastNotifications();
         refreshSessionState();
     }
 
+    /**
+     * Refreshes session-related UI state and default content.
+     */
     public void refreshSessionState() {
         updateUserLabel();
         applyRoleAccess();
@@ -160,31 +193,29 @@ public class MainController {
     }
 
     private void setOwnerOnly(Button button, boolean owner) {
-        if (button == null) {
-            return;
+        if (button != null) {
+            button.setManaged(owner);
+            button.setVisible(owner);
         }
-        button.setManaged(owner);
-        button.setVisible(owner);
     }
 
     private boolean requireOwnerAccess(String featureName) {
-        if (userService.canManageSystem()) {
-            return true;
+        boolean hasAccess = userService.canManageSystem();
+        if (!hasAccess) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Access Restricted");
+            alert.setHeaderText("Owner access required");
+            alert.setContentText(featureName + " is only available to the Owner role. Members can control devices but cannot manage the system.");
+            alert.showAndWait();
         }
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Access Restricted");
-        alert.setHeaderText("Owner access required");
-        alert.setContentText(featureName + " is only available to the Owner role. Members can control devices but cannot manage the system.");
-        alert.showAndWait();
-        return false;
+        return hasAccess;
     }
     
     /**
      * Shows the Rooms view.
      */
     @FXML
-    private void showRooms() {
+    public void showRooms() {
         if (!requireOwnerAccess("Room management")) {
             return;
         }
@@ -195,7 +226,7 @@ public class MainController {
      * Shows the Device Control view.
      */
     @FXML
-    private void showDevices() {
+    public void showDevices() {
         loadView("devices-control-view.fxml");
     }
     
@@ -203,7 +234,7 @@ public class MainController {
      * Shows the Rules view.
      */
     @FXML
-    private void showAutomation() {
+    public void showAutomation() {
         if (!requireOwnerAccess("Rules")) {
             return;
         }
@@ -214,7 +245,7 @@ public class MainController {
      * Shows the Energy view.
      */
     @FXML
-    private void showEnergy() {
+    public void showEnergy() {
         loadView("energy-view.fxml");
     }
     
@@ -222,7 +253,7 @@ public class MainController {
      * Shows the Settings view.
      */
     @FXML
-    private void showSettings() {
+    public void showSettings() {
         loadView("settings-view.fxml");
     }
     
@@ -230,7 +261,7 @@ public class MainController {
      * Shows the Activity Log view.
      */
     @FXML
-    private void showActivityLog() {
+    public void showActivityLog() {
         loadView("activity-log-view.fxml");
     }
     
@@ -238,7 +269,7 @@ public class MainController {
      * Shows the Schedules view.
      */
     @FXML
-    private void showSchedules() {
+    public void showSchedules() {
         if (!requireOwnerAccess("Schedules")) {
             return;
         }
@@ -249,7 +280,7 @@ public class MainController {
      * Shows the Scenes view.
      */
     @FXML
-    private void showScenes() {
+    public void showScenes() {
         if (!requireOwnerAccess("Scenes")) {
             return;
         }
@@ -260,7 +291,7 @@ public class MainController {
      * Shows the Users view.
      */
     @FXML
-    private void showUsers() {
+    public void showUsers() {
         if (!requireOwnerAccess("User management")) {
             return;
         }
@@ -271,7 +302,7 @@ public class MainController {
      * Shows the Vacation Mode view.
      */
     @FXML
-    private void showVacationMode() {
+    public void showVacationMode() {
         if (!requireOwnerAccess("Vacation mode configuration")) {
             return;
         }
@@ -282,7 +313,7 @@ public class MainController {
      * Shows the Simulation view.
      */
     @FXML
-    private void showSimulation() {
+    public void showSimulation() {
         if (!requireOwnerAccess("Simulation tools")) {
             return;
         }
@@ -293,7 +324,7 @@ public class MainController {
      * Shows the IoT Settings view.
      */
     @FXML
-    private void showIoTSettings() {
+    public void showIoTSettings() {
         if (!requireOwnerAccess("IoT integration settings")) {
             return;
         }
@@ -305,7 +336,7 @@ public class MainController {
      * Clears the session and returns to login screen.
      */
     @FXML
-    private void handleLogout() {
+    public void handleLogout() {
         userService.logout();
         if (mainCallback != null) {
             mainCallback.onLogout();
@@ -320,15 +351,16 @@ public class MainController {
     private void loadView(String fxmlFileName) {
         try {
             String resourcePath = "/at/jku/se/smarthome/view/" + fxmlFileName;
-            FXMLLoader loader = new FXMLLoader(
-                    Objects.requireNonNull(getClass().getResource(resourcePath))
-            );
+            java.net.URL resourceUrl = getClass().getResource(resourcePath);
+            if (resourceUrl == null) {
+                showError("View resource not found: " + fxmlFileName, new IOException("Missing resource " + resourcePath));
+                return;
+            }
+            FXMLLoader loader = new FXMLLoader(resourceUrl);
             Node view = loader.load();
             contentArea.getChildren().setAll(view);
         } catch (IOException e) {
             showError("Failed to load view: " + fxmlFileName, e);
-        } catch (NullPointerException e) {
-            showError("View resource not found: " + fxmlFileName, e);
         }
     }
     
@@ -349,60 +381,61 @@ public class MainController {
     }
 
     private void showToast(NotificationEntry entry) {
-        if (toastContainer == null) {
-            return;
+        if (toastContainer != null) {
+            VBox toast = new VBox(4);
+            toast.getStyleClass().add("toast");
+            toast.getStyleClass().add("toast-" + entry.getType());
+            toast.setMouseTransparent(true);
+            toast.setOpacity(0);
+            toast.setMaxWidth(320);
+
+            Label titleLabel = new Label(resolveToastTitle(entry));
+            titleLabel.getStyleClass().add("toast-title");
+
+            Label messageLabel = new Label(entry.getMessage());
+            messageLabel.getStyleClass().add("toast-message");
+            messageLabel.setWrapText(true);
+
+            Label timeLabel = new Label(entry.getTimestamp());
+            timeLabel.getStyleClass().add("toast-time");
+
+            toast.getChildren().addAll(titleLabel, messageLabel, timeLabel);
+            toastContainer.getChildren().add(0, toast);
+
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(180), toast);
+            fadeIn.setFromValue(0);
+            fadeIn.setToValue(1);
+
+            PauseTransition hold = new PauseTransition(Duration.seconds(3));
+
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(250), toast);
+            fadeOut.setFromValue(1);
+            fadeOut.setToValue(0);
+            fadeOut.setOnFinished(event -> toastContainer.getChildren().remove(toast));
+
+            fadeIn.play();
+            hold.setOnFinished(event -> fadeOut.play());
+            hold.play();
         }
-
-        VBox toast = new VBox(4);
-        toast.getStyleClass().add("toast");
-        toast.getStyleClass().add("toast-" + entry.getType());
-        toast.setMouseTransparent(true);
-        toast.setOpacity(0);
-        toast.setMaxWidth(320);
-
-        Label titleLabel = new Label(resolveToastTitle(entry));
-        titleLabel.getStyleClass().add("toast-title");
-
-        Label messageLabel = new Label(entry.getMessage());
-        messageLabel.getStyleClass().add("toast-message");
-        messageLabel.setWrapText(true);
-
-        Label timeLabel = new Label(entry.getTimestamp());
-        timeLabel.getStyleClass().add("toast-time");
-
-        toast.getChildren().addAll(titleLabel, messageLabel, timeLabel);
-        toastContainer.getChildren().add(0, toast);
-
-        FadeTransition fadeIn = new FadeTransition(Duration.millis(180), toast);
-        fadeIn.setFromValue(0);
-        fadeIn.setToValue(1);
-
-        PauseTransition hold = new PauseTransition(Duration.seconds(3));
-
-        FadeTransition fadeOut = new FadeTransition(Duration.millis(250), toast);
-        fadeOut.setFromValue(1);
-        fadeOut.setToValue(0);
-        fadeOut.setOnFinished(event -> toastContainer.getChildren().remove(toast));
-
-        fadeIn.play();
-        hold.setOnFinished(event -> fadeOut.play());
-        hold.play();
     }
 
     private String resolveToastTitle(NotificationEntry entry) {
         String message = entry.getMessage() == null ? "" : entry.getMessage().toLowerCase();
+        String title;
 
         if (message.contains("scene '") || message.contains("scene \"")) {
-            return switch (entry.getType()) {
-                case "error" -> "Scene Failed";
-                default -> "Scene Executed";
+            if (TYPE_ERROR.equals(entry.getType())) {
+                title = "Scene Failed";
+            } else {
+                title = "Scene Executed";
+            }
+        } else {
+            title = switch (entry.getType()) {
+                case "success" -> "Rule Executed";
+                case "error" -> "Rule Failed";
+                default -> "Notification";
             };
         }
-
-        return switch (entry.getType()) {
-            case "success" -> "Rule Executed";
-            case "error" -> "Rule Failed";
-            default -> "Notification";
-        };
+        return title;
     }
 }

@@ -9,9 +9,13 @@ import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
  */
 public final class ServiceRegistry {
 
+    /** Cached schedule service singleton reference. */
     private static ScheduleService scheduleService;
+    /** Cached room service singleton reference. */
     private static RoomService roomService;
+    /** Cached log service singleton reference. */
     private static LogService logService;
+    /** Cached user service singleton reference. */
     private static UserService userService;
 
     private ServiceRegistry() {
@@ -22,11 +26,13 @@ public final class ServiceRegistry {
      *
      * @return lazily initialized schedule service
      */
-    public static synchronized ScheduleService getScheduleService() {
-        if (scheduleService == null) {
-            scheduleService = JdbcScheduleService.getInstance();
+    public static ScheduleService getScheduleService() {
+        synchronized (ServiceRegistry.class) {
+            if (scheduleService == null) {
+                scheduleService = JdbcScheduleService.getInstance();
+            }
+            return scheduleService;
         }
-        return scheduleService;
     }
 
     /**
@@ -34,11 +40,13 @@ public final class ServiceRegistry {
      *
      * @return lazily initialized room service
      */
-    public static synchronized RoomService getRoomService() {
-        if (roomService == null) {
-            roomService = JdbcRoomService.getInstance();
+    public static RoomService getRoomService() {
+        synchronized (ServiceRegistry.class) {
+            if (roomService == null) {
+                roomService = JdbcRoomService.getInstance();
+            }
+            return roomService;
         }
-        return roomService;
     }
 
     /**
@@ -46,11 +54,13 @@ public final class ServiceRegistry {
      *
      * @return lazily initialized log service
      */
-    public static synchronized LogService getLogService() {
-        if (logService == null) {
-            logService = JdbcLogService.getInstance();
+    public static LogService getLogService() {
+        synchronized (ServiceRegistry.class) {
+            if (logService == null) {
+                logService = JdbcLogService.getInstance();
+            }
+            return logService;
         }
-        return logService;
     }
 
     /**
@@ -58,8 +68,10 @@ public final class ServiceRegistry {
      *
      * @param testLogService replacement log service instance
      */
-    public static synchronized void setLogServiceForTesting(LogService testLogService) {
-        logService = testLogService;
+    public static void setLogServiceForTesting(LogService testLogService) {
+        synchronized (ServiceRegistry.class) {
+            logService = testLogService;
+        }
     }
 
     /**
@@ -67,8 +79,10 @@ public final class ServiceRegistry {
      *
      * @param testScheduleService replacement schedule service instance
      */
-    public static synchronized void setScheduleServiceForTesting(ScheduleService testScheduleService) {
-        scheduleService = testScheduleService;
+    public static void setScheduleServiceForTesting(ScheduleService testScheduleService) {
+        synchronized (ServiceRegistry.class) {
+            scheduleService = testScheduleService;
+        }
     }
 
     /**
@@ -79,8 +93,10 @@ public final class ServiceRegistry {
      *
      * @param testRoomService replacement room service instance
      */
-    public static synchronized void setRoomServiceForTesting(RoomService testRoomService) {
-        roomService = testRoomService;
+    public static void setRoomServiceForTesting(RoomService testRoomService) {
+        synchronized (ServiceRegistry.class) {
+            roomService = testRoomService;
+        }
     }
 
     /**
@@ -88,11 +104,13 @@ public final class ServiceRegistry {
      *
      * @return lazily initialized user service
      */
-    public static synchronized UserService getUserService() {
-        if (userService == null) {
-            userService = JdbcUserService.getInstance();
+    public static UserService getUserService() {
+        synchronized (ServiceRegistry.class) {
+            if (userService == null) {
+                userService = JdbcUserService.getInstance();
+            }
+            return userService;
         }
-        return userService;
     }
 
     /**
@@ -100,15 +118,19 @@ public final class ServiceRegistry {
      *
      * @param testUserService replacement user service instance
      */
-    public static synchronized void setUserServiceForTesting(UserService testUserService) {
-        userService = testUserService;
+    public static void setUserServiceForTesting(UserService testUserService) {
+        synchronized (ServiceRegistry.class) {
+            userService = testUserService;
+        }
     }
 
     /**
      * Clears the cached schedule service so it is re-created on next access.
      */
-    public static synchronized void resetForTesting() {
-        scheduleService = null;
+    public static void resetForTesting() {
+        synchronized (ServiceRegistry.class) {
+            scheduleService = JdbcScheduleService.getInstance();
+        }
     }
 
     /**
@@ -117,7 +139,9 @@ public final class ServiceRegistry {
      * This is intended for test lifecycle management where the singleton
      * service instance must be reset between test cases.
      */
-    public static synchronized void resetRoomServiceForTesting() {
-        roomService = null;
+    public static void resetRoomServiceForTesting() {
+        synchronized (ServiceRegistry.class) {
+            roomService = JdbcRoomService.getInstance();
+        }
     }
 }

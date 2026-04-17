@@ -14,56 +14,91 @@ import javafx.scene.control.TextField;
  */
 public class RegisterController {
     
+    /** Input field for account email. */
     @FXML
     private TextField emailField;
     
+    /** Input field for display/user name. */
     @FXML
     private TextField usernameField;
     
+    /** Input field for the chosen password. */
     @FXML
     private PasswordField passwordField;
     
+    /** Input field for password confirmation. */
     @FXML
     private PasswordField confirmPasswordField;
     
+    /** Inline error label shown above dialogs. */
     @FXML
     private Label errorLabel;
-    
-    private final UserService userService = ServiceRegistry.getUserService();
+
+    /** Service used for registration. */
+    private final UserService userService;
+    /** Callback used to navigate back to login. */
     private RegisterCallback registerCallback;
 
+    /**
+     * Creates a register controller with the default user service.
+     */
+    public RegisterController() {
+        this.userService = ServiceRegistry.getUserService();
+    }
+
+    /** Callback contract for leaving the register screen. */
     @FunctionalInterface
     public interface RegisterCallback {
+        /**
+         * Navigates back to the login view.
+         */
         void onBackToLogin();
     }
     
+    /**
+     * Sets the callback used after successful registration or cancel action.
+     *
+     * @param callback callback implementation
+     */
     public void setRegisterCallback(RegisterCallback callback) {
         this.registerCallback = callback;
     }
     
+    /**
+     * Validates form input and performs user registration.
+     */
     @FXML
-    private void handleRegister() {
+    public void handleRegister() {
         String email = emailField.getText();
         String username = usernameField.getText();
         String password = passwordField.getText();
         String confirmPassword = confirmPasswordField.getText();
-        
-        if (email.isEmpty() || username.isEmpty() || password.isEmpty()) {
-            showError("All fields are required");
-            return;
-        }
-        
-        if (!email.contains("@")) {
-            showError("Please enter a valid email");
-            return;
-        }
-        
-        if (!password.equals(confirmPassword)) {
-            showError("Passwords do not match");
+
+        String validationError = validateInput(email, username, password, confirmPassword);
+        if (validationError != null) {
+            showError(validationError);
             return;
         }
 
         RegistrationStatus registrationStatus = userService.registerUser(email, username, password, confirmPassword);
+        processRegistrationStatus(registrationStatus);
+    }
+
+    private String validateInput(String email, String username, String password, String confirmPassword) {
+        String validationError = null;
+        if (email.isEmpty() || username.isEmpty() || password.isEmpty()) {
+            validationError = "All fields are required";
+        }
+        if (validationError == null && !email.contains("@")) {
+            validationError = "Please enter a valid email";
+        }
+        if (validationError == null && !password.equals(confirmPassword)) {
+            validationError = "Passwords do not match";
+        }
+        return validationError;
+    }
+
+    private void processRegistrationStatus(RegistrationStatus registrationStatus) {
         if (registrationStatus == RegistrationStatus.SUCCESS) {
             errorLabel.setText("");
             showSuccess("Registration successful! Redirecting to login...");
@@ -75,8 +110,11 @@ public class RegisterController {
         }
     }
     
+    /**
+     * Navigates back to the login screen.
+     */
     @FXML
-    private void handleBackToLogin() {
+    public void handleBackToLogin() {
         if (registerCallback != null) {
             registerCallback.onBackToLogin();
         }
