@@ -31,35 +31,47 @@ import javafx.scene.layout.HBox;
  */
 public class RulesController {
     
+    /** Table view for displaying all rules. */
     @FXML
     private TableView<Rule> rulesTable;
     
+    /** Column displaying rule name. */
     @FXML
     private TableColumn<Rule, String> nameColumn;
     
+    /** Column displaying trigger type. */
     @FXML
     private TableColumn<Rule, String> triggerColumn;
 
+    /** Column displaying source device. */
     @FXML
     private TableColumn<Rule, String> sourceColumn;
     
+    /** Column displaying condition. */
     @FXML
     private TableColumn<Rule, String> conditionColumn;
     
+    /** Column displaying action. */
     @FXML
     private TableColumn<Rule, String> actionColumn;
 
+    /** Column displaying target device. */
     @FXML
     private TableColumn<Rule, String> targetColumn;
     
+    /** Column displaying rule status. */
     @FXML
     private TableColumn<Rule, String> statusColumn;
 
+    /** Button to add new rule. */
     @FXML
     private Button addRuleBtn;
     
+    /** Rule service for rule operations. */
     private final MockRuleService ruleService = MockRuleService.getInstance();
+    /** Room service for room data access. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
+    /** User service for authorization checks. */
     private final UserService userService = ServiceRegistry.getUserService();
     
     @FXML

@@ -17,34 +17,52 @@ import java.util.Properties;
  */
 public final class DatabaseConfig {
 
+    /** Path to .env file for environment variables. */
     private static final Path DOT_ENV_PATH = Path.of(".env");
+    /** Path to local database configuration properties file. */
     private static final Path LOCAL_CONFIG_PATH = Path.of("smarthome-db.properties");
+    /** Environment variable for SmartHome database URL. */
     private static final String ENV_URL = "SMARTHOME_DB_URL";
+    /** Environment variable for database user. */
     private static final String ENV_USER = "SMARTHOME_DB_USER";
+    /** Environment variable for database password. */
     private static final String ENV_PASSWORD = "SMARTHOME_DB_PASSWORD";
+    /** Environment variable for generic database URL. */
     private static final String ENV_DATABASE_URL = "DATABASE_URL";
+    /** Environment variable for SmartHome database URL (alternative). */
     private static final String ENV_SMARTHOME_DATABASE_URL = "SMARTHOME_DATABASE_URL";
+    /** Properties key for database URL. */
     private static final String PROPERTY_URL = "smarthome.db.url";
+    /** Properties key for database user. */
     private static final String PROPERTY_USER = "smarthome.db.user";
+    /** Properties key for database password. */
     private static final String PROPERTY_PASSWORD = "smarthome.db.password";
 
+    /** Private constructor prevents instantiation. */
     private DatabaseConfig() {
     }
 
+    /**
+     * Loads database settings from various sources.
+     *
+     * @return optional containing database settings if found
+     */
     public static Optional<DatabaseSettings> load() {
-        DatabaseSettings systemPropertySettings = readFromSystemProperties();
-        if (systemPropertySettings != null) {
-            return Optional.of(systemPropertySettings);
+        DatabaseSettings result;
+        
+        result = readFromSystemProperties();
+        if (result != null) {
+            return Optional.of(result);
         }
 
-        DatabaseSettings dotEnvSettings = readFromDotEnv();
-        if (dotEnvSettings != null) {
-            return Optional.of(dotEnvSettings);
+        result = readFromDotEnv();
+        if (result != null) {
+            return Optional.of(result);
         }
 
-        DatabaseSettings envSettings = readFromEnvironment();
-        if (envSettings != null) {
-            return Optional.of(envSettings);
+        result = readFromEnvironment();
+        if (result != null) {
+            return Optional.of(result);
         }
 
         if (!Files.exists(LOCAL_CONFIG_PATH)) {
@@ -58,9 +76,10 @@ public final class DatabaseConfig {
             throw new IllegalStateException("Unable to read smarthome-db.properties", exception);
         }
 
-        return Optional.of(readSettings(properties.getProperty(PROPERTY_URL),
+        result = readSettings(properties.getProperty(PROPERTY_URL),
                 properties.getProperty(PROPERTY_USER),
-                properties.getProperty(PROPERTY_PASSWORD)));
+                properties.getProperty(PROPERTY_PASSWORD));
+        return Optional.of(result);
     }
 
     private static DatabaseSettings readFromSystemProperties() {

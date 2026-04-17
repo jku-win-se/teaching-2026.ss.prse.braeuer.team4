@@ -15,11 +15,18 @@ import at.jku.se.smarthome.service.mock.MockRuleService;
 
 public class TestMockRuleService {
 
+    /** Rule service under test. */
     private MockRuleService service;
+    /** Mock room service. */
     private MockRoomService roomService;
+    /** Mock log service. */
     private MockLogService logService;
+    /** Mock notification service. */
     private MockNotificationService notificationService;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockRoomService.resetForTesting();
@@ -33,6 +40,9 @@ public class TestMockRuleService {
         service = MockRuleService.getInstance();
     }
 
+    /**
+     * Test: execute active rule applies to target action and logs.
+     */
     @Test
     public void executeRuleActiveRuleAppliesToTargetActionAndLogs() {
         Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
@@ -45,6 +55,9 @@ public class TestMockRuleService {
         assertTrue(notificationService.getNotifications().size() > beforeNotifications);
     }
 
+    /**
+     * Test: toggle and execute inactive rule fails.
+     */
     @Test
     public void toggleAndExecuteRuleInactiveRuleFails() {
         Rule rule = service.addRule("Alert", "Sensor Threshold", "Motion Sensor", "Value > 0", "Notify User", "Main Light");
@@ -55,6 +68,9 @@ public class TestMockRuleService {
         assertEquals("error", notificationService.getNotifications().get(0).getType());
     }
 
+    /**
+     * Test: update and delete rule mutate rule collection.
+     */
     @Test
     public void updateAndDeleteRuleMutateRuleCollection() {
         Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");

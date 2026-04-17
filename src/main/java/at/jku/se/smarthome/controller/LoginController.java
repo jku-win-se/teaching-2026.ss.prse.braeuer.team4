@@ -18,19 +18,25 @@ import javafx.scene.control.TextField;
  */
 public class LoginController {
     
+    /** Text field for user email input. */
     @FXML
     private TextField emailField;
     
+    /** Password field for user password input. */
     @FXML
     private PasswordField passwordField;
 
+    /** Button to trigger login action. */
     @FXML
     private Button loginButton;
     
+    /** Label for displaying login error messages. */
     @FXML
     private Label errorLabel;
     
+    /** User service for authentication operations. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Callback for login and registration events. */
     private LoginCallback loginCallback;
     
     /**

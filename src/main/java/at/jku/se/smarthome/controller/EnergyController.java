@@ -20,37 +20,49 @@ import javafx.scene.control.ToggleButton;
  */
 public class EnergyController {
     
+    /** Label displaying total energy usage. */
     @FXML
     private Label totalUsageLabel;
     
+    /** Label displaying top energy consumer device. */
     @FXML
     private Label topDeviceLabel;
     
+    /** Label displaying top energy consuming room. */
     @FXML
     private Label topRoomLabel;
 
+    /** Label displaying timeline title. */
     @FXML
     private Label timelineTitleLabel;
 
+    /** Label displaying aggregation period hint. */
     @FXML
     private Label aggregationHintLabel;
     
+    /** Pie chart displaying energy usage by room. */
     @FXML
     private PieChart roomChart;
     
+    /** Bar chart displaying energy usage by device. */
     @FXML
     private BarChart<String, Number> deviceChart;
     
+    /** Line chart displaying energy usage over time. */
     @FXML
     private LineChart<String, Number> timelineChart;
     
+    /** Toggle button for daily aggregation. */
     @FXML
     private ToggleButton dayToggle;
     
+    /** Toggle button for weekly aggregation. */
     @FXML
     private ToggleButton weekToggle;
     
+    /** Energy service for consumption data. */
     private final MockEnergyService energyService = MockEnergyService.getInstance();
+    /** Current aggregation period for data display. */
     private AggregationPeriod currentPeriod = AggregationPeriod.DAY;
     
     @FXML

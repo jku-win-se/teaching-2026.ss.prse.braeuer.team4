@@ -18,11 +18,18 @@ import at.jku.se.smarthome.service.mock.MockSceneService;
 
 public class TestMockSceneService {
 
+    /** Scene service under test. */
     private MockSceneService service;
+    /** Mock room service. */
     private MockRoomService roomService;
+    /** Mock log service. */
     private MockLogService logService;
+    /** Mock notification service. */
     private MockNotificationService notificationService;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockRoomService.resetForTesting();
@@ -36,6 +43,9 @@ public class TestMockSceneService {
         service = MockSceneService.getInstance();
     }
 
+    /**
+     * Test: activate scene applies to device states, logs and notifies.
+     */
     @Test
     public void activateSceneAppliesToDeviceStatesLogsAndNotifies() {
         int beforeLogs = logService.getLogs().size();
@@ -55,6 +65,9 @@ public class TestMockSceneService {
         assertTrue(notificationService.getNotifications().size() > beforeNotifications);
     }
 
+    /**
+     * Test: add, update, and delete scene manage configured states.
+     */
     @Test
     public void addUpdateDeleteSceneManageConfiguredStates() {
         Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));

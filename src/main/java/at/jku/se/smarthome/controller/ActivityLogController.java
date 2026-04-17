@@ -16,33 +16,43 @@ import javafx.scene.control.cell.PropertyValueFactory;
  */
 public class ActivityLogController {
     
+    /** Table view for displaying activity log entries. */
     @FXML
     private TableView<LogEntry> logTable;
     
+    /** Column displaying event timestamp. */
     @FXML
     private TableColumn<LogEntry, String> timestampColumn;
     
+    /** Column displaying affected device. */
     @FXML
     private TableColumn<LogEntry, String> deviceColumn;
     
+    /** Column displaying device location/room. */
     @FXML
     private TableColumn<LogEntry, String> roomColumn;
     
+    /** Column displaying action performed. */
     @FXML
     private TableColumn<LogEntry, String> actionColumn;
     
+    /** Column displaying user/actor who performed action. */
     @FXML
     private TableColumn<LogEntry, String> actorColumn;
     
+    /** Date picker for filtering logs from start date. */
     @FXML
     private DatePicker fromDatePicker;
     
+    /** Date picker for filtering logs to end date. */
     @FXML
     private DatePicker toDatePicker;
     
+    /** ComboBox for filtering logs by device. */
     @FXML
     private ComboBox<String> deviceFilter;
     
+    /** Log service for activity log access. */
     private final LogService logService = ServiceRegistry.getLogService();
     
     @FXML

@@ -8,13 +8,21 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class Schedule {
     
+    /** Unique schedule identifier. */
     private final SimpleStringProperty id;
+    /** Schedule display name. */
     private final SimpleStringProperty name;
+    /** Target device identifier. */
     private final SimpleStringProperty deviceId;
+    /** Target device display name. */
     private final SimpleStringProperty device;
+    /** Action to execute on target device. */
     private final SimpleStringProperty action;
+    /** Execution time pattern. */
     private final SimpleStringProperty time;
+    /** Recurrence mode (never, daily, etc.). */
     private final SimpleStringProperty recurrence;
+    /** Whether the schedule is active. */
     private final SimpleBooleanProperty active;
     
     /**

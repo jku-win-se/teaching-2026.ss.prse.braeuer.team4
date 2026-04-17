@@ -10,11 +10,16 @@ import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
  */
 public final class ServiceRegistry {
 
+    /** Override for log service used in tests. */
     private static LogService testLogServiceOverride;
+    /** Override for schedule service used in tests. */
     private static ScheduleService testScheduleServiceOverride;
+    /** Override for room service used in tests. */
     private static RoomService testRoomServiceOverride;
+    /** Override for user service used in tests. */
     private static UserService testUserServiceOverride;
 
+    /** Private constructor prevents instantiation. */
     private ServiceRegistry() {
     }
 

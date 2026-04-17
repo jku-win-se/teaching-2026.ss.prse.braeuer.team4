@@ -24,8 +24,12 @@ import at.jku.se.smarthome.service.mock.MockSmartHomeService;
  */
 public class TestMockSmartHomeService {
 
+    /** Smart home service under test. */
     private MockSmartHomeService service;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockSmartHomeService.resetForTesting();
@@ -48,7 +52,9 @@ public class TestMockSmartHomeService {
         assertFalse(service.getDeviceById("dev-001").getState());
     }
 
-    /** A device that starts OFF should be ON after one toggle. */
+    /**
+     * Test: a device that starts OFF should be ON after one toggle.
+     */
     @Test
     public void testToggleDeviceOffToOn() {
         Device d = service.getDeviceById("dev-003");
@@ -60,7 +66,9 @@ public class TestMockSmartHomeService {
         assertTrue(service.getDeviceById("dev-003").getState());
     }
 
-    /** An unknown device ID returns false and has no side effects. */
+    /**
+     * Test: unknown device ID returns false and has no side effects.
+     */
     @Test
     public void testToggleDeviceUnknownIdReturnsFalse() {
         assertFalse(service.toggleDevice("does-not-exist"));

@@ -14,22 +14,29 @@ import javafx.scene.control.TextField;
  */
 public class RegisterController {
     
+    /** Text field for user email input. */
     @FXML
     private TextField emailField;
     
+    /** Text field for username input. */
     @FXML
     private TextField usernameField;
     
+    /** Password field for password input. */
     @FXML
     private PasswordField passwordField;
     
+    /** Password field for password confirmation. */
     @FXML
     private PasswordField confirmPasswordField;
     
+    /** Label for displaying error messages. */
     @FXML
     private Label errorLabel;
     
+    /** User service for registration operations. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Callback for navigation to login view. */
     private RegisterCallback registerCallback;
     
     public interface RegisterCallback {

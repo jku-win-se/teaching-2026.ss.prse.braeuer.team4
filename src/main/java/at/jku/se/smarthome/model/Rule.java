@@ -8,14 +8,23 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class Rule {
     
+    /** Unique rule identifier. */
     private final SimpleStringProperty id;
+    /** Display name of the rule. */
     private final SimpleStringProperty name;
+    /** Trigger category. */
     private final SimpleStringProperty triggerType;
+    /** Trigger source device or source label. */
     private final SimpleStringProperty sourceDevice;
+    /** Trigger condition expression. */
     private final SimpleStringProperty condition;
+    /** Action to perform. */
     private final SimpleStringProperty action;
+    /** Target device name. */
     private final SimpleStringProperty targetDevice;
+    /** Whether the rule is enabled. */
     private final SimpleBooleanProperty enabled;
+    /** Current status label. */
     private final SimpleStringProperty status;
     
     /**

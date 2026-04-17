@@ -26,13 +26,21 @@ import at.jku.se.smarthome.service.real.room.JdbcRoomService;
  */
 public class TestJdbcRoomService {
 
+    /** JDBC URL property. */
     private static final String URL_PROPERTY = "smarthome.db.url";
+    /** JDBC user property. */
     private static final String USER_PROPERTY = "smarthome.db.user";
+    /** JDBC password property. */
     private static final String PASSWORD_PROPERTY = "smarthome.db.password";
 
+    /** JDBC URL for in-memory test database. */
     private String jdbcUrl;
+    /** Room service under test. */
     private JdbcRoomService service;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         jdbcUrl = "jdbc:h2:mem:rooms_" + System.nanoTime() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1";
@@ -47,6 +55,9 @@ public class TestJdbcRoomService {
         service = JdbcRoomService.getInstance();
     }
 
+    /**
+     * Tears down test fixtures after each test.
+     */
     @After
     public void tearDown() {
         JdbcRoomService.resetForTesting();
@@ -55,6 +66,9 @@ public class TestJdbcRoomService {
         System.clearProperty(PASSWORD_PROPERTY);
     }
 
+    /**
+     * Test: add, rename, and remove device persists changes.
+     */
     @Test
     public void addRenameRemoveDevicePersistsChanges() throws Exception {
         Room room = service.addRoom("Test Room");

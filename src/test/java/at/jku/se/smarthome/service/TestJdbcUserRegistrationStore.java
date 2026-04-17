@@ -17,13 +17,21 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 
 public class TestJdbcUserRegistrationStore {
 
+    /** JDBC URL property. */
     private static final String URL_PROPERTY = "smarthome.db.url";
+    /** JDBC user property. */
     private static final String USER_PROPERTY = "smarthome.db.user";
+    /** JDBC password property. */
     private static final String PASSWORD_PROPERTY = "smarthome.db.password";
 
+    /** User registration store under test. */
     private JdbcUserRegistrationStore store;
+    /** JDBC URL for in-memory test database. */
     private String jdbcUrl;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         jdbcUrl = "jdbc:h2:mem:auth_" + System.nanoTime() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1";
@@ -33,6 +41,9 @@ public class TestJdbcUserRegistrationStore {
         store = new JdbcUserRegistrationStore();
     }
 
+    /**
+     * Tears down test fixtures after each test.
+     */
     @After
     public void tearDown() {
         System.clearProperty(URL_PROPERTY);
@@ -40,6 +51,9 @@ public class TestJdbcUserRegistrationStore {
         System.clearProperty(PASSWORD_PROPERTY);
     }
 
+    /**
+     * Test: save and find by email round-trip user.
+     */
     @Test
     public void saveAndFindByEmailRoundTripUser() throws Exception {
         UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
@@ -58,6 +72,9 @@ public class TestJdbcUserRegistrationStore {
         assertFalse(store.findByEmail("missing@example.com").isPresent());
     }
 
+    /**
+     * Test: save duplicate email throws exception.
+     */
     @Test(expected = UserRegistrationStore.DuplicateEmailException.class)
     public void saveDuplicateEmailThrowsDuplicateEmailException() throws Exception {
         UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
@@ -72,6 +89,9 @@ public class TestJdbcUserRegistrationStore {
         store.save(user);
     }
 
+    /**
+     * Test: update last login updates persisted timestamp.
+     */
     @Test
     public void updateLastLoginUpdatesPersistedTimestamp() throws Exception {
         UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(

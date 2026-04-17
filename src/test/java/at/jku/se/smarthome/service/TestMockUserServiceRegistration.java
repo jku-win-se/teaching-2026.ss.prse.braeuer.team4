@@ -16,6 +16,9 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
  */
 public class TestMockUserServiceRegistration {
 
+    /**
+     * Test: register user password mismatch returns password mismatch.
+     */
     @Test
     public void registerUserPasswordMismatchReturnsPasswordMismatch() {
         MockUserService service = new MockUserService(new StubRegistrationStore());
@@ -30,6 +33,9 @@ public class TestMockUserServiceRegistration {
         assertEquals(MockUserService.RegistrationStatus.PASSWORD_MISMATCH, result);
     }
 
+    /**
+     * Test: register user duplicate email in store returns duplicate email.
+     */
     @Test
     public void registerUserDuplicateEmailInStoreReturnsDuplicateEmail() {
         StubRegistrationStore store = new StubRegistrationStore();
@@ -46,6 +52,9 @@ public class TestMockUserServiceRegistration {
         assertEquals(MockUserService.RegistrationStatus.DUPLICATE_EMAIL, result);
     }
 
+    /**
+     * Test: register user store not configured returns database not configured.
+     */
     @Test
     public void registerUserStoreNotConfiguredReturnsDatabaseNotConfigured() {
         StubRegistrationStore store = new StubRegistrationStore();
@@ -62,6 +71,9 @@ public class TestMockUserServiceRegistration {
         assertEquals(MockUserService.RegistrationStatus.DATABASE_NOT_CONFIGURED, result);
     }
 
+    /**
+     * Test: register user success hashes password and adds user.
+     */
     @Test
     public void registerUserSuccessHashesPasswordAndAddsUser() {
         StubRegistrationStore store = new StubRegistrationStore();
@@ -89,11 +101,20 @@ public class TestMockUserServiceRegistration {
         assertTrue(service.login("new.user@example.com", "secret123"));
     }
 
+    /**
+     * Stub registration store for testing.
+     */
     private static final class StubRegistrationStore implements UserRegistrationStore {
+        /** Email exists flag. */
         private boolean emailExists;
+        /** Configuration failure flag. */
         private boolean configurationFailure;
+        /** Saved persisted user. */
         private PersistedUser savedUser;
 
+        /**
+         * Checks if email exists.
+         */
         @Override
         public boolean emailExists(String normalizedEmail) throws StoreException {
             if (configurationFailure) {
@@ -102,6 +123,9 @@ public class TestMockUserServiceRegistration {
             return emailExists;
         }
 
+        /**
+         * Finds user by email.
+         */
         @Override
         public java.util.Optional<PersistedUser> findByEmail(String normalizedEmail) throws StoreException {
             if (configurationFailure) {
@@ -113,6 +137,9 @@ public class TestMockUserServiceRegistration {
             return java.util.Optional.of(savedUser);
         }
 
+        /**
+         * Finds all users.
+         */
         @Override
         public java.util.List<PersistedUser> findAllUsers() throws StoreException {
             if (configurationFailure) {
@@ -121,6 +148,9 @@ public class TestMockUserServiceRegistration {
             return savedUser == null ? java.util.List.of() : java.util.List.of(savedUser);
         }
 
+        /**
+         * Saves a user.
+         */
         @Override
         public void save(PersistedUser user) throws StoreException {
             if (configurationFailure) {
@@ -129,6 +159,9 @@ public class TestMockUserServiceRegistration {
             this.savedUser = user;
         }
 
+        /**
+         * Updates last login.
+         */
         @Override
         public void updateLastLogin(String normalizedEmail) throws StoreException {
             if (configurationFailure) {
