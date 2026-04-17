@@ -1,5 +1,8 @@
 # Einleitung
 
+[![Continuous Integration](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml/badge.svg)](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml)
+[![codecov](https://codecov.io/gh/jku-win-se/teaching-2026.ss.prse.braeuer.team4/branch/main/graph/badge.svg)](https://codecov.io/gh/jku-win-se/teaching-2026.ss.prse.braeuer.team4)
+
 Überblick über das Projekt.
 
 # Umgesetzte Anforderungen
