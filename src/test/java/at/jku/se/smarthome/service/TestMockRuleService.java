@@ -34,7 +34,7 @@ public class TestMockRuleService {
     }
 
     @Test
-    public void executeRule_activeRule_appliesTargetActionAndLogs() {
+    public void executeRuleActiveRuleAppliesToTargetActionAndLogs() {
         Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
         int beforeLogs = logService.getLogs().size();
         int beforeNotifications = notificationService.getNotifications().size();
@@ -46,7 +46,7 @@ public class TestMockRuleService {
     }
 
     @Test
-    public void toggleAndExecuteRule_inactiveRuleFails() {
+    public void toggleAndExecuteRuleInactiveRuleFails() {
         Rule rule = service.addRule("Alert", "Sensor Threshold", "Motion Sensor", "Value > 0", "Notify User", "Main Light");
         assertTrue(service.toggleRule(rule.getId()));
         assertEquals("Inactive", rule.getStatus());
@@ -56,7 +56,7 @@ public class TestMockRuleService {
     }
 
     @Test
-    public void updateAndDeleteRule_mutateRuleCollection() {
+    public void updateAndDeleteRuleMutateRuleCollection() {
         Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");
         assertNotNull(rule);
 

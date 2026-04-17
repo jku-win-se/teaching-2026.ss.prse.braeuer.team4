@@ -10,7 +10,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock in-app notification service.
  */
-public class MockNotificationService {
+public final class MockNotificationService {
     
     private static MockNotificationService instance;
     private final ObservableList<NotificationEntry> notifications;

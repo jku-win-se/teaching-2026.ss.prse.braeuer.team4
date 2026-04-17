@@ -34,7 +34,7 @@ public class TestMockRoomServiceDeviceManagement {
 
     /** A valid rename changes the device name. */
     @Test
-    public void testRenameDevice_valid() {
+    public void testRenameDeviceValid() {
         boolean result = service.renameDevice("room-001", "dev-001", "Hallway Lamp");
         assertTrue(result);
         assertEquals("Hallway Lamp", service.getRoomById("room-001")
@@ -45,37 +45,37 @@ public class TestMockRoomServiceDeviceManagement {
 
     /** Renaming with a blank name is rejected. */
     @Test
-    public void testRenameDevice_blankName_returnsFalse() {
+    public void testRenameDeviceBlankNameReturnsFalse() {
         assertFalse(service.renameDevice("room-001", "dev-001", "   "));
     }
 
     /** Renaming with an empty string is rejected. */
     @Test
-    public void testRenameDevice_emptyName_returnsFalse() {
+    public void testRenameDeviceEmptyNameReturnsFalse() {
         assertFalse(service.renameDevice("room-001", "dev-001", ""));
     }
 
     /** Renaming with null is rejected. */
     @Test
-    public void testRenameDevice_nullName_returnsFalse() {
+    public void testRenameDeviceNullNameReturnsFalse() {
         assertFalse(service.renameDevice("room-001", "dev-001", null));
     }
 
     /** Renaming a device that does not exist in the room returns false. */
     @Test
-    public void testRenameDevice_unknownDeviceId_returnsFalse() {
+    public void testRenameDeviceUnknownDeviceIdReturnsFalse() {
         assertFalse(service.renameDevice("room-001", "does-not-exist", "New Name"));
     }
 
     /** Renaming in a room that does not exist returns false. */
     @Test
-    public void testRenameDevice_unknownRoomId_returnsFalse() {
+    public void testRenameDeviceUnknownRoomIdReturnsFalse() {
         assertFalse(service.renameDevice("does-not-exist", "dev-001", "New Name"));
     }
 
     /** The original name is unchanged after a failed rename. */
     @Test
-    public void testRenameDevice_failedRename_nameUnchanged() {
+    public void testRenameDeviceFailedRenameNameUnchanged() {
         service.renameDevice("room-001", "dev-001", "");
         Device d = service.getRoomById("room-001").getDevices().stream()
                 .filter(dev -> dev.getId().equals("dev-001"))
@@ -89,7 +89,7 @@ public class TestMockRoomServiceDeviceManagement {
 
     /** Removing an existing device returns true and the device is gone. */
     @Test
-    public void testRemoveDevice_valid() {
+    public void testRemoveDeviceValid() {
         boolean result = service.removeDeviceFromRoom("room-001", "dev-001");
         assertTrue(result);
         Room room = service.getRoomById("room-001");
@@ -100,7 +100,7 @@ public class TestMockRoomServiceDeviceManagement {
 
     /** The other devices in the room are unaffected after a removal. */
     @Test
-    public void testRemoveDevice_otherDevicesUntouched() {
+    public void testRemoveDeviceOtherDevicesUntouched() {
         service.removeDeviceFromRoom("room-001", "dev-001");
         Room room = service.getRoomById("room-001");
         boolean dev002Still = room.getDevices().stream()
@@ -110,19 +110,19 @@ public class TestMockRoomServiceDeviceManagement {
 
     /** Removing with an unknown device ID returns false. */
     @Test
-    public void testRemoveDevice_unknownDeviceId_returnsFalse() {
+    public void testRemoveDeviceUnknownDeviceIdReturnsFalse() {
         assertFalse(service.removeDeviceFromRoom("room-001", "does-not-exist"));
     }
 
     /** Removing from an unknown room ID returns false. */
     @Test
-    public void testRemoveDevice_unknownRoomId_returnsFalse() {
+    public void testRemoveDeviceUnknownRoomIdReturnsFalse() {
         assertFalse(service.removeDeviceFromRoom("does-not-exist", "dev-001"));
     }
 
     /** Removing the same device twice: second call returns false. */
     @Test
-    public void testRemoveDevice_removedTwice_secondReturnsFalse() {
+    public void testRemoveDeviceRemovedTwiceSecondReturnsFalse() {
         service.removeDeviceFromRoom("room-001", "dev-001");
         assertFalse(service.removeDeviceFromRoom("room-001", "dev-001"));
     }

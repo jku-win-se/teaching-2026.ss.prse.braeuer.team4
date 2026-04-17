@@ -350,7 +350,7 @@ public class RulesController {
             String targetDevice) {
     }
 
-    private class RuleActionCell extends TableCell<Rule, Void> {
+    private final class RuleActionCell extends TableCell<Rule, Void> {
         private final Button runButton = new Button("Run");
         private final Button editButton = new Button("Edit");
         private final Button deleteButton = new Button("Delete");

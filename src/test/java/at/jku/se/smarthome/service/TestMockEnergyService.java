@@ -20,7 +20,7 @@ public class TestMockEnergyService {
     }
 
     @Test
-    public void getSnapshot_day_containsExpectedTotalsAndRanking() {
+    public void getSnapshotDayContainsExpectedTotalsAndRanking() {
         EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
 
         assertEquals(AggregationPeriod.DAY, snapshot.period());
@@ -34,7 +34,7 @@ public class TestMockEnergyService {
     }
 
     @Test
-    public void getSnapshot_week_usesWeeklyTimelineAndBathroomTotals() {
+    public void getSnapshotWeekUsesWeeklyTimelineAndBathroomTotals() {
         EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.WEEK);
 
         assertEquals(AggregationPeriod.WEEK, snapshot.period());

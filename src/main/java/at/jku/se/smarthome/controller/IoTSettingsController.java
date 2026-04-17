@@ -18,60 +18,79 @@ import javafx.scene.control.cell.PropertyValueFactory;
  */
 public class IoTSettingsController {
     
+    /** Toggle button to enable/disable IoT integration. */
     @FXML
     private ToggleButton enableToggle;
     
+    /** Label displaying IoT integration status. */
     @FXML
     private Label statusLabel;
 
+    /** Label displaying protocol information. */
     @FXML
     private Label protocolLabel;
 
+    /** Label displaying integration summary. */
     @FXML
     private Label integrationSummaryLabel;
 
+    /** Label displaying last synchronization time. */
     @FXML
     private Label lastSyncLabel;
     
+    /** Text field for broker address. */
     @FXML
     private TextField brokerField;
     
+    /** Text field for broker port. */
     @FXML
     private TextField portField;
     
+    /** Text field for broker username. */
     @FXML
     private TextField usernameField;
     
+    /** Password field for broker password. */
     @FXML
     private PasswordField passwordField;
     
+    /** Label displaying test/operation results. */
     @FXML
     private Label resultLabel;
 
+    /** Button to test IoT connection. */
     @FXML
     private Button testBtn;
 
+    /** Button to save configuration. */
     @FXML
     private Button saveBtn;
 
+    /** Button to discover IoT devices. */
     @FXML
     private Button discoverBtn;
 
+    /** Table view displaying discovered IoT devices. */
     @FXML
     private TableView<IntegrationDevice> devicesTable;
 
+    /** Column displaying device names. */
     @FXML
     private TableColumn<IntegrationDevice, String> deviceNameColumn;
 
+    /** Column displaying device types. */
     @FXML
     private TableColumn<IntegrationDevice, String> deviceTypeColumn;
 
+    /** Column displaying MQTT topics. */
     @FXML
     private TableColumn<IntegrationDevice, String> topicColumn;
 
+    /** Column displaying device status. */
     @FXML
     private TableColumn<IntegrationDevice, String> deviceStatusColumn;
     
+    /** IoT integration service instance. */
     private final MockIoTIntegrationService integrationService = MockIoTIntegrationService.getInstance();
     
     @FXML

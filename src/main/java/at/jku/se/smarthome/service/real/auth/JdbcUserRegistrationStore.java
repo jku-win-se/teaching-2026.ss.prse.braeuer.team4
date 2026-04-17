@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import at.jku.se.smarthome.config.DatabaseConfig;
 import at.jku.se.smarthome.config.DatabaseSettings;
@@ -21,7 +22,7 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
 
     private static final String DUPLICATE_EMAIL_SQL_STATE = "23505";
     private static final String INIT_SCRIPT_PATH = "/db/init-auth.sql";
-    private volatile boolean schemaReady;
+    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     @Override
     public boolean emailExists(String normalizedEmail) throws StoreException {
@@ -143,12 +144,12 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
     }
 
     private void ensureSchema(Connection connection) throws StoreException {
-        if (schemaReady) {
+        if (schemaReady.get()) {
             return;
         }
 
         synchronized (this) {
-            if (schemaReady) {
+            if (schemaReady.get()) {
                 return;
             }
 
@@ -160,7 +161,7 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
                         statement.execute(trimmedStatement);
                     }
                 }
-                schemaReady = true;
+                schemaReady.set(true);
             } catch (SQLException exception) {
                 throw new StoreException("Failed to initialize the auth schema.", exception);
             }

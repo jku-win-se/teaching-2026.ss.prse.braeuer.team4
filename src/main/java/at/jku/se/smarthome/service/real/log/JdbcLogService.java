@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -33,7 +34,7 @@ public final class JdbcLogService implements LogService {
 
     private final ObservableList<LogEntry> logs = FXCollections.observableArrayList();
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private volatile boolean schemaReady;
+    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     private JdbcLogService() {
         refreshLogs();
@@ -155,15 +156,15 @@ public final class JdbcLogService implements LogService {
     }
 
     private void ensureSchema(Connection connection) {
-        if (schemaReady) return;
+        if (schemaReady.get()) return;
         synchronized (this) {
-            if (schemaReady) return;
+            if (schemaReady.get()) return;
             try (Statement stmt = connection.createStatement()) {
                 for (String sql : loadInitScript().split(";")) {
                     String s = sql.trim();
                     if (!s.isEmpty()) stmt.execute(s);
                 }
-                schemaReady = true;
+                schemaReady.set(true);
             } catch (SQLException e) {
                 throw new IllegalStateException("Failed to initialize activity_log schema.", e);
             }

@@ -8,7 +8,7 @@ import javafx.scene.chart.XYChart;
 /**
  * Mock Energy Service providing day and week energy consumption data.
  */
-public class MockEnergyService {
+public final class MockEnergyService {
 
     public enum AggregationPeriod {
         DAY("Day"),

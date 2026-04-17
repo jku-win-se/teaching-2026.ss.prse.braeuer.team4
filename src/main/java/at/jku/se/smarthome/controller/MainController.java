@@ -32,57 +32,77 @@ public class MainController {
 
     private static final Logger LOGGER = LogManager.getLogger(MainController.class);
     
+    /** Label displaying current user information. */
     @FXML
     private Label userLabel;
     
+    /** Button to logout the current user. */
     @FXML
     private Button logoutButton;
     
+    /** Stack pane container for dynamic content area. */
     @FXML
     private StackPane contentArea;
 
+    /** VBox container for toast notifications. */
     @FXML
     private VBox toastContainer;
     
+    /** Button to navigate to rooms view. */
     @FXML
     private Button roomsBtn;
 
+    /** Button to navigate to devices view. */
     @FXML
     private Button devicesBtn;
 
+    /** Button to navigate to schedules view. */
     @FXML
     private Button schedulesBtn;
     
+    /** Button to navigate to automation/rules view. */
     @FXML
     private Button automationBtn;
 
+    /** Button to navigate to scenes view. */
     @FXML
     private Button scenesBtn;
     
+    /** Button to navigate to energy view. */
     @FXML
     private Button energyBtn;
 
+    /** Button to navigate to activity log view. */
     @FXML
     private Button activityLogBtn;
 
+    /** Button to navigate to users management view. */
     @FXML
     private Button usersBtn;
 
+    /** Button to navigate to vacation mode view. */
     @FXML
     private Button vacationModeBtn;
 
+    /** Button to navigate to simulation view. */
     @FXML
     private Button simulationBtn;
 
+    /** Button to navigate to IoT settings view. */
     @FXML
     private Button iotSettingsBtn;
     
+    /** Button to navigate to settings view. */
     @FXML
     private Button settingsBtn;
     
+    /** Notification service instance. */
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    /** User service instance. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Callback for main controller events. */
     private MainCallback mainCallback;
+    /** Count of observed notifications for tracking new ones. */
     private int observedNotificationCount;
     
     /**

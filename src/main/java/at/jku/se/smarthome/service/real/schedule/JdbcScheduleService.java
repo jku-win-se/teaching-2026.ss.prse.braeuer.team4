@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 import at.jku.se.smarthome.config.DatabaseConfig;
 import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.Device;
@@ -59,7 +59,7 @@ public final class JdbcScheduleService implements ScheduleService {
     private final LogService logService = ServiceRegistry.getLogService();
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new HashMap<>();
-    private volatile boolean schemaReady;
+    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
     private ScheduledExecutorService scheduler;
 
     private JdbcScheduleService() {
@@ -498,12 +498,12 @@ public final class JdbcScheduleService implements ScheduleService {
     }
 
     private void ensureSchema(Connection connection) {
-        if (schemaReady) {
+        if (schemaReady.get()) {
             return;
         }
 
         synchronized (this) {
-            if (schemaReady) {
+            if (schemaReady.get()) {
                 return;
             }
 
@@ -514,7 +514,7 @@ public final class JdbcScheduleService implements ScheduleService {
                         statement.execute(trimmedStatement);
                     }
                 }
-                schemaReady = true;
+                schemaReady.set(true);
             } catch (SQLException exception) {
                 throw new IllegalStateException("Failed to initialize the schedules schema.", exception);
             }

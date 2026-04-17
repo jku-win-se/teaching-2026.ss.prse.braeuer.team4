@@ -13,7 +13,7 @@ import at.jku.se.smarthome.service.api.ServiceRegistry;
  * Mock vacation mode service for FR-21.
  * Stores a selected schedule and date range and exposes the effective override state.
  */
-public class MockVacationModeService {
+public final class MockVacationModeService {
 
     private static MockVacationModeService instance;
 

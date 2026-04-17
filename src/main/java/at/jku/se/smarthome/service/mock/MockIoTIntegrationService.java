@@ -10,22 +10,33 @@ import javafx.collections.ObservableList;
 /**
  * Mock MQTT integration layer for demonstrating optional physical device connectivity.
  */
-public class MockIoTIntegrationService {
+public final class MockIoTIntegrationService {
 
-    public record IoTConfiguration(boolean enabled, String broker, int port, String username, String password) {
+    /** Record for IoT configuration. */
+    public record IoTConfiguration(/** Enable/disable flag. */ boolean enabled, /** MQTT broker address. */ String broker, /** MQTT broker port. */ int port, /** Username for authentication. */ String username, /** Password for authentication. */ String password) {
     }
 
+    /** Singleton instance. */
     private static MockIoTIntegrationService instance;
 
+    /** Observable list of discovered devices. */
     private final ObservableList<IntegrationDevice> discoveredDevices = FXCollections.observableArrayList();
+    /** Date/time formatter for timestamps. */
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    /** Flag indicating if IoT integration is enabled. */
     private boolean enabled;
+    /** Flag indicating if currently connected to broker. */
     private boolean connected;
+    /** MQTT broker address. */
     private String broker;
+    /** MQTT broker port. */
     private int port;
+    /** MQTT broker username. */
     private String username;
+    /** MQTT broker password. */
     private String password;
+    /** Timestamp of last synchronization. */
     private String lastSync;
 
     private MockIoTIntegrationService() {

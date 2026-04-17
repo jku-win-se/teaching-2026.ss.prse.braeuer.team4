@@ -9,8 +9,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.mindrot.jbcrypt.BCrypt;
 
-import at.jku.se.smarthome.service.mock.MockUserService;
 import at.jku.se.smarthome.service.api.UserService.LoginStatus;
+import at.jku.se.smarthome.service.mock.MockUserService;
 import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 
 /**
@@ -19,7 +19,7 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 public class TestMockUserServiceLoginLogout {
 
     @Test
-    public void authenticate_validPersistedCredentials_startsSessionAndUpdatesLastLogin() {
+    public void authenticateValidPersistedCredentialsStartsSessionAndUpdatesLastLogin() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "owner@smarthome.com",
@@ -40,7 +40,7 @@ public class TestMockUserServiceLoginLogout {
     }
 
     @Test
-    public void authenticate_invalidPassword_returnsGenericFailureWithoutSession() {
+    public void authenticateInvalidPasswordReturnsGenericFailureWithoutSession() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "owner@smarthome.com",
@@ -59,7 +59,7 @@ public class TestMockUserServiceLoginLogout {
     }
 
     @Test
-    public void authenticate_inactiveUser_rejectsLogin() {
+    public void authenticateInactiveUserRejectsLogin() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "member@smarthome.com",
@@ -77,7 +77,7 @@ public class TestMockUserServiceLoginLogout {
     }
 
     @Test
-    public void authenticate_repeatedFailures_triggerThrottle() {
+    public void authenticateRepeatedFailuresTriggerThrottle() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "owner@smarthome.com",
@@ -99,7 +99,7 @@ public class TestMockUserServiceLoginLogout {
     }
 
     @Test
-    public void logoutAndSessionExpiry_clearAuthenticatedState() {
+    public void logoutAndSessionExpiryClearAuthenticatedState() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "owner@smarthome.com",

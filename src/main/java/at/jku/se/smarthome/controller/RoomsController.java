@@ -22,35 +22,47 @@ import javafx.scene.layout.HBox;
  */
 public class RoomsController {
     
+    /** Table view displaying all rooms. */
     @FXML
     private TableView<Room> roomsTable;
     
+    /** Column displaying room names. */
     @FXML
     private TableColumn<Room, String> nameColumn;
     
+    /** Column displaying device count for each room. */
     @FXML
     private TableColumn<Room, Integer> deviceCountColumn;
     
+    /** Table view displaying devices for the selected room. */
     @FXML
     private TableView<Device> devicesTable;
     
+    /** Column displaying device names. */
     @FXML
     private TableColumn<Device, String> deviceNameColumn;
     
+    /** Column displaying device types. */
     @FXML
     private TableColumn<Device, String> deviceTypeColumn;
 
+    /** Button to add a new room. */
     @FXML
     private Button addRoomBtn;
     
+    /** Button to add a device to the selected room. */
     @FXML
     private Button addDeviceBtn;
     
+    /** Label displaying the currently selected room. */
     @FXML
     private Label selectedRoomLabel;
     
+    /** Room service instance. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
+    /** User service instance. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Currently selected room. */
     private Room selectedRoom;
     
     @FXML

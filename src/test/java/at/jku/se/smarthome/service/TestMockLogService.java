@@ -37,7 +37,7 @@ public class TestMockLogService {
 
     /** A new entry must appear at index 0 (newest-first ordering). */
     @Test
-    public void addLogEntry_insertsAtFront() {
+    public void addLogEntryInsertsAtFront() {
         int before = service.getLogs().size();
         service.addLogEntry("Garden Blind", "Garden", "Opened", "User");
         assertEquals(before + 1, service.getLogs().size());
@@ -46,7 +46,7 @@ public class TestMockLogService {
 
     /** All four fields must be stored without mutation. */
     @Test
-    public void addLogEntry_storesAllFields() {
+    public void addLogEntryStoresAllFields() {
         service.addLogEntry("Garden Blind", "Garden", "Opened", "User");
         LogEntry entry = service.getLogs().get(0);
         assertEquals("Garden Blind", entry.getDevice());
@@ -57,7 +57,7 @@ public class TestMockLogService {
 
     /** Timestamp must be auto-generated and non-empty. */
     @Test
-    public void addLogEntry_timestampIsNotBlank() {
+    public void addLogEntryTimestampIsNotBlank() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         assertFalse(service.getLogs().get(0).getTimestamp().isBlank());
     }
@@ -68,7 +68,7 @@ public class TestMockLogService {
 
     /** Legacy overload must default room to "Unknown". */
     @Test
-    public void addLogEntry_legacyWithoutRoom_defaultsToUnknown() {
+    public void addLogEntryLegacyWithoutRoomDefaultsToUnknown() {
         service.addLogEntry("Main Light", "Turned ON", "User");
         LogEntry entry = service.getLogs().get(0);
         assertEquals("Main Light", entry.getDevice());
@@ -83,7 +83,7 @@ public class TestMockLogService {
 
     /** After a fresh init the service always has at least the seeded entries. */
     @Test
-    public void getLogs_returnsAtLeastSeedEntries() {
+    public void getLogsReturnsAtLeastSeedEntries() {
         assertTrue(service.getLogs().size() >= 5);
     }
 
@@ -92,7 +92,7 @@ public class TestMockLogService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void getLogsByRoom_returnsOnlyMatchingEntries() {
+    public void getLogsByRoomReturnsOnlyMatchingEntries() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         service.addLogEntry("Bed Light", "Bedroom", "Turned OFF", "User");
         ObservableList<LogEntry> result = service.getLogsByRoom("Living Room");
@@ -103,7 +103,7 @@ public class TestMockLogService {
     }
 
     @Test
-    public void getLogsByRoom_noMatch_returnsEmpty() {
+    public void getLogsByRoomNoMatchReturnsEmpty() {
         ObservableList<LogEntry> result = service.getLogsByRoom("Nonexistent Room XYZ");
         assertEquals(0, result.size());
     }
@@ -113,7 +113,7 @@ public class TestMockLogService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void getLogsByDevice_returnsOnlyMatchingEntries() {
+    public void getLogsByDeviceReturnsOnlyMatchingEntries() {
         service.addLogEntry("Unique Device ABC", "Room", "Action", "User");
         ObservableList<LogEntry> result = service.getLogsByDevice("Unique Device ABC");
         assertEquals(1, result.size());
@@ -121,7 +121,7 @@ public class TestMockLogService {
     }
 
     @Test
-    public void getLogsByDevice_noMatch_returnsEmpty() {
+    public void getLogsByDeviceNoMatchReturnsEmpty() {
         ObservableList<LogEntry> result = service.getLogsByDevice("Device That Does Not Exist");
         assertEquals(0, result.size());
     }
@@ -132,7 +132,7 @@ public class TestMockLogService {
 
     /** Manual user actions must be filterable by actor "User". */
     @Test
-    public void getLogsByActor_user_returnsMatchingEntries() {
+    public void getLogsByActorUserReturnsMatchingEntries() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         ObservableList<LogEntry> result = service.getLogsByActor("User");
         assertTrue(result.size() >= 1);
@@ -143,7 +143,7 @@ public class TestMockLogService {
 
     /** Rule-triggered entries must be filterable by actor "Rule: Morning Routine". */
     @Test
-    public void getLogsByActor_rule_returnsMatchingEntries() {
+    public void getLogsByActorRuleReturnsMatchingEntries() {
         service.addLogEntry("Dimmer Light", "Bedroom", "Set to 50%", "Rule: Morning Routine");
         ObservableList<LogEntry> result = service.getLogsByActor("Rule: Morning Routine");
         assertTrue(result.size() >= 1);
@@ -154,7 +154,7 @@ public class TestMockLogService {
 
     /** Schedule-triggered entries must be filterable by actor "Schedule: Evening Shutdown". */
     @Test
-    public void getLogsByActor_schedule_returnsMatchingEntries() {
+    public void getLogsByActorScheduleReturnsMatchingEntries() {
         service.addLogEntry("Kitchen Light", "Kitchen", "Turned OFF", "Schedule: Evening Shutdown");
         ObservableList<LogEntry> result = service.getLogsByActor("Schedule: Evening Shutdown");
         assertTrue(result.size() >= 1);
@@ -168,13 +168,13 @@ public class TestMockLogService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void exportToCSV_containsHeader() {
+    public void exportToCSVContainsHeader() {
         String csv = service.exportToCSV();
         assertTrue(csv.startsWith("Timestamp,Device,Room,Action,Actor"));
     }
 
     @Test
-    public void exportToCSV_containsAddedEntry() {
+    public void exportToCSVContainsAddedEntry() {
         service.addLogEntry("Export Device", "Export Room", "Export Action", "Export Actor");
         String csv = service.exportToCSV();
         assertTrue(csv.contains("Export Device"));
@@ -189,7 +189,7 @@ public class TestMockLogService {
 
     /** After reset a new instance must be independent (fresh seed data, no carryover). */
     @Test
-    public void resetForTesting_createsNewInstance() {
+    public void resetForTestingCreatesNewInstance() {
         service.addLogEntry("Carry Device", "Room", "Action", "User");
         int sizeAfterAdd = service.getLogs().size();
 

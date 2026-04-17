@@ -6,13 +6,14 @@ import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 
 /**
  * Resolves shared service implementations used across the application.
+ * Uses the initialization-on-demand holder pattern for thread-safe lazy initialization.
  */
 public final class ServiceRegistry {
 
-    private static volatile ScheduleService scheduleService;
-    private static volatile RoomService roomService;
-    private static volatile LogService logService;
-    private static volatile UserService userService;
+    private static LogService testLogServiceOverride;
+    private static ScheduleService testScheduleServiceOverride;
+    private static RoomService testRoomServiceOverride;
+    private static UserService testUserServiceOverride;
 
     private ServiceRegistry() {
     }
@@ -23,14 +24,14 @@ public final class ServiceRegistry {
      * @return lazily initialized schedule service
      */
     public static ScheduleService getScheduleService() {
-        if (scheduleService == null) {
-            synchronized (ServiceRegistry.class) {
-                if (scheduleService == null) {
-                    scheduleService = JdbcScheduleService.getInstance();
-                }
-            }
+        if (testScheduleServiceOverride != null) {
+            return testScheduleServiceOverride;
         }
-        return scheduleService;
+        return ScheduleServiceHolder.INSTANCE;
+    }
+
+    private static final class ScheduleServiceHolder {
+        private static final ScheduleService INSTANCE = JdbcScheduleService.getInstance();
     }
 
     /**
@@ -39,30 +40,30 @@ public final class ServiceRegistry {
      * @return lazily initialized room service
      */
     public static RoomService getRoomService() {
-        if (roomService == null) {
-            synchronized (ServiceRegistry.class) {
-                if (roomService == null) {
-                    roomService = JdbcRoomService.getInstance();
-                }
-            }
+        if (testRoomServiceOverride != null) {
+            return testRoomServiceOverride;
         }
-        return roomService;
+        return RoomServiceHolder.INSTANCE;
+    }
+
+    private static final class RoomServiceHolder {
+        private static final RoomService INSTANCE = JdbcRoomService.getInstance();
     }
 
     /**
      * Returns the active log service instance.
      *
-     * @return lazily initialized log service
+     * @return lazily initialized log service (or test override if set)
      */
     public static LogService getLogService() {
-        if (logService == null) {
-            synchronized (ServiceRegistry.class) {
-                if (logService == null) {
-                    logService = JdbcLogService.getInstance();
-                }
-            }
+        if (testLogServiceOverride != null) {
+            return testLogServiceOverride;
         }
-        return logService;
+        return LogServiceHolder.INSTANCE;
+    }
+
+    private static final class LogServiceHolder {
+        private static final LogService INSTANCE = JdbcLogService.getInstance();
     }
 
     /**
@@ -71,7 +72,7 @@ public final class ServiceRegistry {
      * @param testLogService replacement log service instance
      */
     public static synchronized void setLogServiceForTesting(LogService testLogService) {
-        logService = testLogService;
+        testLogServiceOverride = testLogService;
     }
 
     /**
@@ -80,7 +81,7 @@ public final class ServiceRegistry {
      * @param testScheduleService replacement schedule service instance
      */
     public static synchronized void setScheduleServiceForTesting(ScheduleService testScheduleService) {
-        scheduleService = testScheduleService;
+        testScheduleServiceOverride = testScheduleService;
     }
 
     /**
@@ -92,7 +93,7 @@ public final class ServiceRegistry {
      * @param testRoomService replacement room service instance
      */
     public static synchronized void setRoomServiceForTesting(RoomService testRoomService) {
-        roomService = testRoomService;
+        testRoomServiceOverride = testRoomService;
     }
 
     /**
@@ -101,14 +102,14 @@ public final class ServiceRegistry {
      * @return lazily initialized user service
      */
     public static UserService getUserService() {
-        if (userService == null) {
-            synchronized (ServiceRegistry.class) {
-                if (userService == null) {
-                    userService = JdbcUserService.getInstance();
-                }
-            }
+        if (testUserServiceOverride != null) {
+            return testUserServiceOverride;
         }
-        return userService;
+        return UserServiceHolder.INSTANCE;
+    }
+
+    private static final class UserServiceHolder {
+        private static final UserService INSTANCE = JdbcUserService.getInstance();
     }
 
     /**
@@ -117,14 +118,14 @@ public final class ServiceRegistry {
      * @param testUserService replacement user service instance
      */
     public static synchronized void setUserServiceForTesting(UserService testUserService) {
-        userService = testUserService;
+        testUserServiceOverride = testUserService;
     }
 
     /**
      * Clears the cached schedule service so it is re-created on next access.
      */
     public static synchronized void resetForTesting() {
-        scheduleService = null;
+        testScheduleServiceOverride = null;
     }
 
     /**
@@ -134,6 +135,6 @@ public final class ServiceRegistry {
      * service instance must be reset between test cases.
      */
     public static synchronized void resetRoomServiceForTesting() {
-        roomService = null;
+        testRoomServiceOverride = null;
     }
 }

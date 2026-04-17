@@ -345,7 +345,7 @@ public class SchedulesController {
             boolean active) {
     }
 
-    private class ScheduleActionCell extends TableCell<Schedule, Void> {
+    private final class ScheduleActionCell extends TableCell<Schedule, Void> {
         private final Button editButton = new Button("Edit");
         private final Button deleteButton = new Button("Delete");
         private final HBox container = new HBox(8);

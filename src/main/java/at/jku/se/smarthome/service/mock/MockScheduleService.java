@@ -26,7 +26,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Schedule Service providing schedule management functionality.
  */
-public class MockScheduleService implements ScheduleService {
+public final class MockScheduleService implements ScheduleService {
     
     private static MockScheduleService instance;
     private final ObservableList<Schedule> schedules;

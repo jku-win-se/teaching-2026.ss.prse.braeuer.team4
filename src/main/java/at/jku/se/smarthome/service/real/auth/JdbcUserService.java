@@ -17,26 +17,47 @@ import javafx.collections.ObservableList;
  */
 public final class JdbcUserService extends UserService {
 
+    /** Session timeout in milliseconds (30 minutes). */
     private static final long SESSION_TIMEOUT_MILLIS = 30 * 60 * 1000L;
+    /** Maximum failed login attempts before throttling. */
     private static final int THROTTLE_THRESHOLD = 3;
 
-    private static volatile JdbcUserService instance;
+    /** Singleton instance. */
+    private static JdbcUserService instance;
 
+    /** Observable list of users. */
     private final ObservableList<User> users;
+    /** User registration store. */
     private final UserRegistrationStore registrationStore;
+    /** Map tracking failed login attempts by email. */
     private final Map<String, Integer> failedLoginAttempts;
+    /** Map tracking login throttle periods by email. */
     private final Map<String, Long> blockedUntilByEmail;
+    /** Current user email. */
     private String currentUserEmail;
+    /** Current user username. */
     private String currentUsername;
+    /** Current user role. */
     private String currentUserRole;
+    /** Current user status. */
     private String currentUserStatus;
+    /** Timestamp when current session expires. */
     private long currentSessionExpiresAt;
 
+    /**
+     * Private constructor for singleton pattern.
+     */
     private JdbcUserService() {
         this(new JdbcUserRegistrationStore());
     }
 
+    /**
+     * Constructs JdbcUserService with a registration store.
+     *
+     * @param registrationStore the user registration store
+     */
     public JdbcUserService(UserRegistrationStore registrationStore) {
+        super();
         this.users = FXCollections.observableArrayList();
         this.registrationStore = registrationStore;
         this.failedLoginAttempts = new HashMap<>();

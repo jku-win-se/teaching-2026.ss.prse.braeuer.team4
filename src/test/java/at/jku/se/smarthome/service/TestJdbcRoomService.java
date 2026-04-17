@@ -6,12 +6,11 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import org.junit.Before;
+import org.junit.Test;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
@@ -57,7 +56,7 @@ public class TestJdbcRoomService {
     }
 
     @Test
-    public void addRenameRemoveDevice_persistsChanges() throws Exception {
+    public void addRenameRemoveDevicePersistsChanges() throws Exception {
         Room room = service.addRoom("Test Room");
         assertNotNull(room);
 
