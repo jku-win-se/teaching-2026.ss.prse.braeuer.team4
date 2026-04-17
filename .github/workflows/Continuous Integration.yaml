@@ -42,14 +42,15 @@ jobs:
           path: target/site/jacoco/
 
       - name: PMD static analysis
-        run: mvn pmd:pmd pmd:cpd -q
-
-      - name: Upload PMD report
-        uses: actions/upload-artifact@v4
-        if: always()
+        uses: pmd/pmd-github-action@v2
+        id: pmd
         with:
-          name: pmd-report
-          path: target/pmd.xml
+          version: '6.55.0'
+          rulesets: 'ruleset.xml'
+
+      - name: Fail build if there are violations
+        if: steps.pmd.outputs.violations != 0
+        run: exit 1
 
       - name: Package
         run: mvn package -DskipTests -q
@@ -59,4 +60,3 @@ jobs:
         with:
           name: calculator-jar
           path: target/*.jar
-

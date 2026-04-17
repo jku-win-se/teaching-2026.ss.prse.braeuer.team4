@@ -86,7 +86,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-pmd-plugin</artifactId>
-				<version>3.22.0</version>
+				<version>3.28.0</version>
 				<configuration>
 					<includeTests>true</includeTests>
 					<failOnViolation>true</failOnViolation>
@@ -94,7 +94,7 @@
 					<printFailingErrors>true</printFailingErrors>
 					<typeResolution>false</typeResolution>
 					<rulesets>
-						<ruleset>ruleset-effective-java.xml</ruleset>
+						<ruleset>ruleset.xml</ruleset>
 					</rulesets>
 					<skipEmptyReport>false</skipEmptyReport>
 				</configuration>
