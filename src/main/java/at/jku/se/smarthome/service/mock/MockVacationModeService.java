@@ -15,18 +15,30 @@ import at.jku.se.smarthome.service.api.ServiceRegistry;
  */
 public final class MockVacationModeService {
 
+    /** Singleton instance. */
     private static MockVacationModeService instance;
 
+    /** Room service for room operations. */
     private final MockRoomService roomService = MockRoomService.getInstance();
+    /** Log service for activity logging. */
     private final MockLogService logService = MockLogService.getInstance();
+    /** Notification service for alerts. */
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    /** Date formatter for vacation mode dates. */
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    /** Vacation mode configuration. */
     private final VacationModeConfig configuration = new VacationModeConfig(false, null, null, null);
 
+    /** Private constructor for singleton pattern. */
     private MockVacationModeService() {
     }
 
+    /**
+     * Gets the singleton instance.
+     *
+     * @return the instance
+     */
     public static synchronized MockVacationModeService getInstance() {
         if (instance == null) {
             instance = new MockVacationModeService();
@@ -34,18 +46,37 @@ public final class MockVacationModeService {
         return instance;
     }
 
+    /**
+     * Resets the singleton instance for testing.
+     */
     public static synchronized void resetForTesting() {
         instance = null;
     }
 
+    /**
+     * Gets the vacation mode configuration.
+     *
+     * @return the configuration
+     */
     public VacationModeConfig getConfiguration() {
         return configuration;
     }
 
+    /**
+     * Checks if vacation mode is enabled.
+     *
+     * @return true if enabled
+     */
     public boolean isEnabled() {
         return configuration.isEnabled() && configuration.isConfigured();
     }
 
+    /**
+     * Checks if vacation mode is active on the specified date.
+     *
+     * @param date the date
+     * @return true if active on date
+     */
     public boolean isActiveOn(LocalDate date) {
         if (!isEnabled() || date == null) {
             return false;
@@ -53,6 +84,11 @@ public final class MockVacationModeService {
         return !date.isBefore(configuration.getStartDate()) && !date.isAfter(configuration.getEndDate());
     }
 
+    /**
+     * Gets the selected vacation schedule.
+     *
+     * @return the schedule or null
+     */
     public Schedule getSelectedSchedule() {
         if (configuration.getScheduleId() == null) {
             return null;
@@ -60,6 +96,11 @@ public final class MockVacationModeService {
         return getScheduleService().getScheduleById(configuration.getScheduleId());
     }
 
+    /**
+     * Gets the schedules overridden by vacation mode.
+     *
+     * @return list of overridden schedules
+     */
     public List<Schedule> getOverriddenSchedules() {
         Schedule selectedSchedule = getSelectedSchedule();
         String selectedScheduleId = selectedSchedule != null ? selectedSchedule.getId() : null;
@@ -70,6 +111,14 @@ public final class MockVacationModeService {
                 .toList();
     }
 
+    /**
+     * Activates vacation mode with specified schedule and dates.
+     *
+     * @param startDate start date
+     * @param endDate end date
+     * @param schedule the selected schedule
+     * @param actor actor triggering activation
+     */
     public void activateVacationMode(LocalDate startDate, LocalDate endDate, Schedule schedule, String actor) {
         configuration.setEnabled(true);
         configuration.setStartDate(startDate);
@@ -104,6 +153,11 @@ public final class MockVacationModeService {
         );
     }
 
+    /**
+     * Deactivates vacation mode.
+     *
+     * @param actor actor triggering deactivation
+     */
     public void deactivateVacationMode(String actor) {
         Schedule selectedSchedule = getSelectedSchedule();
         String scheduleName = selectedSchedule != null ? selectedSchedule.getName() : "Unavailable schedule";
@@ -126,6 +180,12 @@ public final class MockVacationModeService {
         clearConfiguration();
     }
 
+    /**
+     * Clears vacation mode if using specified schedule.
+     *
+     * @param scheduleId schedule ID
+     * @param reason reason for clearing
+     */
     public void clearIfUsingSchedule(String scheduleId, String reason) {
         if (scheduleId == null || !scheduleId.equals(configuration.getScheduleId())) {
             return;
@@ -139,6 +199,11 @@ public final class MockVacationModeService {
         logService.addLogEntry("Vacation Mode", "System", reason, "System");
     }
 
+    /**
+     * Gets the status summary.
+     *
+     * @return status summary
+     */
     public String getStatusSummary() {
         Schedule selectedSchedule = getSelectedSchedule();
         if (!isEnabled() || selectedSchedule == null) {
@@ -153,6 +218,11 @@ public final class MockVacationModeService {
         );
     }
 
+    /**
+     * Gets the override summary.
+     *
+     * @return override summary
+     */
     public String getOverrideSummary() {
         Schedule selectedSchedule = getSelectedSchedule();
         if (!isEnabled() || selectedSchedule == null) {
@@ -167,6 +237,9 @@ public final class MockVacationModeService {
         );
     }
 
+    /**
+     * Clears the configuration.
+     */
     private void clearConfiguration() {
         configuration.setEnabled(false);
         configuration.setStartDate(null);
@@ -174,10 +247,21 @@ public final class MockVacationModeService {
         configuration.setScheduleId(null);
     }
 
+    /**
+     * Formats the date for display.
+     *
+     * @param date the date
+     * @return formatted date
+     */
     private String formatDate(LocalDate date) {
         return date != null ? date.format(dateFormatter) : "-";
     }
 
+    /**
+     * Gets the schedule service.
+     *
+     * @return the schedule service
+     */
     private ScheduleService getScheduleService() {
         return ServiceRegistry.getScheduleService();
     }

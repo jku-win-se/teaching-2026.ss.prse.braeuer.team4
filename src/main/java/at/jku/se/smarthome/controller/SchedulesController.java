@@ -34,36 +34,49 @@ import javafx.scene.layout.HBox;
  */
 public class SchedulesController {
     
+    /** Table view for displaying all schedules. */
     @FXML
     private TableView<Schedule> schedulesTable;
     
+    /** Column displaying schedule name. */
     @FXML
     private TableColumn<Schedule, String> nameColumn;
     
+    /** Column displaying affected device. */
     @FXML
     private TableColumn<Schedule, String> deviceColumn;
     
+    /** Column displaying action/command. */
     @FXML
     private TableColumn<Schedule, String> actionColumn;
     
+    /** Column displaying execution time. */
     @FXML
     private TableColumn<Schedule, String> timeColumn;
     
+    /** Column displaying recurrence pattern. */
     @FXML
     private TableColumn<Schedule, String> recurrenceColumn;
 
+    /** Column displaying active status. */
     @FXML
     private TableColumn<Schedule, Boolean> activeColumn;
 
+    /** Button to add new schedule. */
     @FXML
     private Button addScheduleBtn;
     
+    /** Label displaying schedule conflict warnings. */
     @FXML
     private Label conflictWarning;
     
+    /** Schedule service for schedule operations. */
     private final ScheduleService scheduleService = ServiceRegistry.getScheduleService();
+    /** Room service for room data access. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
+    /** User service for authorization checks. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Vacation mode service for vacation scheduling. */
     private final MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
     
     @FXML

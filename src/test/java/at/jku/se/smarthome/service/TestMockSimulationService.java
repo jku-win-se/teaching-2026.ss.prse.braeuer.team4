@@ -21,8 +21,12 @@ import javafx.collections.ObservableList;
 
 public class TestMockSimulationService {
 
+    /** Simulation service under test. */
     private MockSimulationService service;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockRoomService.resetForTesting();
@@ -30,6 +34,9 @@ public class TestMockSimulationService {
         service = MockSimulationService.getInstance();
     }
 
+    /**
+     * Test: build plan creates snapshot and sorted events.
+     */
     @Test
     public void buildPlanCreatesSnapshotAndSortedEvents() {
         Rule timeRule = new Rule("rule-100", "Morning Routine", "Time", "Clock", "06:30 AM", "Turn On", "Main Light", true, "Active");
@@ -53,6 +60,9 @@ public class TestMockSimulationService {
         assertEquals("Rule: Morning Routine", plan.events().get(0).triggerSource());
     }
 
+    /**
+     * Test: apply event updates matching simulation snapshot entry.
+     */
     @Test
     public void applyEventUpdatesMatchingSimulationSnapshotEntry() {
         SimulationConfiguration configuration = new SimulationConfiguration(
@@ -76,17 +86,26 @@ public class TestMockSimulationService {
         assertEquals("08:30:00", state.getLastChanged());
     }
 
+    /**
+     * Test: parse start time supports short and long format.
+     */
     @Test
     public void parseStartTimeSupportsShortAndLongFormat() {
         assertEquals(LocalTime.of(7, 15), service.parseStartTime("07:15"));
         assertEquals(LocalTime.of(7, 15, 30), service.parseStartTime("07:15:30"));
     }
 
+    /**
+     * Test: parse start time rejects invalid format.
+     */
     @Test(expected = IllegalArgumentException.class)
     public void parseStartTimeRejectsInvalidFormat() {
         service.parseStartTime("invalid");
     }
 
+    /**
+     * Test: build plan maps different action types to simulation states.
+     */
     @Test
     public void buildPlanMapsDifferentActionTypesToSimulationStates() {
         Rule notifyRule = new Rule("rule-103", "Notify", "Device State", "Bed Light", "State = Active", "Notify User", "Main Light", true, "Active");

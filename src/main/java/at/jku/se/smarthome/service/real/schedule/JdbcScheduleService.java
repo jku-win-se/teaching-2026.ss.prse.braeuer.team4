@@ -43,7 +43,9 @@ import javafx.collections.ObservableList;
 
 public final class JdbcScheduleService implements ScheduleService {
 
+    /** Path to schedule initialization SQL script. */
     private static final String INIT_SCRIPT_PATH = "/db/init-schedules.sql";
+    /** Time formatters for parsing various time formats. */
     private static final List<DateTimeFormatter> TIME_FORMATTERS = List.of(
             DateTimeFormatter.ofPattern("H:mm"),
             DateTimeFormatter.ofPattern("HH:mm"),
@@ -51,15 +53,22 @@ public final class JdbcScheduleService implements ScheduleService {
             DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
     );
 
+    /** Singleton instance. */
     private static JdbcScheduleService instance;
 
+    /** Observable list of all schedules. */
     private final ObservableList<Schedule> schedules = FXCollections.observableArrayList();
-    // Use the application-wide RoomService via ServiceRegistry instead of directly referencing the mock.
+    /** Room service for room data access. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
+    /** Log service for activity logging. */
     private final LogService logService = ServiceRegistry.getLogService();
+    /** Notification service for alerts. */
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    /** Tracks last processed minute for each schedule (prevents duplicate execution). */
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new HashMap<>();
+    /** Flag indicating database schema is ready. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
+    /** Executor service for recurring schedule execution. */
     private ScheduledExecutorService scheduler;
 
     private JdbcScheduleService() {

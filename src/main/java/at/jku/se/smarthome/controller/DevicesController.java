@@ -39,21 +39,30 @@ import javafx.scene.layout.VBox;
  */
 public class DevicesController {
 
+    /** Default filter option for all rooms. */
     private static final String ALL_ROOMS_OPTION = "All Rooms";
     
+    /** Container for device UI components. */
     @FXML
     private VBox devicesContainer;
     
+    /** ComboBox for filtering devices by room. */
     @FXML
     private ComboBox<String> roomFilterCombo;
     
+    /** Button to add new device. */
     @FXML
     private Button addDeviceBtn;
     
+    /** Room service for room data access. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
+    /** Log service for activity logging. */
     private final LogService logService = ServiceRegistry.getLogService();
+    /** User service for authorization checks. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Maps rooms to their name change listeners. */
     private final Map<Room, ChangeListener<String>> roomNameListeners = new IdentityHashMap<>();
+    /** Listener for room list changes. */
     private final ListChangeListener<Room> roomListListener = change -> {
         while (change.next()) {
             if (change.wasRemoved()) {

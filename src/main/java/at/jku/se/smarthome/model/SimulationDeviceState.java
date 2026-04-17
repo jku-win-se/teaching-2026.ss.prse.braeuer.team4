@@ -7,10 +7,15 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class SimulationDeviceState {
 
+    /** Device display name. */
     private final SimpleStringProperty deviceName;
+    /** Room containing device. */
     private final SimpleStringProperty room;
+    /** Device type. */
     private final SimpleStringProperty type;
+    /** Simulated device state. */
     private final SimpleStringProperty state;
+    /** Time of last simulated change. */
     private final SimpleStringProperty lastChanged;
 
     /**

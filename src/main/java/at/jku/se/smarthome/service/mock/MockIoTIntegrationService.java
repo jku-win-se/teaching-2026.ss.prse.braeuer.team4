@@ -47,6 +47,11 @@ public final class MockIoTIntegrationService {
         lastSync = "Never";
     }
 
+    /**
+     * Returns singleton instance.
+     *
+     * @return the singleton instance
+     */
     public static synchronized MockIoTIntegrationService getInstance() {
         if (instance == null) {
             instance = new MockIoTIntegrationService();
@@ -54,34 +59,76 @@ public final class MockIoTIntegrationService {
         return instance;
     }
 
+    /**
+     * Resets singleton for testing.
+     */
     public static synchronized void resetForTesting() {
         instance = null;
     }
 
+    /**
+     * Returns the protocol name.
+     *
+     * @return protocol name
+     */
     public String getProtocolName() {
         return "MQTT";
     }
 
+    /**
+     * Returns list of discovered devices.
+     *
+     * @return observable list of devices
+     */
     public ObservableList<IntegrationDevice> getDiscoveredDevices() {
         return discoveredDevices;
     }
 
+    /**
+     * Returns current IoT configuration.
+     *
+     * @return current configuration
+     */
     public IoTConfiguration getConfiguration() {
         return new IoTConfiguration(enabled, broker, port, username, password);
     }
 
+    /**
+     * Checks if IoT integration is enabled.
+     *
+     * @return true if enabled
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Checks if currently connected to broker.
+     *
+     * @return true if connected
+     */
     public boolean isConnected() {
         return connected;
     }
 
+    /**
+     * Returns timestamp of last synchronization.
+     *
+     * @return last sync time string
+     */
     public String getLastSync() {
         return lastSync;
     }
 
+    /**
+     * Saves new IoT configuration.
+     *
+     * @param enabled whether IoT is enabled
+     * @param broker broker address
+     * @param port broker port
+     * @param username authentication username
+     * @param password authentication password
+     */
     public void saveConfiguration(boolean enabled, String broker, int port, String username, String password) {
         this.enabled = enabled;
         this.broker = broker;
@@ -95,6 +142,13 @@ public final class MockIoTIntegrationService {
         }
     }
 
+    /**
+     * Tests connection with given broker settings.
+     *
+     * @param broker broker address
+     * @param portValue broker port
+     * @return true if connection parameters are valid
+     */
     public boolean testConnection(String broker, String portValue) {
         if (broker == null || broker.isBlank()) {
             return false;
@@ -108,6 +162,11 @@ public final class MockIoTIntegrationService {
         }
     }
 
+    /**
+     * Connects to MQTT broker.
+     *
+     * @return true if connection successful
+     */
     public boolean connect() {
         if (!enabled || broker == null || broker.isBlank() || port <= 0) {
             connected = false;
@@ -120,10 +179,18 @@ public final class MockIoTIntegrationService {
         return true;
     }
 
+    /**
+     * Disconnects from MQTT broker.
+     */
     public void disconnect() {
         connected = false;
     }
 
+    /**
+     * Refreshes device list from broker.
+     *
+     * @return true if refresh successful
+     */
     public boolean refreshDevices() {
         if (!connected) {
             return false;

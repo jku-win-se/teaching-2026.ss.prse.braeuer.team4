@@ -28,13 +28,20 @@ import javafx.collections.ObservableList;
  */
 public final class MockScheduleService implements ScheduleService {
     
+    /** Singleton instance. */
     private static MockScheduleService instance;
+    /** Observable list of all schedules. */
     private final ObservableList<Schedule> schedules;
+    /** Room service for room data. */
     private final MockRoomService roomService = MockRoomService.getInstance();
+    /** Log service for activity logging. */
     private final MockLogService logService = MockLogService.getInstance();
+    /** Tracks last processed minute for each schedule. */
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new HashMap<>();
+    /** Executor service for recurring schedule execution. */
     private ScheduledExecutorService scheduler;
 
+    /** Time formatters for parsing various time formats. */
     private static final List<DateTimeFormatter> TIME_FORMATTERS = List.of(
             DateTimeFormatter.ofPattern("H:mm"),
             DateTimeFormatter.ofPattern("HH:mm"),
@@ -42,6 +49,7 @@ public final class MockScheduleService implements ScheduleService {
             DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
     );
 
+    /** Private constructor for singleton pattern. */
     private MockScheduleService() {
         this.schedules = FXCollections.observableArrayList();
         initializeMockSchedules();

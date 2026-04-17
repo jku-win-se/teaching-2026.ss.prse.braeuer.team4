@@ -168,10 +168,14 @@ public class RoomsController {
      * Inner class for room action buttons.
      */
     private class RoomActionButtonCell extends TableCell<Room, Void> {
+        /** Button to rename room. */
         private final Button editBtn = new Button("Rename");
+        /** Button to delete room. */
         private final Button deleteBtn = new Button("Delete");
+        /** Container for action buttons. */
         private final HBox container = new HBox(10);
         
+        /** Constructs action cell with buttons. */
         public RoomActionButtonCell() {
             editBtn.setStyle("-fx-padding: 5; -fx-font-size: 11;");
             editBtn.setOnAction(e -> handleEditRoom(getTableView().getItems().get(getIndex())));
@@ -201,10 +205,14 @@ public class RoomsController {
      * Inner class for device action buttons.
      */
     private class DeviceActionButtonCell extends TableCell<Device, Void> {
+        /** Button to rename device. */
         private final Button editBtn = new Button("Rename");
+        /** Button to delete device. */
         private final Button deleteBtn = new Button("Delete");
+        /** Container for action buttons. */
         private final HBox container = new HBox(10);
         
+        /** Constructs action cell with buttons. */
         public DeviceActionButtonCell() {
             editBtn.setStyle("-fx-padding: 5; -fx-font-size: 11;");
             editBtn.setOnAction(e -> {

@@ -22,16 +22,27 @@ import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 
 public class TestJdbcScheduleService {
 
+    /** JDBC URL property. */
     private static final String URL_PROPERTY = "smarthome.db.url";
+    /** JDBC user property. */
     private static final String USER_PROPERTY = "smarthome.db.user";
+    /** JDBC password property. */
     private static final String PASSWORD_PROPERTY = "smarthome.db.password";
 
+    /** JDBC URL for in-memory test database. */
     private String jdbcUrl;
+    /** Schedule service under test. */
     private JdbcScheduleService service;
+    /** Mock room service. */
     private MockRoomService roomService;
+    /** Mock log service. */
     private MockLogService logService;
+    /** Mock notification service. */
     private MockNotificationService notificationService;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         jdbcUrl = "jdbc:h2:mem:schedule_" + System.nanoTime() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1";
@@ -54,6 +65,9 @@ public class TestJdbcScheduleService {
         // No additional initialization needed for schedule execution tests
     }
 
+    /**
+     * Tears down test fixtures after each test.
+     */
     @After
     public void tearDown() {
         JdbcScheduleService.resetForTesting();
@@ -62,6 +76,9 @@ public class TestJdbcScheduleService {
         System.clearProperty(PASSWORD_PROPERTY);
     }
 
+    /**
+     * Test: add, update, toggle, and delete schedule persists changes.
+     */
     @Test
     public void addUpdateToggleDeleteSchedulePersistsChanges() throws Exception {
         Schedule schedule = service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
@@ -86,6 +103,9 @@ public class TestJdbcScheduleService {
         assertEquals(0, service.getSchedules().size());
     }
 
+    /**
+     * Test: execute and reload schedule updates device, log, notification, and database.
+     */
     @Test
     public void executeAndReloadScheduleUpdatesDeviceLogNotificationAndDatabase() throws Exception {
         Schedule schedule = service.addSchedule("Warmup", "dev-004", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
@@ -106,6 +126,9 @@ public class TestJdbcScheduleService {
         assertNotNull(service.getScheduleByName("Warmup"));
     }
 
+    /**
+     * Test: process due schedules executes matching recurring schedules.
+     */
     @Test
     public void processDueSchedulesExecutesMatchingRecurringSchedules() throws Exception {
         Schedule schedule = service.addSchedule("Wake Up", "dev-003", "Bed Light", "Turn On", "07:00 AM", "Daily", true);

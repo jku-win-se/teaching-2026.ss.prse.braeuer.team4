@@ -26,10 +26,16 @@ import at.jku.se.smarthome.service.mock.MockScheduleService;
  */
 public class TestMockScheduleService {
 
+    /** Schedule service under test. */
     private MockScheduleService scheduleService;
+    /** Room service for device management. */
     private MockRoomService roomService;
+    /** Log service for activity verification. */
     private MockLogService logService;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockScheduleService.resetForTesting();
@@ -44,17 +50,26 @@ public class TestMockScheduleService {
     // Guard conditions
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: execute schedule with unknown ID returns false.
+     */
     @Test
     public void executeScheduleUnknownIdReturnsFalse() {
         assertFalse(scheduleService.executeSchedule("does-not-exist"));
     }
 
+    /**
+     * Test: execute inactive schedule returns false.
+     */
     @Test
     public void executeScheduleInactiveScheduleReturnsFalse() {
         // sched-003 "Weekend Relax" is inactive in seed data
         assertFalse(scheduleService.executeSchedule("sched-003"));
     }
 
+    /**
+     * Test: execute schedule with device not found returns false.
+     */
     @Test
     public void executeScheduleDeviceNotFoundReturnsFalse() {
         scheduleService.addSchedule("Missing Device", "Does Not Exist", "Turn On", "07:00 AM", "Daily", true);
@@ -67,6 +82,9 @@ public class TestMockScheduleService {
     // Turn On
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: turn on action sets device state to true.
+     */
     @Test
     public void executeScheduleTurnOnSetDeviceStateTrue() {
         // Bed Light starts OFF — schedule turns it ON
@@ -84,6 +102,9 @@ public class TestMockScheduleService {
     // Turn Off
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: turn off action sets device state to false.
+     */
     @Test
     public void executeScheduleTurnOffSetDeviceStateFalse() {
         // Main Light starts ON — schedule turns it OFF
@@ -101,6 +122,9 @@ public class TestMockScheduleService {
     // Set brightness
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: set brightness action sets dimmer to specified level.
+     */
     @Test
     public void executeScheduleSetBrightnessSetsDimmerLevel() {
         scheduleService.addSchedule("Dim Scene", "Dimmer Light", "Set to 40%", "18:00", "Daily", true);
@@ -111,6 +135,9 @@ public class TestMockScheduleService {
         assertEquals(40, dimmer.getBrightness());
     }
 
+    /**
+     * Test: set temperature action sets thermostat to specified temperature.
+     */
     @Test
     public void executeScheduleSetTemperatureSetsThermostatTemperature() {
         scheduleService.addSchedule("Morning Warmup", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
@@ -125,6 +152,9 @@ public class TestMockScheduleService {
     // Recurring execution (FR-09)
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: daily schedule matching execution time executes only once per minute.
+     */
     @Test
     public void processDueSchedulesMatchingDailyTimeExecutesOnlyOncePerMinute() {
         scheduleService.addSchedule("Wake Up", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
@@ -140,6 +170,9 @@ public class TestMockScheduleService {
         assertEquals(logsBefore + 1, logService.getLogs().size());
     }
 
+    /**
+     * Test: weekdays schedule skips weekend.
+     */
     @Test
     public void processDueSchedulesWeekdaysScheduleSkipsWeekend() {
         scheduleService.addSchedule("Weekday Entry", "Main Light", "Turn Off", "08:15", "Weekdays", true);
@@ -154,6 +187,9 @@ public class TestMockScheduleService {
         assertFalse(main.getState());
     }
 
+    /**
+     * Test: weekly schedule requires configured day.
+     */
     @Test
     public void processDueSchedulesWeeklyScheduleRequiresConfiguredDay() {
         scheduleService.addSchedule("Weekly Warmup", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
@@ -172,6 +208,9 @@ public class TestMockScheduleService {
     // Logging (FR-08 core requirement)
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: executed schedule logs entry with schedule actor.
+     */
     @Test
     public void executeScheduleLogsEntryWithScheduleActor() {
         scheduleService.addSchedule("Log Test", "Main Light", "Turn On", "06:00 AM", "Daily", true);
@@ -187,6 +226,9 @@ public class TestMockScheduleService {
         assertEquals("Schedule: Log Test", entry.getActor());
     }
 
+    /**
+     * Test: schedule execution logs entry with correct room.
+     */
     @Test
     public void executeScheduleLogsEntryWithCorrectRoom() {
         scheduleService.addSchedule("Room Test", "Main Light", "Turn Off", "11:00 PM", "Daily", true);
@@ -197,6 +239,9 @@ public class TestMockScheduleService {
         assertEquals("Living Room", entry.getRoom());
     }
 
+    /**
+     * Test: failed schedule execution does not log entry.
+     */
     @Test
     public void executeScheduleFailedExecutionDoesNotLog() {
         // Device does not exist → executeSchedule returns false and must not log

@@ -42,10 +42,14 @@ public final class MockSimulationService {
             List<SimulationEvent> events) {
     }
 
+    /** Pattern for numeric conditions in rules. */
     private static final Pattern NUMERIC_CONDITION_PATTERN = Pattern.compile("(>=|<=|>|<|=)\\s*(-?\\d+(?:\\.\\d+)?)");
+    /** Singleton instance. */
     private static MockSimulationService instance;
 
+    /** Room service for room data. */
     private final MockRoomService roomService = MockRoomService.getInstance();
+    /** Time formatter for parsing times. */
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private MockSimulationService() {

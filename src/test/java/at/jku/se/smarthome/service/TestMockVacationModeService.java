@@ -20,11 +20,18 @@ import at.jku.se.smarthome.service.mock.MockVacationModeService;
 
 public class TestMockVacationModeService {
 
+    /** Vacation mode service under test. */
     private MockVacationModeService service;
+    /** Mock schedule service. */
     private MockScheduleService scheduleService;
+    /** Mock log service. */
     private MockLogService logService;
+    /** Mock notification service. */
     private MockNotificationService notificationService;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockRoomService.resetForTesting();
@@ -40,11 +47,17 @@ public class TestMockVacationModeService {
         service = MockVacationModeService.getInstance();
     }
 
+    /**
+     * Tears down test fixtures after each test.
+     */
     @After
     public void tearDown() {
         ServiceRegistry.setScheduleServiceForTesting(scheduleService);
     }
 
+    /**
+     * Test: activate vacation mode sets status and override summaries.
+     */
     @Test
     public void activateVacationModeSetsStatusAndOverrideSummaries() {
         Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
@@ -63,6 +76,9 @@ public class TestMockVacationModeService {
         assertTrue(logService.getLogs().get(0).getAction().contains("Vacation mode enabled"));
     }
 
+    /**
+     * Test: deactivate and clear reset configuration.
+     */
     @Test
     public void deactivateAndClearResetConfiguration() {
         Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");

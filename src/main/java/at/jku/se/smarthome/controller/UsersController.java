@@ -22,28 +22,37 @@ import javafx.scene.layout.HBox;
  */
 public class UsersController {
     
+    /** Table view for displaying all users. */
     @FXML
     private TableView<User> usersTable;
     
+    /** Column displaying user email. */
     @FXML
     private TableColumn<User, String> emailColumn;
     
+    /** Column displaying user role. */
     @FXML
     private TableColumn<User, String> roleColumn;
     
+    /** Column displaying user account status. */
     @FXML
     private TableColumn<User, String> statusColumn;
 
+    /** Column displaying action buttons. */
     @FXML
     private TableColumn<User, Void> actionsColumn;
 
+    /** Button to invite new users. */
     @FXML
     private Button inviteBtn;
 
+    /** ComboBox for filtering users by status. */
     @FXML
     private ComboBox<String> statusFilterCombo;
     
+    /** User service for user management. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Filtered view of users for status filtering. */
     private FilteredList<User> filteredUsers;
     
     @FXML

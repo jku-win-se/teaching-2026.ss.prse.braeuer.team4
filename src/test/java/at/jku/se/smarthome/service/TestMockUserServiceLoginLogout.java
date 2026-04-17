@@ -18,6 +18,9 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
  */
 public class TestMockUserServiceLoginLogout {
 
+    /**
+     * Test: authenticate valid persisted credentials starts session and updates last login.
+     */
     @Test
     public void authenticateValidPersistedCredentialsStartsSessionAndUpdatesLastLogin() {
         StubAuthStore store = new StubAuthStore();
@@ -39,6 +42,9 @@ public class TestMockUserServiceLoginLogout {
         assertEquals("owner@smarthome.com", store.lastLoginUpdatedEmail);
     }
 
+    /**
+     * Test: authenticate invalid password returns generic failure without session.
+     */
     @Test
     public void authenticateInvalidPasswordReturnsGenericFailureWithoutSession() {
         StubAuthStore store = new StubAuthStore();
@@ -58,6 +64,9 @@ public class TestMockUserServiceLoginLogout {
         assertNull(service.getCurrentUserEmail());
     }
 
+    /**
+     * Test: authenticate inactive user rejects login.
+     */
     @Test
     public void authenticateInactiveUserRejectsLogin() {
         StubAuthStore store = new StubAuthStore();
@@ -76,6 +85,9 @@ public class TestMockUserServiceLoginLogout {
         assertFalse(service.hasActiveSession());
     }
 
+    /**
+     * Test: authenticate repeated failures triggers throttle.
+     */
     @Test
     public void authenticateRepeatedFailuresTriggerThrottle() {
         StubAuthStore store = new StubAuthStore();
@@ -98,6 +110,9 @@ public class TestMockUserServiceLoginLogout {
         assertTrue(service.getRemainingThrottleSeconds("owner@smarthome.com") >= 1);
     }
 
+    /**
+     * Test: logout and session expiry clear authenticated state.
+     */
     @Test
     public void logoutAndSessionExpiryClearAuthenticatedState() {
         StubAuthStore store = new StubAuthStore();
@@ -124,15 +139,26 @@ public class TestMockUserServiceLoginLogout {
         assertEquals("Guest", service.getCurrentUserRole());
     }
 
+    /**
+     * Stub authentication store for testing.
+     */
     private static final class StubAuthStore implements UserRegistrationStore {
+        /** Persisted user. */
         private UserRegistrationStore.PersistedUser persistedUser;
+        /** Last login updated email. */
         private String lastLoginUpdatedEmail;
 
+        /**
+         * Checks if email exists.
+         */
         @Override
         public boolean emailExists(String normalizedEmail) {
             return persistedUser != null && persistedUser.email().equals(normalizedEmail);
         }
 
+        /**
+         * Finds user by email.
+         */
         @Override
         public Optional<PersistedUser> findByEmail(String normalizedEmail) {
             if (persistedUser == null || !persistedUser.email().equals(normalizedEmail)) {
@@ -141,16 +167,25 @@ public class TestMockUserServiceLoginLogout {
             return Optional.of(persistedUser);
         }
 
+        /**
+         * Finds all users.
+         */
         @Override
         public java.util.List<PersistedUser> findAllUsers() {
             return persistedUser == null ? java.util.List.of() : java.util.List.of(persistedUser);
         }
 
+        /**
+         * Saves a user.
+         */
         @Override
         public void save(PersistedUser user) {
             this.persistedUser = user;
         }
 
+        /**
+         * Updates last login.
+         */
         @Override
         public void updateLastLogin(String normalizedEmail) {
             this.lastLoginUpdatedEmail = normalizedEmail;

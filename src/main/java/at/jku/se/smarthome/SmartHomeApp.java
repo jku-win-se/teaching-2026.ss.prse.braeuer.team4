@@ -22,13 +22,26 @@ import javafx.stage.Stage;
  */
 public class SmartHomeApp extends Application {
 
+    /** Logger instance for application logging. */
     private static final Logger LOGGER = LogManager.getLogger(SmartHomeApp.class);
     
+    /** Primary application stage. */
     private Stage primaryStage;
+    /** Login screen scene. */
     private Scene loginScene;
+    /** User registration screen scene. */
     private Scene registerScene;
+    /** Main application screen scene. */
     private Scene mainScene;
+    /** Controller for main application view. */
     private MainController mainController;
+    
+    /**
+     * Constructs the Smart Home application.
+     */
+    public SmartHomeApp() {
+        super();
+    }
     
     /**
      * Starts the JavaFX application.

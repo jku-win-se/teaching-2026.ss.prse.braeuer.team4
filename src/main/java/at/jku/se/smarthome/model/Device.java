@@ -13,12 +13,19 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class Device {
     
+    /** Unique device identifier. */
     private final SimpleStringProperty id;
+    /** Device display name. */
     private final SimpleStringProperty name;
+    /** Device type (Switch, Dimmer, Thermostat). */
     private final SimpleStringProperty type;
+    /** Room containing device. */
     private final SimpleStringProperty room;
+    /** Current power state. */
     private final SimpleBooleanProperty state;
+    /** Brightness level for dimmers (0-100). */
     private final SimpleIntegerProperty brightness;
+    /** Temperature for thermostats (in degrees). */
     private final SimpleDoubleProperty temperature;
     
     /**
