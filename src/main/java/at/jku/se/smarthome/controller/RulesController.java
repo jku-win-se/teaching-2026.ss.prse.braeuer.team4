@@ -74,6 +74,9 @@ public class RulesController {
     /** User service for authorization checks. */
     private final UserService userService = ServiceRegistry.getUserService();
     
+    /**
+     * Initializes the rules table with columns and loads rules from service.
+     */
     @FXML
     private void initialize() {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -96,6 +99,9 @@ public class RulesController {
         }
     }
     
+    /**
+     * Handles add rule button click, showing dialog to create new rule.
+     */
     @FXML
     private void handleAddRule() {
         if (!userService.canManageSystem()) {
@@ -112,6 +118,11 @@ public class RulesController {
         ));
     }
 
+    /**
+     * Handles edit rule action, showing dialog to modify existing rule.
+     *
+     * @param rule rule to edit
+     */
     private void handleEditRule(Rule rule) {
         if (!userService.canManageSystem()) {
             return;
@@ -131,6 +142,11 @@ public class RulesController {
         });
     }
 
+    /**
+     * Handles delete rule action, removing rule from service.
+     *
+     * @param rule rule to delete
+     */
     private void handleDeleteRule(Rule rule) {
         if (!userService.canManageSystem()) {
             return;
@@ -138,10 +154,21 @@ public class RulesController {
         ruleService.deleteRule(rule.getId());
     }
 
+    /**
+     * Handles run rule action, executing rule immediately.
+     *
+     * @param rule rule to execute
+     */
     private void handleRunRule(Rule rule) {
         ruleService.executeRule(rule.getId());
     }
 
+    /**
+     * Shows dialog for adding or editing a rule.
+     *
+     * @param existingRule existing rule to edit, or null for new rule
+     * @return optional containing rule input if saved, empty if cancelled
+     */
     private Optional<RuleInput> showRuleDialog(Rule existingRule) {
         Dialog<RuleInput> dialog = new Dialog<>();
         dialog.setTitle(existingRule == null ? "Add Rule" : "Edit Rule");
@@ -251,10 +278,23 @@ public class RulesController {
         return dialog.showAndWait();
     }
 
+    /**
+     * Helper: checks if device can be a rule target (non-sensor).
+     *
+     * @param device device to check
+     * @return true if device is a valid rule target
+     */
     private boolean isRuleTargetDevice(Device device) {
         return !"sensor".equalsIgnoreCase(device.getType());
     }
 
+    /**
+     * Helper: updates action options based on selected target device.
+     *
+     * @param deviceCombo combo box with device selection
+     * @param actionCombo combo box to populate with actions
+     * @param preferredAction action to select if available
+     */
     private void updateActionOptions(ComboBox<String> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
         actionCombo.getItems().clear();
 
@@ -290,6 +330,13 @@ public class RulesController {
         }
     }
 
+    /**
+     * Helper: updates source device options based on trigger type.
+     *
+     * @param triggerCombo combo box with trigger type selection
+     * @param sourceDeviceCombo combo box to populate with source devices
+     * @param preferredSource source device to select if available
+     */
     private void updateSourceDeviceOptions(ComboBox<String> triggerCombo, ComboBox<String> sourceDeviceCombo, String preferredSource) {
         sourceDeviceCombo.getItems().clear();
 
@@ -317,6 +364,13 @@ public class RulesController {
         }
     }
 
+    /**
+     * Helper: checks if device is valid source for given trigger type.
+     *
+     * @param triggerType trigger type to check
+     * @param device device to validate
+     * @return true if device is valid source for trigger type
+     */
     private boolean isValidSourceDevice(String triggerType, Device device) {
         if ("Sensor Threshold".equals(triggerType)) {
             return "sensor".equalsIgnoreCase(device.getType());
@@ -327,6 +381,12 @@ public class RulesController {
         return false;
     }
 
+    /**
+     * Helper: updates condition prompt text based on trigger type.
+     *
+     * @param triggerCombo combo box with trigger type selection
+     * @param conditionField text field to update with prompt
+     */
     private void updateConditionPrompt(ComboBox<String> triggerCombo, TextField conditionField) {
         String triggerType = triggerCombo.getValue();
         if ("Time".equals(triggerType)) {
@@ -338,6 +398,12 @@ public class RulesController {
         }
     }
 
+    /**
+     * Helper: finds device by name across all rooms.
+     *
+     * @param deviceName name of device to find
+     * @return device with matching name, or null if not found
+     */
     private Device getDeviceByName(String deviceName) {
         if (deviceName == null) {
             return null;
@@ -353,6 +419,16 @@ public class RulesController {
         return null;
     }
 
+    /**
+     * Record for holding rule form input data.
+     *
+     * @param name rule name
+     * @param triggerType type of trigger (Time, Sensor Threshold, Device State)
+     * @param sourceDevice source device for trigger
+     * @param condition condition for trigger
+     * @param action action to perform
+     * @param targetDevice target device for action
+     */
     private record RuleInput(
             String name,
             String triggerType,
@@ -362,12 +438,22 @@ public class RulesController {
             String targetDevice) {
     }
 
+    /**
+     * Custom table cell for displaying rule action buttons.
+     */
     private final class RuleActionCell extends TableCell<Rule, Void> {
+        /** Button to run rule. */
         private final Button runButton = new Button("Run");
+        /** Button to edit rule. */
         private final Button editButton = new Button("Edit");
+        /** Button to delete rule. */
         private final Button deleteButton = new Button("Delete");
+        /** Container for action buttons. */
         private final HBox container = new HBox(6);
 
+        /**
+         * Constructs action cell with run, edit, and delete buttons.
+         */
         private RuleActionCell() {
             runButton.setOnAction(event -> handleRunRule(getTableView().getItems().get(getIndex())));
             editButton.setOnAction(event -> handleEditRule(getTableView().getItems().get(getIndex())));
@@ -377,6 +463,12 @@ public class RulesController {
             container.getChildren().addAll(runButton, editButton, deleteButton);
         }
 
+        /**
+         * Updates cell to display action buttons or nothing if row is empty.
+         *
+         * @param item item value (not used for action cell)
+         * @param empty true if row is empty
+         */
         @Override
         protected void updateItem(Void item, boolean empty) {
             super.updateItem(item, empty);

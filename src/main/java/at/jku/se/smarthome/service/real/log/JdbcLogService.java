@@ -149,12 +149,23 @@ public final class JdbcLogService implements LogService {
         logs.setAll(loaded);
     }
 
+    /**
+     * Helper: opens a database connection using configured settings.
+     *
+     * @return open database connection
+     * @throws SQLException if connection fails
+     */
     private Connection openConnection() throws SQLException {
         DatabaseSettings settings = DatabaseConfig.load()
                 .orElseThrow(() -> new IllegalStateException("Log database is not configured."));
         return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
     }
 
+    /**
+     * Helper: ensures database schema is initialized.
+     *
+     * @param connection database connection to use
+     */
     private void ensureSchema(Connection connection) {
         if (schemaReady.get()) return;
         synchronized (this) {
@@ -171,6 +182,11 @@ public final class JdbcLogService implements LogService {
         }
     }
 
+    /**
+     * Helper: loads database schema initialization script from classpath.
+     *
+     * @return SQL script content as string
+     */
     private String loadInitScript() {
         try (InputStream in = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
             if (in == null) throw new IllegalStateException("Log schema script not found at " + INIT_SCRIPT_PATH);

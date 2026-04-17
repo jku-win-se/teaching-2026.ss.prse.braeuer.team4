@@ -8,10 +8,15 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class LogEntry {
     
+    /** Timestamp of the logged action. */
     private final SimpleStringProperty timestamp;
+    /** Name of the device affected. */
     private final SimpleStringProperty device;
+    /** Room containing the affected device. */
     private final SimpleStringProperty room;
+    /** Action that occurred. */
     private final SimpleStringProperty action;
+    /** Actor responsible for triggering the action. */
     private final SimpleStringProperty actor;
     
     /**

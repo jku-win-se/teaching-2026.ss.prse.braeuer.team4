@@ -49,12 +49,18 @@ public class ScenesController {
     private final UserService userService = ServiceRegistry.getUserService();
     private boolean refreshingDeviceOptions;
     
+    /**
+     * Initializes the scenes controller and loads all scenes.
+     */
     @FXML
     private void initialize() {
         newSceneBtn.setDisable(!userService.canManageSystem());
         loadScenes();
     }
     
+    /**
+     * Loads all scenes and displays them as grid cards.
+     */
     private void loadScenes() {
         scenesGrid.getChildren().clear();
         int row = 0, col = 0;
@@ -71,6 +77,12 @@ public class ScenesController {
         }
     }
     
+    /**
+     * Creates a visual card for a scene with activation and edit/delete options.
+     *
+     * @param scene scene to create card for
+     * @return VBox containing the scene card UI
+     */
     private VBox createSceneCard(Scene scene) {
         VBox card = new VBox(10);
         card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; " +
@@ -109,6 +121,9 @@ public class ScenesController {
         return card;
     }
     
+    /**
+     * Handles create scene button click, showing dialog to create new scene.
+     */
     @FXML
     private void handleCreateScene() {
         if (!userService.canManageSystem()) {
@@ -122,6 +137,11 @@ public class ScenesController {
         });
     }
 
+    /**
+     * Handles edit scene action, showing dialog to modify existing scene.
+     *
+     * @param scene scene to edit
+     */
     private void handleEditScene(Scene scene) {
         if (!userService.canManageSystem()) {
             return;
@@ -134,6 +154,11 @@ public class ScenesController {
         });
     }
 
+    /**
+     * Handles delete scene action with confirmation dialog.
+     *
+     * @param scene scene to delete
+     */
     private void handleDeleteScene(Scene scene) {
         if (!userService.canManageSystem()) {
             return;
@@ -152,6 +177,12 @@ public class ScenesController {
         });
     }
 
+    /**
+     * Shows dialog for adding or editing a scene.
+     *
+     * @param existingScene existing scene to edit, or null for new scene
+     * @return optional containing scene input if saved, empty if cancelled
+     */
     private Optional<SceneInput> showSceneDialog(Scene existingScene) {
         Dialog<SceneInput> dialog = new Dialog<>();
         dialog.setTitle(existingScene == null ? "Create Scene" : "Edit Scene");
@@ -233,6 +264,15 @@ public class ScenesController {
         return dialog.showAndWait();
     }
 
+    /**
+     * Creates a row for selecting device and state in scene dialog.
+     *
+     * @param selectedDeviceName pre-selected device name, or null
+     * @param selectedState pre-selected state, or null
+     * @param parentBox parent VBox for updating state options
+     * @param dialog dialog for resizing when content changes
+     * @return HBox containing device and state combo boxes
+     */
     private HBox createDeviceStateRow(String selectedDeviceName, String selectedState, VBox parentBox, Dialog<?> dialog) {
         ComboBox<Device> deviceCombo = new ComboBox<>();
         deviceCombo.setPrefWidth(230);
@@ -282,6 +322,11 @@ public class ScenesController {
         return row;
     }
 
+    /**
+     * Helper: resizes dialog to fit content.
+     *
+     * @param dialog dialog to resize
+     */
     private void resizeDialog(Dialog<?> dialog) {
         Platform.runLater(() -> {
             if (dialog.getDialogPane().getScene() != null && dialog.getDialogPane().getScene().getWindow() != null) {
@@ -290,6 +335,13 @@ public class ScenesController {
         });
     }
 
+    /**
+     * Helper: updates state options available for selected device.
+     *
+     * @param deviceCombo device combo box
+     * @param stateCombo state combo box to update
+     * @param selectedState state to select after update
+     */
     private void updateStateOptions(ComboBox<Device> deviceCombo, ComboBox<String> stateCombo, String selectedState) {
         stateCombo.getItems().clear();
 
@@ -307,6 +359,11 @@ public class ScenesController {
         }
     }
 
+    /**
+     * Helper: refreshes all device options in scene state rows.
+     *
+     * @param deviceStatesBox VBox containing state rows
+     */
     private void refreshDeviceOptions(VBox deviceStatesBox) {
         if (refreshingDeviceOptions) {
             return;
@@ -357,6 +414,12 @@ public class ScenesController {
         }
     }
 
+    /**
+     * Helper: extracts scene state rows from VBox children.
+     *
+     * @param deviceStatesBox VBox containing state rows
+     * @return list of SceneStateRow objects
+     */
     private List<SceneStateRow> getSceneStateRows(VBox deviceStatesBox) {
         List<SceneStateRow> rows = new ArrayList<>();
         for (javafx.scene.Node child : deviceStatesBox.getChildren()) {
@@ -373,6 +436,11 @@ public class ScenesController {
         return rows;
     }
 
+    /**
+     * Helper: gets all devices compatible with scenes (non-sensor).
+     *
+     * @return list of scene-compatible devices sorted by room and name
+     */
     private List<Device> getSceneCompatibleDevices() {
         return roomService.getAllDevices().stream()
                 .filter(device -> !"sensor".equalsIgnoreCase(device.getType()))
@@ -380,6 +448,12 @@ public class ScenesController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Helper: gets valid state options for a device type.
+     *
+     * @param device device to get valid states for
+     * @return list of valid state strings
+     */
     private List<String> getValidStates(Device device) {
         return switch (device.getType().toLowerCase()) {
             case "switch" -> List.of("ON", "OFF");
@@ -390,11 +464,24 @@ public class ScenesController {
         };
     }
 
+    /**
+     * Helper: validates scene input for completeness.
+     *
+     * @param sceneName scene name to validate
+     * @param deviceStatesBox VBox containing device states
+     * @return true if scene input is valid
+     */
     private boolean isValidSceneInput(String sceneName, VBox deviceStatesBox) {
         return !sceneName.trim().isEmpty()
                 && !collectDeviceStates(deviceStatesBox).isEmpty();
     }
 
+    /**
+     * Helper: collects device state strings from scene state rows.
+     *
+     * @param deviceStatesBox VBox containing state rows
+     * @return list of device state strings
+     */
     private List<String> collectDeviceStates(VBox deviceStatesBox) {
         List<String> deviceStates = new ArrayList<>();
         for (SceneStateRow row : getSceneStateRows(deviceStatesBox)) {
@@ -407,6 +494,12 @@ public class ScenesController {
         return deviceStates;
     }
 
+    /**
+     * Helper: parses device state string into device name and state value.
+     *
+     * @param deviceState device state string
+     * @return map entry with device name and state value
+     */
     private Map.Entry<String, String> parseSceneState(String deviceState) {
         String[] parts = deviceState.split(":", 2);
         if (parts.length == 2) {
@@ -415,6 +508,9 @@ public class ScenesController {
         return new AbstractMap.SimpleEntry<>(deviceState.trim(), null);
     }
 
+    /**
+     * Helper: shows validation error alert for incomplete scene input.
+     */
     private void showSceneValidationError() {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Incomplete Scene");
@@ -423,6 +519,12 @@ public class ScenesController {
         alert.showAndWait();
     }
 
+    /**
+     * Helper: builds a summary string of scene device states.
+     *
+     * @param scene scene to summarize
+     * @return formatted state summary string
+     */
     private String buildStateSummary(Scene scene) {
         if (scene.getDeviceStates().isEmpty()) {
             return "No device states configured yet.";
@@ -437,6 +539,12 @@ public class ScenesController {
                 : "");
     }
 
+    /**
+     * Helper: formats a single state definition for compact display.
+     *
+     * @param stateDefinition state definition string
+     * @return formatted compact state string
+     */
     private String formatCompactState(String stateDefinition) {
         Map.Entry<String, String> parsed = parseSceneState(stateDefinition);
         Device device = roomService.getDeviceByName(parsed.getKey());
@@ -446,13 +554,32 @@ public class ScenesController {
         return device.getRoom() + " | " + device.getName() + " -> " + parsed.getValue();
     }
 
+    /**
+     * Helper: formats a device label showing name, room, and type.
+     *
+     * @param device device to format
+     * @return formatted device label string
+     */
     private String formatDeviceLabel(Device device) {
         return device.getName() + " (" + device.getRoom() + " • " + device.getType() + ")";
     }
 
+    /**
+     * Record for holding scene form input data.
+     *
+     * @param name scene name
+     * @param description scene description
+     * @param deviceStates list of device state strings
+     */
     private record SceneInput(String name, String description, List<String> deviceStates) {
     }
 
+    /**
+     * Record for holding scene state row components (device and state combos).
+     *
+     * @param deviceCombo combo box with device selection
+     * @param stateCombo combo box with state selection
+     */
     private record SceneStateRow(ComboBox<Device> deviceCombo, ComboBox<String> stateCombo) {
     }
 }
