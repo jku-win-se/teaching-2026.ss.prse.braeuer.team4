@@ -25,39 +25,53 @@ import javafx.util.StringConverter;
  */
 public class VacationModeController {
     
+    /** Toggle button to activate/deactivate vacation mode. */
     @FXML
     private ToggleButton vacationToggle;
     
+    /** Date picker for vacation start date. */
     @FXML
     private DatePicker startDatePicker;
     
+    /** Date picker for vacation end date. */
     @FXML
     private DatePicker endDatePicker;
     
+    /** Combo box for selecting vacation schedule. */
     @FXML
     private ComboBox<Schedule> scheduleCombo;
     
+    /** VBox container displaying affected devices. */
     @FXML
     private VBox affectedDevicesBox;
 
+    /** Label displaying current vacation status. */
     @FXML
     private Label currentStatusLabel;
 
+    /** Label displaying selected schedule. */
     @FXML
     private Label selectedScheduleLabel;
 
+    /** Label displaying override summary. */
     @FXML
     private Label overrideSummaryLabel;
     
+    /** Button to activate vacation mode. */
     @FXML
     private Button activateBtn;
     
+    /** Button to deactivate vacation mode. */
     @FXML
     private Button deactivateBtn;
     
+    /** Schedule service instance. */
     private final ScheduleService scheduleService = ServiceRegistry.getScheduleService();
+    /** Vacation mode service instance. */
     private final MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
+    /** Room service instance. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
+    /** User service instance. */
     private final UserService userService = ServiceRegistry.getUserService();
     
     @FXML

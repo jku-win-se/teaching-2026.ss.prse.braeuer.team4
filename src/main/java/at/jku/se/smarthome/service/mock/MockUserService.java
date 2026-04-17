@@ -19,25 +19,46 @@ import javafx.collections.ObservableList;
  */
 public class MockUserService extends UserService {
 
+    /** Session timeout in milliseconds (30 minutes). */
     private static final long SESSION_TIMEOUT_MILLIS = 30 * 60 * 1000L;
+    /** Maximum failed login attempts before throttling. */
     private static final int THROTTLE_THRESHOLD = 3;
     
+    /** Singleton instance of MockUserService. */
     private static MockUserService instance;
+    /** Observable list of users in the system. */
     private final ObservableList<User> users;
+    /** Store for persisted user registration data. */
     private final UserRegistrationStore registrationStore;
+    /** Map tracking failed login attempts by email. */
     private final Map<String, Integer> failedLoginAttempts;
+    /** Map tracking when users are blocked from login by email. */
     private final Map<String, Long> blockedUntilByEmail;
+    /** Email of the current logged-in user. */
     private String currentUserEmail;
+    /** Username of the current logged-in user. */
     private String currentUsername;
+    /** Role of the current logged-in user. */
     private String currentUserRole;
+    /** Status of the current logged-in user. */
     private String currentUserStatus;
+    /** Timestamp when the current session expires. */
     private long currentSessionExpiresAt;
     
+    /**
+     * Private constructor for singleton pattern.
+     */
     private MockUserService() {
         this(new JdbcUserRegistrationStore());
     }
 
+    /**
+     * Constructs a MockUserService with a provided registration store.
+     *
+     * @param registrationStore the user registration store to use
+     */
     public MockUserService(UserRegistrationStore registrationStore) {
+        super();
         this.users = FXCollections.observableArrayList();
         this.registrationStore = registrationStore;
         this.failedLoginAttempts = new HashMap<>();

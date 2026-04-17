@@ -35,68 +35,94 @@ import javafx.util.Duration;
  */
 public class SimulationController {
     
+    /** Text field for entering simulation start time. */
     @FXML
     private TextField startTimeSpinner;
     
+    /** Combo box for selecting simulation speed. */
     @FXML
     private ComboBox<String> speedCombo;
     
+    /** Text field for entering temperature. */
     @FXML
     private TextField temperatureField;
     
+    /** Text field for entering humidity. */
     @FXML
     private TextField humidityField;
     
+    /** VBox container for rules checkboxes. */
     @FXML
     private VBox rulesCheckBox;
     
+    /** Button to start simulation. */
     @FXML
     private Button startBtn;
     
+    /** Button to pause simulation. */
     @FXML
     private Button pauseBtn;
     
+    /** Button to reset simulation. */
     @FXML
     private Button resetBtn;
     
+    /** Slider to control simulation progress. */
     @FXML
     private Slider progressSlider;
     
+    /** Label displaying current simulation progress. */
     @FXML
     private Label progressLabel;
 
+    /** Label displaying simulation summary. */
     @FXML
     private Label summaryLabel;
     
+    /** Text area for simulation logs. */
     @FXML
     private TextArea logOutput;
 
+    /** Table view displaying simulated device states. */
     @FXML
     private TableView<SimulationDeviceState> simulatedDevicesTable;
 
+    /** Column displaying device names. */
     @FXML
     private TableColumn<SimulationDeviceState, String> simDeviceColumn;
 
+    /** Column displaying room names. */
     @FXML
     private TableColumn<SimulationDeviceState, String> simRoomColumn;
 
+    /** Column displaying device types. */
     @FXML
     private TableColumn<SimulationDeviceState, String> simTypeColumn;
 
+    /** Column displaying current device state. */
     @FXML
     private TableColumn<SimulationDeviceState, String> simStateColumn;
 
+    /** Column displaying last change timestamp. */
     @FXML
     private TableColumn<SimulationDeviceState, String> simLastChangedColumn;
     
+    /** Rule service instance. */
     private final MockRuleService ruleService = MockRuleService.getInstance();
+    /** Simulation service instance. */
     private final MockSimulationService simulationService = MockSimulationService.getInstance();
+    /** Observable list of simulated device states. */
     private final ObservableList<SimulationDeviceState> simulatedDeviceStates = FXCollections.observableArrayList();
 
+    /** Timeline for simulation playback animation. */
     private Timeline playbackTimeline;
+    /** Current simulation plan being executed. */
     private SimulationPlan currentPlan;
+    /** Configured start time for the simulation. */
     private LocalTime configuredStartTime;
+    /** Index of the current event in the simulation. */
     private int currentEventIndex;
+    /** Flag indicating if simulation is currently running. */
     private boolean isRunning = false;
     
     @FXML
