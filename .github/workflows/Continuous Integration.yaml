@@ -45,7 +45,7 @@ jobs:
         uses: pmd/pmd-github-action@v2
         id: pmd
         with:
-          version: '6.55.0'
+          version: '7.17.0'
           rulesets: 'ruleset.xml'
 
       - name: Fail build if there are violations
