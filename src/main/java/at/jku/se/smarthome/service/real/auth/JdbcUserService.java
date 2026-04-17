@@ -20,7 +20,7 @@ public final class JdbcUserService extends UserService {
     private static final long SESSION_TIMEOUT_MILLIS = 30 * 60 * 1000L;
     private static final int THROTTLE_THRESHOLD = 3;
 
-    private static volatile JdbcUserService instance;
+    private static JdbcUserService instance;
 
     private final ObservableList<User> users;
     private final UserRegistrationStore registrationStore;

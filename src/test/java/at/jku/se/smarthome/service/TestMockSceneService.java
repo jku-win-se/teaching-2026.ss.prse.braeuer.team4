@@ -37,7 +37,7 @@ public class TestMockSceneService {
     }
 
     @Test
-    public void activateScene_appliesDeviceStates_logsAndNotifies() {
+    public void activateSceneAppliesToDeviceStatesLogsAndNotifies() {
         int beforeLogs = logService.getLogs().size();
         int beforeNotifications = notificationService.getNotifications().size();
 
@@ -56,7 +56,7 @@ public class TestMockSceneService {
     }
 
     @Test
-    public void addUpdateDeleteScene_manageConfiguredStates() {
+    public void addUpdateDeleteSceneManageConfiguredStates() {
         Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));
         assertNotNull(scene);
         assertEquals(2, scene.getDeviceStates().size());

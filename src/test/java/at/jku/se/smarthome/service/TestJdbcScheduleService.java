@@ -63,7 +63,7 @@ public class TestJdbcScheduleService {
     }
 
     @Test
-    public void addUpdateToggleDeleteSchedule_persistsChanges() throws Exception {
+    public void addUpdateToggleDeleteSchedulePersistsChanges() throws Exception {
         Schedule schedule = service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
         assertNotNull(schedule);
         assertEquals(1, service.getSchedules().size());
@@ -87,7 +87,7 @@ public class TestJdbcScheduleService {
     }
 
     @Test
-    public void executeAndReloadSchedule_updatesDeviceLogNotificationAndDatabase() throws Exception {
+    public void executeAndReloadScheduleUpdatesDeviceLogNotificationAndDatabase() throws Exception {
         Schedule schedule = service.addSchedule("Warmup", "dev-004", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
         assertNotNull(schedule);
         assertEquals(1, service.getSchedules().size());
@@ -107,7 +107,7 @@ public class TestJdbcScheduleService {
     }
 
     @Test
-    public void processDueSchedules_executesMatchingRecurringSchedules() throws Exception {
+    public void processDueSchedulesExecutesMatchingRecurringSchedules() throws Exception {
         Schedule schedule = service.addSchedule("Wake Up", "dev-003", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
         assertNotNull(schedule);
         assertEquals(1, service.getSchedules().size());

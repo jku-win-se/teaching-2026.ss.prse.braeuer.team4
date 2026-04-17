@@ -13,7 +13,7 @@ import javafx.collections.ObservableList;
  * Mock Log Service providing activity logging functionality.
  * Records all manual and automated state changes with detailed information.
  */
-public class MockLogService implements LogService {
+public final class MockLogService implements LogService {
     
     private static MockLogService instance;
     private final ObservableList<LogEntry> logs;

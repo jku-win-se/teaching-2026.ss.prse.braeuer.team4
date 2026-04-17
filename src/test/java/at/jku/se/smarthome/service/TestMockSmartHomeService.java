@@ -38,7 +38,7 @@ public class TestMockSmartHomeService {
 
     /** A device that starts ON should be OFF after one toggle. */
     @Test
-    public void testToggleDevice_onToOff() {
+    public void testToggleDeviceOnToOff() {
         Device d = service.getDeviceById("dev-001");
         assertTrue("pre-condition: dev-001 starts ON", d.getState());
 
@@ -50,7 +50,7 @@ public class TestMockSmartHomeService {
 
     /** A device that starts OFF should be ON after one toggle. */
     @Test
-    public void testToggleDevice_offToOn() {
+    public void testToggleDeviceOffToOn() {
         Device d = service.getDeviceById("dev-003");
         assertFalse("pre-condition: dev-003 starts OFF", d.getState());
 
@@ -62,7 +62,7 @@ public class TestMockSmartHomeService {
 
     /** An unknown device ID returns false and has no side effects. */
     @Test
-    public void testToggleDevice_unknownId_returnsFalse() {
+    public void testToggleDeviceUnknownIdReturnsFalse() {
         assertFalse(service.toggleDevice("does-not-exist"));
     }
 
@@ -72,7 +72,7 @@ public class TestMockSmartHomeService {
 
     /** Brightness within [0, 100] is applied to a Dimmer. */
     @Test
-    public void testSetBrightness_validRange() {
+    public void testSetBrightnessValidRange() {
         boolean result = service.setBrightness("dev-003", 50);
         assertTrue(result);
         assertEquals(50, service.getDeviceById("dev-003").getBrightness());
@@ -80,33 +80,33 @@ public class TestMockSmartHomeService {
 
     /** Setting brightness to 0 turns the dimmer OFF. */
     @Test
-    public void testSetBrightness_zero_turnsDeviceOff() {
+    public void testSetBrightnessZeroTurnsDeviceOff() {
         service.setBrightness("dev-003", 0);
         assertFalse(service.getDeviceById("dev-003").getState());
     }
 
     /** Setting brightness above 0 turns the dimmer ON. */
     @Test
-    public void testSetBrightness_aboveZero_turnsDeviceOn() {
+    public void testSetBrightnessAboveZeroTurnsDeviceOn() {
         service.setBrightness("dev-003", 80);
         assertTrue(service.getDeviceById("dev-003").getState());
     }
 
     /** Brightness > 100 is rejected. */
     @Test
-    public void testSetBrightness_aboveMax_returnsFalse() {
+    public void testSetBrightnessAboveMaxReturnsFalse() {
         assertFalse(service.setBrightness("dev-003", 101));
     }
 
     /** Negative brightness is rejected. */
     @Test
-    public void testSetBrightness_negative_returnsFalse() {
+    public void testSetBrightnessNegativeReturnsFalse() {
         assertFalse(service.setBrightness("dev-003", -1));
     }
 
     /** setBrightness on a non-Dimmer device returns false. */
     @Test
-    public void testSetBrightness_wrongType_returnsFalse() {
+    public void testSetBrightnessWrongTypeReturnsFalse() {
         assertFalse(service.setBrightness("dev-001", 50)); // dev-001 is a Switch
     }
 
@@ -116,7 +116,7 @@ public class TestMockSmartHomeService {
 
     /** A temperature in the valid range [10.0, 35.0] is applied. */
     @Test
-    public void testSetTemperature_valid() {
+    public void testSetTemperatureValid() {
         boolean result = service.setTemperature("dev-002", 22.5);
         assertTrue(result);
         assertEquals(22.5, service.getDeviceById("dev-002").getTemperature(), 0.001);
@@ -124,19 +124,19 @@ public class TestMockSmartHomeService {
 
     /** Temperature below 10.0 is rejected. */
     @Test
-    public void testSetTemperature_tooLow_returnsFalse() {
+    public void testSetTemperatureTooLowReturnsFalse() {
         assertFalse(service.setTemperature("dev-002", 9.9));
     }
 
     /** Temperature above 35.0 is rejected. */
     @Test
-    public void testSetTemperature_tooHigh_returnsFalse() {
+    public void testSetTemperatureTooHighReturnsFalse() {
         assertFalse(service.setTemperature("dev-002", 35.1));
     }
 
     /** setTemperature on a non-Thermostat device returns false. */
     @Test
-    public void testSetTemperature_wrongType_returnsFalse() {
+    public void testSetTemperatureWrongTypeReturnsFalse() {
         assertFalse(service.setTemperature("dev-001", 22.0)); // dev-001 is a Switch
     }
 
@@ -146,7 +146,7 @@ public class TestMockSmartHomeService {
 
     /** Opening a closed blind succeeds and state becomes true (OPEN). */
     @Test
-    public void testOpenBlind_valid() {
+    public void testOpenBlindValid() {
         boolean result = service.openBlind("dev-006");
         assertTrue(result);
         assertTrue(service.getDeviceById("dev-006").getState());
@@ -154,7 +154,7 @@ public class TestMockSmartHomeService {
 
     /** Closing an open blind succeeds and state becomes false (CLOSED). */
     @Test
-    public void testCloseBlind_valid() {
+    public void testCloseBlindValid() {
         service.openBlind("dev-006");
         boolean result = service.closeBlind("dev-006");
         assertTrue(result);
@@ -163,13 +163,13 @@ public class TestMockSmartHomeService {
 
     /** openBlind on a non-Cover/Blind device returns false. */
     @Test
-    public void testOpenBlind_wrongType_returnsFalse() {
+    public void testOpenBlindWrongTypeReturnsFalse() {
         assertFalse(service.openBlind("dev-001")); // Switch
     }
 
     /** closeBlind on an unknown ID returns false. */
     @Test
-    public void testCloseBlind_unknownId_returnsFalse() {
+    public void testCloseBlindUnknownIdReturnsFalse() {
         assertFalse(service.closeBlind("does-not-exist"));
     }
 
@@ -179,7 +179,7 @@ public class TestMockSmartHomeService {
 
     /** Any double value can be injected into a Sensor. */
     @Test
-    public void testInjectSensorValue_valid() {
+    public void testInjectSensorValueValid() {
         boolean result = service.injectSensorValue("dev-007", 42.5);
         assertTrue(result);
         assertEquals(42.5, service.getDeviceById("dev-007").getTemperature(), 0.001);
@@ -187,7 +187,7 @@ public class TestMockSmartHomeService {
 
     /** Negative sensor values are also valid (e.g. temperature below zero). */
     @Test
-    public void testInjectSensorValue_negativeValue_valid() {
+    public void testInjectSensorValueNegativeValueValid() {
         boolean result = service.injectSensorValue("dev-007", -10.0);
         assertTrue(result);
         assertEquals(-10.0, service.getDeviceById("dev-007").getTemperature(), 0.001);
@@ -195,13 +195,13 @@ public class TestMockSmartHomeService {
 
     /** injectSensorValue on a non-Sensor device returns false. */
     @Test
-    public void testInjectSensorValue_wrongType_returnsFalse() {
+    public void testInjectSensorValueWrongTypeReturnsFalse() {
         assertFalse(service.injectSensorValue("dev-001", 42.0)); // Switch
     }
 
     /** injectSensorValue on an unknown ID returns false. */
     @Test
-    public void testInjectSensorValue_unknownId_returnsFalse() {
+    public void testInjectSensorValueUnknownIdReturnsFalse() {
         assertFalse(service.injectSensorValue("does-not-exist", 42.0));
     }
 }

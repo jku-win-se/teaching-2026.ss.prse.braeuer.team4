@@ -19,7 +19,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock simulation service for replaying a full day without affecting live devices.
  */
-public class MockSimulationService {
+public final class MockSimulationService {
 
     public record SimulationConfiguration(
             LocalTime startTime,

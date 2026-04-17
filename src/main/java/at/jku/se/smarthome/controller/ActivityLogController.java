@@ -80,6 +80,6 @@ public class ActivityLogController {
     private void handleExportCSV() {
         String csv = logService.exportToCSV();
         // In a real application, this would save to a file or copy to clipboard
-        System.out.println("Export CSV:\n" + csv);
+        // Export CSV data is now available via logService.exportToCSV()
     }
 }

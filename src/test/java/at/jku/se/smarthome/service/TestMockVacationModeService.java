@@ -46,7 +46,7 @@ public class TestMockVacationModeService {
     }
 
     @Test
-    public void activateVacationMode_setsStatusAndOverrideSummaries() {
+    public void activateVacationModeSetsStatusAndOverrideSummaries() {
         Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
         LocalDate start = LocalDate.of(2026, 4, 20);
         LocalDate end = LocalDate.of(2026, 4, 25);
@@ -64,7 +64,7 @@ public class TestMockVacationModeService {
     }
 
     @Test
-    public void deactivateAndClear_resetConfiguration() {
+    public void deactivateAndClearResetConfiguration() {
         Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
         service.activateVacationMode(LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 25), selectedSchedule, "Owner");
 

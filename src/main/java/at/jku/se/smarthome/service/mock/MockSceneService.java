@@ -11,7 +11,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Scene Service providing smart scene management functionality.
  */
-public class MockSceneService {
+public final class MockSceneService {
     
     private static MockSceneService instance;
     private final ObservableList<Scene> scenes;

@@ -8,7 +8,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Rule Service providing rule management functionality.
  */
-public class MockRuleService {
+public final class MockRuleService {
     
     private static MockRuleService instance;
     private final ObservableList<Rule> rules;

@@ -17,7 +17,7 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 public class TestMockUserServiceRegistration {
 
     @Test
-    public void registerUser_passwordMismatch_returnsPasswordMismatch() {
+    public void registerUserPasswordMismatchReturnsPasswordMismatch() {
         MockUserService service = new MockUserService(new StubRegistrationStore());
 
         MockUserService.RegistrationStatus result = service.registerUser(
@@ -31,7 +31,7 @@ public class TestMockUserServiceRegistration {
     }
 
     @Test
-    public void registerUser_duplicateEmailInStore_returnsDuplicateEmail() {
+    public void registerUserDuplicateEmailInStoreReturnsDuplicateEmail() {
         StubRegistrationStore store = new StubRegistrationStore();
         store.emailExists = true;
         MockUserService service = new MockUserService(store);
@@ -47,7 +47,7 @@ public class TestMockUserServiceRegistration {
     }
 
     @Test
-    public void registerUser_storeNotConfigured_returnsDatabaseNotConfigured() {
+    public void registerUserStoreNotConfiguredReturnsDatabaseNotConfigured() {
         StubRegistrationStore store = new StubRegistrationStore();
         store.configurationFailure = true;
         MockUserService service = new MockUserService(store);
@@ -63,7 +63,7 @@ public class TestMockUserServiceRegistration {
     }
 
     @Test
-    public void registerUser_success_hashesPasswordAndAddsUser() {
+    public void registerUserSuccessHashesPasswordAndAddsUser() {
         StubRegistrationStore store = new StubRegistrationStore();
         MockUserService service = new MockUserService(store);
 

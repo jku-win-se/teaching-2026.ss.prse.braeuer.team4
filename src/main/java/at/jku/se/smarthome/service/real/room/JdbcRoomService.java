@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import at.jku.se.smarthome.config.DatabaseConfig;
 import at.jku.se.smarthome.config.DatabaseSettings;
@@ -36,7 +37,7 @@ public final class JdbcRoomService implements RoomService {
     private final ObservableList<Room> rooms = FXCollections.observableArrayList();
     private final MockLogService logService = MockLogService.getInstance();
     private final UserService userService = ServiceRegistry.getUserService();
-    private volatile boolean schemaReady;
+    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     private JdbcRoomService() {
         refreshRooms();
@@ -485,15 +486,15 @@ public final class JdbcRoomService implements RoomService {
     }
 
     private void ensureSchema(Connection connection) {
-        if (schemaReady) return;
+        if (schemaReady.get()) return;
         synchronized (this) {
-            if (schemaReady) return;
+            if (schemaReady.get()) return;
             try (Statement stmt = connection.createStatement()) {
                 for (String sql : loadInitScript().split(";")) {
                     String s = sql.trim();
                     if (!s.isEmpty()) stmt.execute(s);
                 }
-                schemaReady = true;
+                schemaReady.set(true);
             } catch (SQLException e) {
                 throw new IllegalStateException("Failed to initialize rooms schema.", e);
             }
