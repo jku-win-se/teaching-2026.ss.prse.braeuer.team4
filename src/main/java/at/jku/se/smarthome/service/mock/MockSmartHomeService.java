@@ -11,7 +11,7 @@ import javafx.collections.ObservableList;
  * and provides methods to control them without connecting to a real backend.
  * For now, all changes are in-memory only.
  */
-public class MockSmartHomeService {
+public final class MockSmartHomeService {
     
     private static MockSmartHomeService instance;
     private final ObservableList<Device> devices;

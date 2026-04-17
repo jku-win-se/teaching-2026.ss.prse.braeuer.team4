@@ -142,7 +142,7 @@ public class UsersController {
         alert.showAndWait();
     }
 
-    private class UserActionCell extends TableCell<User, Void> {
+    private final class UserActionCell extends TableCell<User, Void> {
         private final Button revokeButton = new Button("Revoke Access");
         private final Button restoreButton = new Button("Restore Access");
         private final HBox container = new HBox(8, revokeButton, restoreButton);

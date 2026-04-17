@@ -36,7 +36,7 @@ public final class JdbcRoomService implements RoomService {
     private final ObservableList<Room> rooms = FXCollections.observableArrayList();
     private final MockLogService logService = MockLogService.getInstance();
     private final UserService userService = ServiceRegistry.getUserService();
-    private volatile boolean schemaReady;
+    private boolean schemaReady;
 
     private JdbcRoomService() {
         refreshRooms();

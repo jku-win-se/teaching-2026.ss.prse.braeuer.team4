@@ -31,7 +31,7 @@ public class TestMockSimulationService {
     }
 
     @Test
-    public void buildPlan_createsSnapshotAndSortedEvents() {
+    public void buildPlanCreatesSnapshotAndSortedEvents() {
         Rule timeRule = new Rule("rule-100", "Morning Routine", "Time", "Clock", "06:30 AM", "Turn On", "Main Light", true, "Active");
         Rule thresholdRule = new Rule("rule-101", "Heat Alert", "Sensor Threshold", "Temperature Sensor", "Value > 20", "Set to 22°C", "Temperature Control", true, "Active");
         Rule disabledRule = new Rule("rule-102", "Disabled", "Device State", "Bed Light", "State = Active", "Turn Off", "Bed Light", false, "Inactive");
@@ -54,7 +54,7 @@ public class TestMockSimulationService {
     }
 
     @Test
-    public void applyEvent_updatesMatchingSimulationSnapshotEntry() {
+    public void applyEventUpdatesMatchingSimulationSnapshotEntry() {
         SimulationConfiguration configuration = new SimulationConfiguration(
                 LocalTime.of(8, 0),
                 20.0,
@@ -77,18 +77,18 @@ public class TestMockSimulationService {
     }
 
     @Test
-    public void parseStartTime_supportsShortAndLongFormat() {
+    public void parseStartTimeSupportsShortAndLongFormat() {
         assertEquals(LocalTime.of(7, 15), service.parseStartTime("07:15"));
         assertEquals(LocalTime.of(7, 15, 30), service.parseStartTime("07:15:30"));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void parseStartTime_rejectsInvalidFormat() {
+    public void parseStartTimeRejectsInvalidFormat() {
         service.parseStartTime("invalid");
     }
 
     @Test
-    public void buildPlan_mapsDifferentActionTypesToSimulationStates() {
+    public void buildPlanMapsDifferentActionTypesToSimulationStates() {
         Rule notifyRule = new Rule("rule-103", "Notify", "Device State", "Bed Light", "State = Active", "Notify User", "Main Light", true, "Active");
         Rule blindRule = new Rule("rule-104", "Open Blind", "Device State", "Bed Light", "State = Active", "Open", "Hallway Blind", true, "Active");
 

@@ -57,7 +57,7 @@ public class TestJdbcRoomService {
     }
 
     @Test
-    public void addRenameRemoveDevice_persistsChanges() throws Exception {
+    public void addRenameRemoveDevicePersistsChanges() throws Exception {
         Room room = service.addRoom("Test Room");
         assertNotNull(room);
 

@@ -41,7 +41,7 @@ public class TestJdbcUserRegistrationStore {
     }
 
     @Test
-    public void saveAndFindByEmail_roundTripUser() throws Exception {
+    public void saveAndFindByEmailRoundTripUser() throws Exception {
         UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
                 "owner@example.com",
                 "owner",
@@ -59,7 +59,7 @@ public class TestJdbcUserRegistrationStore {
     }
 
     @Test(expected = UserRegistrationStore.DuplicateEmailException.class)
-    public void save_duplicateEmail_throwsDuplicateEmailException() throws Exception {
+    public void saveDuplicateEmailThrowsDuplicateEmailException() throws Exception {
         UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
                 "owner@example.com",
                 "owner",
@@ -73,7 +73,7 @@ public class TestJdbcUserRegistrationStore {
     }
 
     @Test
-    public void updateLastLogin_updatesPersistedTimestamp() throws Exception {
+    public void updateLastLoginUpdatesPersistedTimestamp() throws Exception {
         UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
                 "member@example.com",
                 "member",

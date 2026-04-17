@@ -88,6 +88,7 @@ public class MainController {
     /**
      * Callback interface for main controller events.
      */
+    @FunctionalInterface
     public interface MainCallback {
         void onLogout();
     }

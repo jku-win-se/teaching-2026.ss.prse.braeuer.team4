@@ -31,7 +31,8 @@ public class RegisterController {
     
     private final UserService userService = ServiceRegistry.getUserService();
     private RegisterCallback registerCallback;
-    
+
+    @FunctionalInterface
     public interface RegisterCallback {
         void onBackToLogin();
     }

@@ -9,7 +9,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Room Service providing room management functionality.
  */
-public class MockRoomService implements RoomService {
+public final class MockRoomService implements RoomService {
     
     private static MockRoomService instance;
     private final ObservableList<Room> rooms;

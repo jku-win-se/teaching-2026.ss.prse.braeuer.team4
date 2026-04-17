@@ -59,7 +59,7 @@ public final class JdbcScheduleService implements ScheduleService {
     private final LogService logService = ServiceRegistry.getLogService();
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new HashMap<>();
-    private volatile boolean schemaReady;
+    private boolean schemaReady;
     private ScheduledExecutorService scheduler;
 
     private JdbcScheduleService() {

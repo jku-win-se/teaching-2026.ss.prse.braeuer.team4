@@ -45,18 +45,18 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void executeSchedule_unknownId_returnsFalse() {
+    public void executeScheduleUnknownIdReturnsFalse() {
         assertFalse(scheduleService.executeSchedule("does-not-exist"));
     }
 
     @Test
-    public void executeSchedule_inactiveSchedule_returnsFalse() {
+    public void executeScheduleInactiveScheduleReturnsFalse() {
         // sched-003 "Weekend Relax" is inactive in seed data
         assertFalse(scheduleService.executeSchedule("sched-003"));
     }
 
     @Test
-    public void executeSchedule_deviceNotFound_returnsFalse() {
+    public void executeScheduleDeviceNotFoundReturnsFalse() {
         scheduleService.addSchedule("Missing Device", "Does Not Exist", "Turn On", "07:00 AM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Missing Device").getId();
 
@@ -68,7 +68,7 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void executeSchedule_turnOn_setDeviceStateTrue() {
+    public void executeScheduleTurnOnSetDeviceStateTrue() {
         // Bed Light starts OFF — schedule turns it ON
         scheduleService.addSchedule("Night On", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Night On").getId();
@@ -85,7 +85,7 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void executeSchedule_turnOff_setDeviceStateFalse() {
+    public void executeScheduleTurnOffSetDeviceStateFalse() {
         // Main Light starts ON — schedule turns it OFF
         scheduleService.addSchedule("Night Off", "Main Light", "Turn Off", "11:00 PM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Night Off").getId();
@@ -102,7 +102,7 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void executeSchedule_setBrightness_setsDimmerLevel() {
+    public void executeScheduleSetBrightnessSetsDimmerLevel() {
         scheduleService.addSchedule("Dim Scene", "Dimmer Light", "Set to 40%", "18:00", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Dim Scene").getId();
 
@@ -112,7 +112,7 @@ public class TestMockScheduleService {
     }
 
     @Test
-    public void executeSchedule_setTemperature_setsThermostatTemperature() {
+    public void executeScheduleSetTemperatureSetsThermostatTemperature() {
         scheduleService.addSchedule("Morning Warmup", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Morning Warmup").getId();
 
@@ -126,7 +126,7 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void processDueSchedules_matchingDailyTime_executesOnlyOncePerMinute() {
+    public void processDueSchedulesMatchingDailyTimeExecutesOnlyOncePerMinute() {
         scheduleService.addSchedule("Wake Up", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
 
         Device bed = roomService.getDeviceByName("Bed Light");
@@ -141,7 +141,7 @@ public class TestMockScheduleService {
     }
 
     @Test
-    public void processDueSchedules_weekdaysSchedule_skipsWeekend() {
+    public void processDueSchedulesWeekdaysScheduleSkipsWeekend() {
         scheduleService.addSchedule("Weekday Entry", "Main Light", "Turn Off", "08:15", "Weekdays", true);
 
         Device main = roomService.getDeviceByName("Main Light");
@@ -155,7 +155,7 @@ public class TestMockScheduleService {
     }
 
     @Test
-    public void processDueSchedules_weeklySchedule_requiresConfiguredDay() {
+    public void processDueSchedulesWeeklyScheduleRequiresConfiguredDay() {
         scheduleService.addSchedule("Weekly Warmup", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
 
         Device thermostat = roomService.getDeviceByName("Temperature Control");
@@ -173,7 +173,7 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     @Test
-    public void executeSchedule_logsEntry_withScheduleActor() {
+    public void executeScheduleLogsEntryWithScheduleActor() {
         scheduleService.addSchedule("Log Test", "Main Light", "Turn On", "06:00 AM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Log Test").getId();
 
@@ -188,7 +188,7 @@ public class TestMockScheduleService {
     }
 
     @Test
-    public void executeSchedule_logsEntry_withCorrectRoom() {
+    public void executeScheduleLogsEntryWithCorrectRoom() {
         scheduleService.addSchedule("Room Test", "Main Light", "Turn Off", "11:00 PM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Room Test").getId();
 
@@ -198,7 +198,7 @@ public class TestMockScheduleService {
     }
 
     @Test
-    public void executeSchedule_failedExecution_doesNotLog() {
+    public void executeScheduleFailedExecutionDoesNotLog() {
         // Device does not exist → executeSchedule returns false and must not log
         scheduleService.addSchedule("Broken Schedule", "Does Not Exist", "Turn On", "06:00 AM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Broken Schedule").getId();

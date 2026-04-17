@@ -20,7 +20,7 @@ public class TestMockIoTIntegrationService {
     }
 
     @Test
-    public void connect_withValidEnabledConfiguration_seedsDevices() {
+    public void connectWithValidEnabledConfigurationSeedsDevices() {
         service.saveConfiguration(true, "broker.local", 1883, "owner", "secret");
 
         assertTrue(service.connect());
@@ -32,7 +32,7 @@ public class TestMockIoTIntegrationService {
     }
 
     @Test
-    public void saveConfiguration_disabled_disconnectsAndClearsDevices() {
+    public void saveConfigurationDisabledDisconnectsAndClearsDevices() {
         service.saveConfiguration(true, "broker.local", 1883, "owner", "secret");
         service.connect();
 
@@ -46,7 +46,7 @@ public class TestMockIoTIntegrationService {
     }
 
     @Test
-    public void testConnection_andRefresh_validateInputsAndConnectionState() {
+    public void testConnectionAndRefreshValidateInputsAndConnectionState() {
         assertFalse(service.testConnection("", "1883"));
         assertFalse(service.testConnection("broker.local", "70000"));
         assertFalse(service.testConnection("broker.local", "bad"));

@@ -21,7 +21,7 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
 
     private static final String DUPLICATE_EMAIL_SQL_STATE = "23505";
     private static final String INIT_SCRIPT_PATH = "/db/init-auth.sql";
-    private volatile boolean schemaReady;
+    private boolean schemaReady;
 
     @Override
     public boolean emailExists(String normalizedEmail) throws StoreException {

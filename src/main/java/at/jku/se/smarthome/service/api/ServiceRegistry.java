@@ -9,10 +9,10 @@ import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
  */
 public final class ServiceRegistry {
 
-    private static volatile ScheduleService scheduleService;
-    private static volatile RoomService roomService;
-    private static volatile LogService logService;
-    private static volatile UserService userService;
+    private static ScheduleService scheduleService;
+    private static RoomService roomService;
+    private static LogService logService;
+    private static UserService userService;
 
     private ServiceRegistry() {
     }
@@ -22,13 +22,9 @@ public final class ServiceRegistry {
      *
      * @return lazily initialized schedule service
      */
-    public static ScheduleService getScheduleService() {
+    public static synchronized ScheduleService getScheduleService() {
         if (scheduleService == null) {
-            synchronized (ServiceRegistry.class) {
-                if (scheduleService == null) {
-                    scheduleService = JdbcScheduleService.getInstance();
-                }
-            }
+            scheduleService = JdbcScheduleService.getInstance();
         }
         return scheduleService;
     }
@@ -38,13 +34,9 @@ public final class ServiceRegistry {
      *
      * @return lazily initialized room service
      */
-    public static RoomService getRoomService() {
+    public static synchronized RoomService getRoomService() {
         if (roomService == null) {
-            synchronized (ServiceRegistry.class) {
-                if (roomService == null) {
-                    roomService = JdbcRoomService.getInstance();
-                }
-            }
+            roomService = JdbcRoomService.getInstance();
         }
         return roomService;
     }
@@ -54,13 +46,9 @@ public final class ServiceRegistry {
      *
      * @return lazily initialized log service
      */
-    public static LogService getLogService() {
+    public static synchronized LogService getLogService() {
         if (logService == null) {
-            synchronized (ServiceRegistry.class) {
-                if (logService == null) {
-                    logService = JdbcLogService.getInstance();
-                }
-            }
+            logService = JdbcLogService.getInstance();
         }
         return logService;
     }
@@ -100,13 +88,9 @@ public final class ServiceRegistry {
      *
      * @return lazily initialized user service
      */
-    public static UserService getUserService() {
+    public static synchronized UserService getUserService() {
         if (userService == null) {
-            synchronized (ServiceRegistry.class) {
-                if (userService == null) {
-                    userService = JdbcUserService.getInstance();
-                }
-            }
+            userService = JdbcUserService.getInstance();
         }
         return userService;
     }

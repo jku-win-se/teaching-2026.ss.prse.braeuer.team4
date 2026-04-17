@@ -10,7 +10,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock MQTT integration layer for demonstrating optional physical device connectivity.
  */
-public class MockIoTIntegrationService {
+public final class MockIoTIntegrationService {
 
     public record IoTConfiguration(boolean enabled, String broker, int port, String username, String password) {
     }

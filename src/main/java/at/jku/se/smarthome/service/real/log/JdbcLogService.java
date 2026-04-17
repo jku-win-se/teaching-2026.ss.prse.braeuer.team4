@@ -33,7 +33,7 @@ public final class JdbcLogService implements LogService {
 
     private final ObservableList<LogEntry> logs = FXCollections.observableArrayList();
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private volatile boolean schemaReady;
+    private boolean schemaReady;
 
     private JdbcLogService() {
         refreshLogs();

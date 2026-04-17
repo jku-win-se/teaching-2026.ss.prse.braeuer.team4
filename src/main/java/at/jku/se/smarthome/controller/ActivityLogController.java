@@ -1,5 +1,8 @@
 package at.jku.se.smarthome.controller;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import at.jku.se.smarthome.model.LogEntry;
 import at.jku.se.smarthome.service.api.LogService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
@@ -15,6 +18,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
  * Displays all manual and automated state changes with filtering options.
  */
 public class ActivityLogController {
+
+    private static final Logger LOGGER = LogManager.getLogger(ActivityLogController.class);
     
     @FXML
     private TableView<LogEntry> logTable;
@@ -80,6 +85,8 @@ public class ActivityLogController {
     private void handleExportCSV() {
         String csv = logService.exportToCSV();
         // In a real application, this would save to a file or copy to clipboard
-        System.out.println("Export CSV:\n" + csv);
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Export CSV:{}{}", System.lineSeparator(), csv);
+        }
     }
 }

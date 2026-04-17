@@ -25,35 +25,35 @@ public class RuleEvaluatorTest {
     // ── Device State trigger ────────────────────────────────────────────────
 
     @Test
-    public void deviceStateActive_deviceIsOn_returnsTrue() {
+    public void deviceStateActiveDeviceIsOnReturnsTrue() {
         Rule rule = rule("Device State", "State = Active");
         Device device = device(true);
         assertTrue(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void deviceStateActive_deviceIsOff_returnsFalse() {
+    public void deviceStateActiveDeviceIsOffReturnsFalse() {
         Rule rule = rule("Device State", "State = Active");
         Device device = device(false);
         assertFalse(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void deviceStateInactive_deviceIsOff_returnsTrue() {
+    public void deviceStateInactiveDeviceIsOffReturnsTrue() {
         Rule rule = rule("Device State", "State = Inactive");
         Device device = device(false);
         assertTrue(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void deviceStateInactive_deviceIsOn_returnsFalse() {
+    public void deviceStateInactiveDeviceIsOnReturnsFalse() {
         Rule rule = rule("Device State", "State = Inactive");
         Device device = device(true);
         assertFalse(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void deviceState_nullDevice_returnsFalse() {
+    public void deviceStateNullDeviceReturnsFalse() {
         Rule rule = rule("Device State", "State = Active");
         assertFalse(evaluator.evaluate(rule, null));
     }
@@ -61,48 +61,48 @@ public class RuleEvaluatorTest {
     // ── Sensor Threshold trigger ────────────────────────────────────────────
 
     @Test
-    public void sensorThreshold_greaterThan_temperatureAbove_returnsTrue() {
+    public void sensorThresholdGreaterThanTemperatureAboveReturnsTrue() {
         Rule rule = rule("Sensor Threshold", "Value > 20");
         Device device = deviceWithTemperature(25.0);
         assertTrue(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void sensorThreshold_greaterThan_temperatureBelow_returnsFalse() {
+    public void sensorThresholdGreaterThanTemperatureBelowReturnsFalse() {
         Rule rule = rule("Sensor Threshold", "Value > 20");
         Device device = deviceWithTemperature(15.0);
         assertFalse(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void sensorThreshold_lessThan_temperatureBelow_returnsTrue() {
+    public void sensorThresholdLessThanTemperatureBelowReturnsTrue() {
         Rule rule = rule("Sensor Threshold", "Value < 18");
         Device device = deviceWithTemperature(15.0);
         assertTrue(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void sensorThreshold_lessThanOrEqual_exactMatch_returnsTrue() {
+    public void sensorThresholdLessThanOrEqualExactMatchReturnsTrue() {
         Rule rule = rule("Sensor Threshold", "Value <= 20");
         Device device = deviceWithTemperature(20.0);
         assertTrue(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void sensorThreshold_greaterThanOrEqual_exactMatch_returnsTrue() {
+    public void sensorThresholdGreaterThanOrEqualExactMatchReturnsTrue() {
         Rule rule = rule("Sensor Threshold", "Value >= 22");
         Device device = deviceWithTemperature(22.0);
         assertTrue(evaluator.evaluate(rule, device));
     }
 
     @Test
-    public void sensorThreshold_nullDevice_returnsFalse() {
+    public void sensorThresholdNullDeviceReturnsFalse() {
         Rule rule = rule("Sensor Threshold", "Value > 20");
         assertFalse(evaluator.evaluate(rule, null));
     }
 
     @Test
-    public void sensorThreshold_malformedCondition_returnsFalse() {
+    public void sensorThresholdMalformedConditionReturnsFalse() {
         Rule rule = rule("Sensor Threshold", "temp > hot");
         Device device = deviceWithTemperature(25.0);
         assertFalse(evaluator.evaluate(rule, device));
@@ -111,12 +111,12 @@ public class RuleEvaluatorTest {
     // ── Guard cases ─────────────────────────────────────────────────────────
 
     @Test
-    public void nullRule_returnsFalse() {
+    public void nullRuleReturnsFalse() {
         assertFalse(evaluator.evaluate(null, device(true)));
     }
 
     @Test
-    public void unknownTriggerType_returnsFalse() {
+    public void unknownTriggerTypeReturnsFalse() {
         Rule rule = rule("Unknown", "anything");
         assertFalse(evaluator.evaluate(rule, device(true)));
     }
