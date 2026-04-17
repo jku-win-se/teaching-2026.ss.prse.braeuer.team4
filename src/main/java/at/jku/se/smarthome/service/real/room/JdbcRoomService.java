@@ -407,6 +407,13 @@ public final class JdbcRoomService implements RoomService {
     }
 
     @Override
+    /**
+     * Updates the temperature setting of a device in database and in-memory list.
+     *
+     * @param deviceId identifier of the device
+     * @param temperature new temperature value
+     * @return true when the device existed and was updated, otherwise false
+     */
     public boolean updateDeviceTemperature(String deviceId, double temperature) {
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
@@ -427,6 +434,9 @@ public final class JdbcRoomService implements RoomService {
         return false;
     }
 
+    /**
+     * Helper: refreshes room list from database.
+     */
     private void refreshRooms() {
         List<Room> loaded = new ArrayList<>();
         try (Connection connection = openConnection()) {
@@ -466,6 +476,12 @@ public final class JdbcRoomService implements RoomService {
         rooms.setAll(loaded);
     }
 
+    /**
+     * Helper: normalizes device type string to standard form.
+     *
+     * @param deviceType device type string to normalize
+     * @return normalized device type or null if invalid
+     */
     private String normalizeDeviceType(String deviceType) {
         if (deviceType == null) return null;
         String t = deviceType.trim().toLowerCase(Locale.ENGLISH);
@@ -479,12 +495,23 @@ public final class JdbcRoomService implements RoomService {
         };
     }
 
+    /**
+     * Helper: opens a database connection using configured settings.
+     *
+     * @return open database connection
+     * @throws SQLException if connection fails
+     */
     private Connection openConnection() throws SQLException {
         DatabaseSettings settings = DatabaseConfig.load()
                 .orElseThrow(() -> new IllegalStateException("Room database is not configured."));
         return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
     }
 
+    /**
+     * Helper: ensures database schema is initialized.
+     *
+     * @param connection database connection to use
+     */
     private void ensureSchema(Connection connection) {
         if (schemaReady.get()) return;
         synchronized (this) {
@@ -501,6 +528,11 @@ public final class JdbcRoomService implements RoomService {
         }
     }
 
+    /**
+     * Helper: loads database schema initialization script from classpath.
+     *
+     * @return SQL script content as string
+     */
     private String loadInitScript() {
         try (InputStream in = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
             if (in == null) throw new IllegalStateException("Room schema script not found at " + INIT_SCRIPT_PATH);

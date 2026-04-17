@@ -9,16 +9,26 @@ import org.junit.Test;
 
 import at.jku.se.smarthome.service.mock.MockIoTIntegrationService;
 
+/**
+ * Tests for {@link MockIoTIntegrationService}.
+ */
 public class TestMockIoTIntegrationService {
 
+    /** IoT integration service under test. */
     private MockIoTIntegrationService service;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockIoTIntegrationService.resetForTesting();
         service = MockIoTIntegrationService.getInstance();
     }
 
+    /**
+     * Test: connect with valid enabled configuration seeds devices.
+     */
     @Test
     public void connectWithValidEnabledConfigurationSeedsDevices() {
         service.saveConfiguration(true, "broker.local", 1883, "owner", "secret");
@@ -31,6 +41,9 @@ public class TestMockIoTIntegrationService {
         assertNotEquals("Never", service.getLastSync());
     }
 
+    /**
+     * Test: save configuration disabled disconnects and clears devices.
+     */
     @Test
     public void saveConfigurationDisabledDisconnectsAndClearsDevices() {
         service.saveConfiguration(true, "broker.local", 1883, "owner", "secret");
@@ -45,6 +58,9 @@ public class TestMockIoTIntegrationService {
         assertEquals("", service.getConfiguration().password());
     }
 
+    /**
+     * Test: connection and refresh validate inputs and connection state.
+     */
     @Test
     public void testConnectionAndRefreshValidateInputsAndConnectionState() {
         assertFalse(service.testConnection("", "1883"));

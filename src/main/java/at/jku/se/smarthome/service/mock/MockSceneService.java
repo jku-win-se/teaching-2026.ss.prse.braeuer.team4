@@ -14,9 +14,15 @@ import javafx.collections.ObservableList;
 public final class MockSceneService {
     
     private static MockSceneService instance;
+    /**
+     * Singleton scenes collection.
+     */
     private final ObservableList<Scene> scenes;
+    /** Room service reference for device lookups. */
     private final MockRoomService roomService = MockRoomService.getInstance();
+    /** Log service for activity tracking. */
     private final MockLogService logService = MockLogService.getInstance();
+    /** Notification service for scene events. */
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
     
     private MockSceneService() {
@@ -24,6 +30,11 @@ public final class MockSceneService {
         initializeMockScenes();
     }
     
+    /**
+     * Returns the singleton instance of the mock scene service.
+     *
+     * @return singleton MockSceneService instance
+     */
     public static synchronized MockSceneService getInstance() {
         if (instance == null) {
             instance = new MockSceneService();
@@ -39,6 +50,9 @@ public final class MockSceneService {
         instance = null;
     }
     
+    /**
+     * Helper: initializes mock scenes with predefined configurations.
+     */
     private void initializeMockScenes() {
         Scene movieScene = new Scene("scene-001", "Movie Night", "Dim all lights and close shutters");
         movieScene.addDeviceState("Dimmer Light: 20%");
@@ -192,6 +206,13 @@ public final class MockSceneService {
         return scenes.removeIf(s -> s.getId().equals(sceneId));
     }
 
+    /**
+     * Helper: applies device state change based on scene state definition.
+     *
+     * @param sceneName name of scene being applied
+     * @param stateDefinition state definition string
+     * @return true if state was applied successfully
+     */
     private boolean applyDeviceState(String sceneName, String stateDefinition) {
         String[] parts = stateDefinition.split(":", 2);
         if (parts.length != 2) {
@@ -218,6 +239,13 @@ public final class MockSceneService {
         return applied;
     }
 
+    /**
+     * Helper: applies normalized target state to device (brightness, temperature, or on/off).
+     *
+     * @param device device to update
+     * @param targetState target state string
+     * @return true if state was applied successfully
+     */
     private boolean applyStateToDevice(Device device, String targetState) {
         String normalized = targetState.trim().toLowerCase(Locale.ROOT);
 

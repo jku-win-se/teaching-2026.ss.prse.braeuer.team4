@@ -11,15 +11,24 @@ import javafx.collections.ObservableList;
 public final class MockRuleService {
     
     private static MockRuleService instance;
+    /** Singleton rules collection. */
     private final ObservableList<Rule> rules;
+    /** Room service for device lookups. */
     private final MockRoomService roomService = MockRoomService.getInstance();
+    /** Notification service for rule events. */
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    /** Log service for activity tracking. */
     private final MockLogService logService = MockLogService.getInstance();
     private MockRuleService() {
         this.rules = FXCollections.observableArrayList();
         initializeMockRules();
     }
     
+    /**
+     * Returns the singleton instance of the mock rule service.
+     *
+     * @return singleton MockRuleService instance
+     */
     public static synchronized MockRuleService getInstance() {
         if (instance == null) {
             instance = new MockRuleService();
@@ -35,6 +44,9 @@ public final class MockRuleService {
         instance = null;
     }
     
+    /**
+     * Helper: initializes mock rules with predefined configurations.
+     */
     private void initializeMockRules() {
         rules.add(new Rule("rule-001", "Morning Routine", "Time", "Clock", "06:00 AM", 
                           "Turn On", "Main Light", true, "Active"));
@@ -181,6 +193,13 @@ public final class MockRuleService {
         return true;
     }
 
+    /**
+     * Helper: applies action to device.
+     *
+     * @param targetDevice device to apply action to
+     * @param action action string to execute
+     * @return true if action was applied successfully
+     */
     private boolean applyAction(Device targetDevice, String action) {
         switch (action) {
             case "Turn On":

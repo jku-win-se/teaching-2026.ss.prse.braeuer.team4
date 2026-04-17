@@ -23,8 +23,12 @@ import javafx.collections.ObservableList;
  */
 public class TestMockLogService {
 
+    /** Log service under test. */
     private MockLogService service;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockLogService.resetForTesting();
@@ -35,7 +39,9 @@ public class TestMockLogService {
     // addLogEntry (4-arg, with room)
     // -----------------------------------------------------------------------
 
-    /** A new entry must appear at index 0 (newest-first ordering). */
+    /**
+     * Test: a new entry must appear at index 0 (newest-first ordering).
+     */
     @Test
     public void addLogEntryInsertsAtFront() {
         int before = service.getLogs().size();
@@ -44,7 +50,9 @@ public class TestMockLogService {
         assertEquals("Garden Blind", service.getLogs().get(0).getDevice());
     }
 
-    /** All four fields must be stored without mutation. */
+    /**
+     * Test: all four fields must be stored without mutation.
+     */
     @Test
     public void addLogEntryStoresAllFields() {
         service.addLogEntry("Garden Blind", "Garden", "Opened", "User");
@@ -55,7 +63,9 @@ public class TestMockLogService {
         assertEquals("User", entry.getActor());
     }
 
-    /** Timestamp must be auto-generated and non-empty. */
+    /**
+     * Test: timestamp must be auto-generated and non-empty.
+     */
     @Test
     public void addLogEntryTimestampIsNotBlank() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
@@ -66,7 +76,9 @@ public class TestMockLogService {
     // addLogEntry (3-arg legacy, without room)
     // -----------------------------------------------------------------------
 
-    /** Legacy overload must default room to "Unknown". */
+    /**
+     * Test: legacy overload must default room to unknown.
+     */
     @Test
     public void addLogEntryLegacyWithoutRoomDefaultsToUnknown() {
         service.addLogEntry("Main Light", "Turned ON", "User");
@@ -81,7 +93,9 @@ public class TestMockLogService {
     // getLogs
     // -----------------------------------------------------------------------
 
-    /** After a fresh init the service always has at least the seeded entries. */
+    /**
+     * Test: after a fresh init the service always has at least the seeded entries.
+     */
     @Test
     public void getLogsReturnsAtLeastSeedEntries() {
         assertTrue(service.getLogs().size() >= 5);
@@ -91,6 +105,9 @@ public class TestMockLogService {
     // getLogsByRoom
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: get logs by room returns only matching entries.
+     */
     @Test
     public void getLogsByRoomReturnsOnlyMatchingEntries() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
@@ -102,6 +119,9 @@ public class TestMockLogService {
         }
     }
 
+    /**
+     * Test: get logs by room no match returns empty.
+     */
     @Test
     public void getLogsByRoomNoMatchReturnsEmpty() {
         ObservableList<LogEntry> result = service.getLogsByRoom("Nonexistent Room XYZ");
@@ -112,6 +132,9 @@ public class TestMockLogService {
     // getLogsByDevice
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: get logs by device returns only matching entries.
+     */
     @Test
     public void getLogsByDeviceReturnsOnlyMatchingEntries() {
         service.addLogEntry("Unique Device ABC", "Room", "Action", "User");
@@ -120,6 +143,9 @@ public class TestMockLogService {
         assertEquals("Unique Device ABC", result.get(0).getDevice());
     }
 
+    /**
+     * Test: get logs by device no match returns empty.
+     */
     @Test
     public void getLogsByDeviceNoMatchReturnsEmpty() {
         ObservableList<LogEntry> result = service.getLogsByDevice("Device That Does Not Exist");
@@ -130,7 +156,9 @@ public class TestMockLogService {
     // getLogsByActor
     // -----------------------------------------------------------------------
 
-    /** Manual user actions must be filterable by actor "User". */
+    /**
+     * Test: manual user actions must be filterable by actor user.
+     */
     @Test
     public void getLogsByActorUserReturnsMatchingEntries() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
@@ -141,7 +169,9 @@ public class TestMockLogService {
         }
     }
 
-    /** Rule-triggered entries must be filterable by actor "Rule: Morning Routine". */
+    /**
+     * Test: rule-triggered entries must be filterable by actor rule.
+     */
     @Test
     public void getLogsByActorRuleReturnsMatchingEntries() {
         service.addLogEntry("Dimmer Light", "Bedroom", "Set to 50%", "Rule: Morning Routine");
@@ -152,7 +182,9 @@ public class TestMockLogService {
         }
     }
 
-    /** Schedule-triggered entries must be filterable by actor "Schedule: Evening Shutdown". */
+    /**
+     * Test: schedule-triggered entries must be filterable by actor schedule.
+     */
     @Test
     public void getLogsByActorScheduleReturnsMatchingEntries() {
         service.addLogEntry("Kitchen Light", "Kitchen", "Turned OFF", "Schedule: Evening Shutdown");
@@ -167,12 +199,18 @@ public class TestMockLogService {
     // exportToCSV
     // -----------------------------------------------------------------------
 
+    /**
+     * Test: export to CSV contains header.
+     */
     @Test
     public void exportToCSVContainsHeader() {
         String csv = service.exportToCSV();
         assertTrue(csv.startsWith("Timestamp,Device,Room,Action,Actor"));
     }
 
+    /**
+     * Test: export to CSV contains added entry.
+     */
     @Test
     public void exportToCSVContainsAddedEntry() {
         service.addLogEntry("Export Device", "Export Room", "Export Action", "Export Actor");
@@ -187,7 +225,9 @@ public class TestMockLogService {
     // resetForTesting
     // -----------------------------------------------------------------------
 
-    /** After reset a new instance must be independent (fresh seed data, no carryover). */
+    /**
+     * Test: after reset a new instance must be independent (fresh seed data, no carryover).
+     */
     @Test
     public void resetForTestingCreatesNewInstance() {
         service.addLogEntry("Carry Device", "Room", "Action", "User");

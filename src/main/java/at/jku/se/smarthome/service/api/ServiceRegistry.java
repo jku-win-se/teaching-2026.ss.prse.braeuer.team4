@@ -35,7 +35,11 @@ public final class ServiceRegistry {
         return ScheduleServiceHolder.INSTANCE;
     }
 
+    /**
+     * Holder for lazy initialization of schedule service.
+     */
     private static final class ScheduleServiceHolder {
+        /** Singleton schedule service instance. */
         private static final ScheduleService INSTANCE = JdbcScheduleService.getInstance();
     }
 
@@ -51,7 +55,11 @@ public final class ServiceRegistry {
         return RoomServiceHolder.INSTANCE;
     }
 
+    /**
+     * Holder for lazy initialization of room service.
+     */
     private static final class RoomServiceHolder {
+        /** Singleton room service instance. */
         private static final RoomService INSTANCE = JdbcRoomService.getInstance();
     }
 
@@ -67,7 +75,11 @@ public final class ServiceRegistry {
         return LogServiceHolder.INSTANCE;
     }
 
+    /**
+     * Holder for lazy initialization of log service.
+     */
     private static final class LogServiceHolder {
+        /** Singleton log service instance. */
         private static final LogService INSTANCE = JdbcLogService.getInstance();
     }
 
@@ -113,7 +125,11 @@ public final class ServiceRegistry {
         return UserServiceHolder.INSTANCE;
     }
 
+    /**
+     * Holder for lazy initialization of user service.
+     */
     private static final class UserServiceHolder {
+        /** Singleton user service instance. */
         private static final UserService INSTANCE = JdbcUserService.getInstance();
     }
 

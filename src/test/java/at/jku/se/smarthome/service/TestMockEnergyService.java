@@ -9,16 +9,26 @@ import at.jku.se.smarthome.service.mock.MockEnergyService;
 import at.jku.se.smarthome.service.mock.MockEnergyService.AggregationPeriod;
 import at.jku.se.smarthome.service.mock.MockEnergyService.EnergySnapshot;
 
+/**
+ * Tests for {@link MockEnergyService}.
+ */
 public class TestMockEnergyService {
 
+    /** Energy service under test. */
     private MockEnergyService service;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockEnergyService.resetForTesting();
         service = MockEnergyService.getInstance();
     }
 
+    /**
+     * Test: get snapshot day contains expected totals and ranking.
+     */
     @Test
     public void getSnapshotDayContainsExpectedTotalsAndRanking() {
         EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
@@ -33,6 +43,9 @@ public class TestMockEnergyService {
         assertEquals(7, snapshot.timelineSeries().getData().size());
     }
 
+    /**
+     * Test: get snapshot week uses weekly timeline and bathroom totals.
+     */
     @Test
     public void getSnapshotWeekUsesWeeklyTimelineAndBathroomTotals() {
         EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.WEEK);

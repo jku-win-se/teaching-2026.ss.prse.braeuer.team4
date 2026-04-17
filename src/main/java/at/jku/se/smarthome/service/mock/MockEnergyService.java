@@ -42,6 +42,11 @@ public final class MockEnergyService {
     private MockEnergyService() {
     }
 
+    /**
+     * Returns the singleton instance of the mock energy service.
+     *
+     * @return singleton MockEnergyService instance
+     */
     public static synchronized MockEnergyService getInstance() {
         if (instance == null) {
             instance = new MockEnergyService();
@@ -79,6 +84,12 @@ public final class MockEnergyService {
         );
     }
 
+    /**
+     * Helper: gets energy consumption by device for the aggregation period.
+     *
+     * @param period aggregation period (DAY or WEEK)
+     * @return map of device name to consumption in kWh
+     */
     private Map<String, Double> getConsumptionByDevice(AggregationPeriod period) {
         Map<String, Double> data = new LinkedHashMap<>();
         if (period == AggregationPeriod.DAY) {
@@ -99,6 +110,13 @@ public final class MockEnergyService {
         return data;
     }
 
+    /**
+     * Helper: aggregates device consumption by room for the aggregation period.
+     *
+     * @param period aggregation period (DAY or WEEK)
+     * @param deviceData device consumption map
+     * @return map of room name to consumption in kWh
+     */
     private Map<String, Double> getConsumptionByRoom(AggregationPeriod period, Map<String, Double> deviceData) {
         Map<String, Double> roomData = new LinkedHashMap<>();
         roomData.put("Living Room", deviceData.get("Living Room Light") + deviceData.get("Living Room Thermostat"));
@@ -115,6 +133,12 @@ public final class MockEnergyService {
         return roomData;
     }
 
+    /**
+     * Helper: gets consumption timeline series for the aggregation period.
+     *
+     * @param period aggregation period (DAY or WEEK)
+     * @return XYChart series with consumption data points
+     */
     private XYChart.Series<String, Number> getConsumptionOverTime(AggregationPeriod period) {
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName(period == AggregationPeriod.DAY ? "Hourly Usage (kWh)" : "Daily Usage (kWh)");
@@ -140,6 +164,13 @@ public final class MockEnergyService {
         return series;
     }
 
+    /**
+     * Helper: adds a data point to timeline series.
+     *
+     * @param series timeline series to add point to
+     * @param label time/day label
+     * @param value consumption value in kWh
+     */
     private void addTimelinePoint(XYChart.Series<String, Number> series, String label, double value) {
         series.getData().add(new XYChart.Data<>(label, value));
     }
