@@ -112,6 +112,7 @@ public final class MockRuleService {
      */
     public boolean updateRule(String ruleId, String name, String triggerType, String sourceDevice,
                              String condition, String action, String targetDevice) {
+        boolean updated = false;
         Rule rule = rules.stream()
                 .filter(r -> r.getId().equals(ruleId))
                 .findFirst()
@@ -124,9 +125,9 @@ public final class MockRuleService {
             rule.setCondition(condition);
             rule.setAction(action);
             rule.setTargetDevice(targetDevice);
-            return true;
+            updated = true;
         }
-        return false;
+        return updated;
     }
     
     /**
@@ -136,6 +137,7 @@ public final class MockRuleService {
         * @return true when the rule exists and was toggled, otherwise false
      */
     public boolean toggleRule(String ruleId) {
+        boolean toggled = false;
         Rule rule = rules.stream()
                 .filter(r -> r.getId().equals(ruleId))
                 .findFirst()
@@ -144,9 +146,9 @@ public final class MockRuleService {
         if (rule != null) {
             rule.setEnabled(!rule.isEnabled());
             rule.setStatus(rule.isEnabled() ? "Active" : "Inactive");
-            return true;
+            toggled = true;
         }
-        return false;
+        return toggled;
     }
     
     /**
@@ -166,36 +168,29 @@ public final class MockRuleService {
         * @return true when execution succeeded, otherwise false
      */
     public boolean executeRule(String ruleId) {
+        boolean executed = false;
         Rule rule = rules.stream()
                 .filter(r -> r.getId().equals(ruleId))
                 .findFirst()
                 .orElse(null);
 
-        if (rule == null) {
+        if (rule != null && rule.isEnabled()) {
+            Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
+            if (targetDevice != null && applyAction(targetDevice, rule.getAction())) {
+                logService.addLogEntry(targetDevice.getName(), targetDevice.getRoom(), rule.getAction(), "Rule: " + rule.getName());
+                notificationService.addNotification("Rule executed: " + rule.getName(), "success");
+                executed = true;
+            } else if (targetDevice == null) {
+                notificationService.addNotification("Rule execution failed: target device missing for " + rule.getName(), "error");
+            } else {
+                notificationService.addNotification("Rule execution failed: unsupported action in " + rule.getName(), "error");
+            }
+        } else if (rule == null) {
             notificationService.addNotification("Rule execution failed: rule not found", "error");
-            return false;
-        }
-
-        if (!rule.isEnabled()) {
+        } else {
             notificationService.addNotification("Rule execution failed: " + rule.getName() + " is inactive", "error");
-            return false;
         }
-
-        Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
-        if (targetDevice == null) {
-            notificationService.addNotification("Rule execution failed: target device missing for " + rule.getName(), "error");
-            return false;
-        }
-
-        boolean success = applyAction(targetDevice, rule.getAction());
-        if (!success) {
-            notificationService.addNotification("Rule execution failed: unsupported action in " + rule.getName(), "error");
-            return false;
-        }
-
-        logService.addLogEntry(targetDevice.getName(), targetDevice.getRoom(), rule.getAction(), "Rule: " + rule.getName());
-        notificationService.addNotification("Rule executed: " + rule.getName(), "success");
-        return true;
+        return executed;
     }
 
     /**
@@ -206,35 +201,38 @@ public final class MockRuleService {
      * @return true if action was applied successfully
      */
     private boolean applyAction(Device targetDevice, String action) {
-        switch (action) {
-            case "Turn On":
+        boolean result = switch (action) {
+            case "Turn On", "Open" -> {
                 targetDevice.setState(true);
-                return true;
-            case "Turn Off":
+                yield true;
+            }
+            case "Turn Off", "Close" -> {
                 targetDevice.setState(false);
-                return true;
-            case "Open":
-                targetDevice.setState(true);
-                return true;
-            case "Close":
-                targetDevice.setState(false);
-                return true;
-            case "Notify User":
-            case "Trigger Alert":
-                return true;
-            default:
+                yield true;
+            }
+            case "Notify User", "Trigger Alert" -> true;
+            default -> {
                 if (action.startsWith("Set to ") && action.endsWith("%")) {
-                    int brightness = Integer.parseInt(action.substring(7, action.length() - 1));
-                    targetDevice.setBrightness(brightness);
-                    return true;
+                    try {
+                        int brightness = Integer.parseInt(action.substring(7, action.length() - 1));
+                        targetDevice.setBrightness(brightness);
+                        yield true;
+                    } catch (NumberFormatException e) {
+                        yield false;
+                    }
+                } else if (action.startsWith("Set to ") && action.endsWith("°C")) {
+                    try {
+                        double temperature = Double.parseDouble(action.substring(7, action.length() - 2));
+                        targetDevice.setTemperature(temperature);
+                        yield true;
+                    } catch (NumberFormatException e) {
+                        yield false;
+                    }
                 }
-                if (action.startsWith("Set to ") && action.endsWith("°C")) {
-                    double temperature = Double.parseDouble(action.substring(7, action.length() - 2));
-                    targetDevice.setTemperature(temperature);
-                    return true;
-                }
-                return false;
-        }
+                yield false;
+            }
+        };
+        return result;
     }
     
     /**

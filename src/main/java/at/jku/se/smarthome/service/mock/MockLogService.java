@@ -15,6 +15,8 @@ import javafx.collections.ObservableList;
  */
 public final class MockLogService implements LogService {
     
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance of MockLogService. */
     private static MockLogService instance;
     /** Observable list of activity log entries. */
@@ -27,19 +29,23 @@ public final class MockLogService implements LogService {
         initializeMockLogs();
     }
     
-    public static synchronized MockLogService getInstance() {
-        if (instance == null) {
-            instance = new MockLogService();
+    public static MockLogService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new MockLogService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
     }
 
     private void initializeMockLogs() {

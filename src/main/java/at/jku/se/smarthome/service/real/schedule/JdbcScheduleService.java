@@ -56,6 +56,8 @@ public final class JdbcScheduleService implements ScheduleService {
             DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH),
             DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
     );
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
 
     /** Singleton instance. */
     private static JdbcScheduleService instance;
@@ -79,21 +81,25 @@ public final class JdbcScheduleService implements ScheduleService {
         refreshSchedules();
     }
 
-    public static synchronized JdbcScheduleService getInstance() {
-        if (instance == null) {
-            instance = new JdbcScheduleService();
+    public static JdbcScheduleService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new JdbcScheduleService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton for unit testing.
      */
-    public static synchronized void resetForTesting() {
-        if (instance != null) {
-            instance.stopRecurringExecution();
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance != null) {
+                instance.stopRecurringExecution();
+            }
+            instance = null;
         }
-        instance = null;
     }
 
     @Override
@@ -118,117 +124,125 @@ public final class JdbcScheduleService implements ScheduleService {
     }
 
     @Override
-    public synchronized Schedule addSchedule(String name, String deviceId, String deviceName, String action,
+    public Schedule addSchedule(String name, String deviceId, String deviceName, String action,
                                              String time, String recurrence, boolean active) {
-        Schedule schedule = new Schedule(
-                UUID.randomUUID().toString(),
-                name,
-                deviceId,
-                deviceName,
-                action,
-                time,
-                recurrence,
-                active
-        );
+        synchronized (this) {
+            Schedule schedule = new Schedule(
+                    UUID.randomUUID().toString(),
+                    name,
+                    deviceId,
+                    deviceName,
+                    action,
+                    time,
+                    recurrence,
+                    active
+            );
 
-        try (Connection connection = openConnection()) {
-            ensureSchema(connection);
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO scheduled_actions (id, name, device_id, device_name, action, time_pattern, recurrence, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
-                bindSchedule(statement, schedule);
-                statement.executeUpdate();
+            try (Connection connection = openConnection()) {
+                ensureSchema(connection);
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "INSERT INTO scheduled_actions (id, name, device_id, device_name, action, time_pattern, recurrence, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                    bindSchedule(statement, schedule);
+                    statement.executeUpdate();
+                }
+            } catch (SQLException exception) {
+                throw new IllegalStateException("Failed to persist the schedule.", exception);
             }
-        } catch (SQLException exception) {
-            throw new IllegalStateException("Failed to persist the schedule.", exception);
-        }
 
-        schedules.add(schedule);
-        return schedule;
+            schedules.add(schedule);
+            return schedule;
+        }
     }
 
     @Override
-    public synchronized boolean updateSchedule(String scheduleId, String name, String deviceId, String deviceName,
+    public boolean updateSchedule(String scheduleId, String name, String deviceId, String deviceName,
                                                String action, String time, String recurrence, boolean active) {
-        boolean updated = false;
-        try (Connection connection = openConnection()) {
-            ensureSchema(connection);
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "UPDATE scheduled_actions SET name = ?, device_id = ?, device_name = ?, action = ?, time_pattern = ?, recurrence = ?, active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
-                statement.setString(1, name);
-                statement.setString(2, deviceId);
-                statement.setString(3, deviceName);
-                statement.setString(4, action);
-                statement.setString(5, time);
-                statement.setString(6, recurrence);
-                statement.setBoolean(7, active);
-                statement.setString(8, scheduleId);
-                if (statement.executeUpdate() > 0) {
-                    updated = true;
+        synchronized (this) {
+            boolean updated = false;
+            try (Connection connection = openConnection()) {
+                ensureSchema(connection);
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE scheduled_actions SET name = ?, device_id = ?, device_name = ?, action = ?, time_pattern = ?, recurrence = ?, active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
+                    statement.setString(1, name);
+                    statement.setString(2, deviceId);
+                    statement.setString(3, deviceName);
+                    statement.setString(4, action);
+                    statement.setString(5, time);
+                    statement.setString(6, recurrence);
+                    statement.setBoolean(7, active);
+                    statement.setString(8, scheduleId);
+                    if (statement.executeUpdate() > 0) {
+                        updated = true;
+                    }
+                }
+            } catch (SQLException exception) {
+                throw new IllegalStateException("Failed to update the schedule.", exception);
+            }
+
+            if (updated) {
+                Schedule schedule = getScheduleById(scheduleId);
+                if (schedule != null) {
+                    schedule.setName(name);
+                    schedule.setDeviceId(deviceId);
+                    schedule.setDevice(deviceName);
+                    schedule.setAction(action);
+                    schedule.setTime(time);
+                    schedule.setRecurrence(recurrence);
+                    schedule.setActive(active);
                 }
             }
-        } catch (SQLException exception) {
-            throw new IllegalStateException("Failed to update the schedule.", exception);
+            return updated;
         }
+    }
 
-        if (updated) {
+    @Override
+    public boolean toggleSchedule(String scheduleId) {
+        synchronized (this) {
+            boolean toggled = false;
             Schedule schedule = getScheduleById(scheduleId);
             if (schedule != null) {
-                schedule.setName(name);
-                schedule.setDeviceId(deviceId);
-                schedule.setDevice(deviceName);
-                schedule.setAction(action);
-                schedule.setTime(time);
-                schedule.setRecurrence(recurrence);
-                schedule.setActive(active);
+                toggled = updateSchedule(
+                        schedule.getId(),
+                        schedule.getName(),
+                        schedule.getDeviceId(),
+                        schedule.getDevice(),
+                        schedule.getAction(),
+                        schedule.getTime(),
+                        schedule.getRecurrence(),
+                        !schedule.isActive()
+                );
             }
+            return toggled;
         }
-        return updated;
     }
 
     @Override
-    public synchronized boolean toggleSchedule(String scheduleId) {
-        boolean toggled = false;
-        Schedule schedule = getScheduleById(scheduleId);
-        if (schedule != null) {
-            toggled = updateSchedule(
-                    schedule.getId(),
-                    schedule.getName(),
-                    schedule.getDeviceId(),
-                    schedule.getDevice(),
-                    schedule.getAction(),
-                    schedule.getTime(),
-                    schedule.getRecurrence(),
-                    !schedule.isActive()
-            );
-        }
-        return toggled;
-    }
-
-    @Override
-    public synchronized boolean deleteSchedule(String scheduleId) {
-        boolean deleted = false;
-        try (Connection connection = openConnection()) {
-            ensureSchema(connection);
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "DELETE FROM scheduled_actions WHERE id = ?")) {
-                statement.setString(1, scheduleId);
-                if (statement.executeUpdate() > 0) {
-                    deleted = true;
+    public boolean deleteSchedule(String scheduleId) {
+        synchronized (this) {
+            boolean deleted = false;
+            try (Connection connection = openConnection()) {
+                ensureSchema(connection);
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "DELETE FROM scheduled_actions WHERE id = ?")) {
+                    statement.setString(1, scheduleId);
+                    if (statement.executeUpdate() > 0) {
+                        deleted = true;
+                    }
                 }
+            } catch (SQLException exception) {
+                throw new IllegalStateException("Failed to delete the schedule.", exception);
             }
-        } catch (SQLException exception) {
-            throw new IllegalStateException("Failed to delete the schedule.", exception);
-        }
 
-        if (deleted) {
-            schedules.removeIf(schedule -> schedule.getId().equals(scheduleId));
-            lastProcessedMinuteByScheduleId.remove(scheduleId);
-            MockVacationModeService.getInstance().clearIfUsingSchedule(
-                    scheduleId,
-                    "Selected vacation schedule was deleted"
-            );
+            if (deleted) {
+                schedules.removeIf(schedule -> schedule.getId().equals(scheduleId));
+                lastProcessedMinuteByScheduleId.remove(scheduleId);
+                MockVacationModeService.getInstance().clearIfUsingSchedule(
+                        scheduleId,
+                        "Selected vacation schedule was deleted"
+                );
+            }
+            return deleted;
         }
-        return deleted;
     }
 
     @Override
@@ -248,32 +262,33 @@ public final class JdbcScheduleService implements ScheduleService {
     }
 
     @Override
-    public synchronized void startRecurringExecution() {
-        if (scheduler != null && !scheduler.isShutdown()) {
-            return;
+    public void startRecurringExecution() {
+        synchronized (this) {
+            boolean needsStart = scheduler == null || scheduler.isShutdown();
+            if (needsStart) {
+                ThreadFactory threadFactory = runnable -> {
+                    Thread thread = new Thread(runnable, "jdbc-schedule-dispatcher");
+                    thread.setDaemon(true);
+                    return thread;
+                };
+
+                scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
+                scheduler.scheduleAtFixedRate(() -> {
+                    LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
+                    Platform.runLater(() -> processDueSchedules(now));
+                }, 0, 15, TimeUnit.SECONDS);
+            }
         }
-
-        ThreadFactory threadFactory = runnable -> {
-            Thread thread = new Thread(runnable, "jdbc-schedule-dispatcher");
-            thread.setDaemon(true);
-            return thread;
-        };
-
-        scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        scheduler.scheduleAtFixedRate(() -> {
-            LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
-            Platform.runLater(() -> processDueSchedules(now));
-        }, 0, 15, TimeUnit.SECONDS);
     }
 
     @Override
-    public synchronized void stopRecurringExecution() {
-        if (scheduler == null) {
-            return;
+    public void stopRecurringExecution() {
+        synchronized (this) {
+            if (scheduler != null) {
+                scheduler.shutdownNow();
+                scheduler = null;
+            }
         }
-
-        scheduler.shutdownNow();
-        scheduler = null;
     }
 
     @Override
@@ -510,25 +525,22 @@ public final class JdbcScheduleService implements ScheduleService {
     }
 
     private void ensureSchema(Connection connection) {
-        if (schemaReady.get()) {
-            return;
-        }
-
-        synchronized (this) {
-            if (schemaReady.get()) {
-                return;
-            }
-
-            try (Statement statement = connection.createStatement()) {
-                for (String sqlStatement : loadInitScript().split(";")) {
-                    String trimmedStatement = sqlStatement.trim();
-                    if (!trimmedStatement.isEmpty()) {
-                        statement.execute(trimmedStatement);
+        boolean needsSchema = !schemaReady.get();
+        if (needsSchema) {
+            synchronized (this) {
+                if (!schemaReady.get()) {
+                    try (Statement statement = connection.createStatement()) {
+                        for (String sqlStatement : loadInitScript().split(";")) {
+                            String trimmedStatement = sqlStatement.trim();
+                            if (!trimmedStatement.isEmpty()) {
+                                statement.execute(trimmedStatement);
+                            }
+                        }
+                        schemaReady.set(true);
+                    } catch (SQLException exception) {
+                        throw new IllegalStateException("Failed to initialize the schedules schema.", exception);
                     }
                 }
-                schemaReady.set(true);
-            } catch (SQLException exception) {
-                throw new IllegalStateException("Failed to initialize the schedules schema.", exception);
             }
         }
     }

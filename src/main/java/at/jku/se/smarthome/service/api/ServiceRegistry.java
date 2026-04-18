@@ -10,6 +10,8 @@ import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
  */
 public final class ServiceRegistry {
 
+    /** Lock for thread-safe access to test overrides. */
+    private static final Object OVERRIDE_LOCK = new Object();
     /** Override for log service used in tests. */
     private static LogService testLogServiceOverride;
     /** Override for schedule service used in tests. */
@@ -79,8 +81,10 @@ public final class ServiceRegistry {
      *
      * @param testLogService replacement log service instance
      */
-    public static synchronized void setLogServiceForTesting(LogService testLogService) {
-        testLogServiceOverride = testLogService;
+    public static void setLogServiceForTesting(LogService testLogService) {
+        synchronized (OVERRIDE_LOCK) {
+            testLogServiceOverride = testLogService;
+        }
     }
 
     /**
@@ -88,8 +92,10 @@ public final class ServiceRegistry {
      *
      * @param testScheduleService replacement schedule service instance
      */
-    public static synchronized void setScheduleServiceForTesting(ScheduleService testScheduleService) {
-        testScheduleServiceOverride = testScheduleService;
+    public static void setScheduleServiceForTesting(ScheduleService testScheduleService) {
+        synchronized (OVERRIDE_LOCK) {
+            testScheduleServiceOverride = testScheduleService;
+        }
     }
 
     /**
@@ -100,8 +106,10 @@ public final class ServiceRegistry {
      *
      * @param testRoomService replacement room service instance
      */
-    public static synchronized void setRoomServiceForTesting(RoomService testRoomService) {
-        testRoomServiceOverride = testRoomService;
+    public static void setRoomServiceForTesting(RoomService testRoomService) {
+        synchronized (OVERRIDE_LOCK) {
+            testRoomServiceOverride = testRoomService;
+        }
     }
 
     /**
@@ -126,15 +134,19 @@ public final class ServiceRegistry {
      *
      * @param testUserService replacement user service instance
      */
-    public static synchronized void setUserServiceForTesting(UserService testUserService) {
-        testUserServiceOverride = testUserService;
+    public static void setUserServiceForTesting(UserService testUserService) {
+        synchronized (OVERRIDE_LOCK) {
+            testUserServiceOverride = testUserService;
+        }
     }
 
     /**
      * Clears the cached schedule service so it is re-created on next access.
      */
-    public static synchronized void resetForTesting() {
-        testScheduleServiceOverride = null;
+    public static void resetForTesting() {
+        synchronized (OVERRIDE_LOCK) {
+            testScheduleServiceOverride = null;
+        }
     }
 
     /**
@@ -143,7 +155,9 @@ public final class ServiceRegistry {
      * This is intended for test lifecycle management where the singleton
      * service instance must be reset between test cases.
      */
-    public static synchronized void resetRoomServiceForTesting() {
-        testRoomServiceOverride = null;
+    public static void resetRoomServiceForTesting() {
+        synchronized (OVERRIDE_LOCK) {
+            testRoomServiceOverride = null;
+        }
     }
 }

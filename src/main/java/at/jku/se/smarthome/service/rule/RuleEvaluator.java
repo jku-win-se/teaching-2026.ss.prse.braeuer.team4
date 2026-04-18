@@ -40,84 +40,79 @@ public class RuleEvaluator {
      * @return true when the condition is met, otherwise false
      */
     public boolean evaluate(Rule rule, Device sourceDevice) {
-        if (rule == null) {
-            return false;
+        boolean result = false;
+        if (rule != null) {
+            result = switch (rule.getTriggerType()) {
+                case "Time" -> evaluateTime(rule.getCondition());
+                case "Device State" -> evaluateDeviceState(rule.getCondition(), sourceDevice);
+                case "Sensor Threshold" -> evaluateSensorThreshold(rule.getCondition(), sourceDevice);
+                default -> false;
+            };
         }
-        switch (rule.getTriggerType()) {
-            case "Time":
-                return evaluateTime(rule.getCondition());
-            case "Device State":
-                return evaluateDeviceState(rule.getCondition(), sourceDevice);
-            case "Sensor Threshold":
-                return evaluateSensorThreshold(rule.getCondition(), sourceDevice);
-            default:
-                return false;
-        }
+        return result;
     }
 
     private boolean evaluateTime(String condition) {
-        if (condition == null || condition.isBlank()) {
-            return false;
+        boolean result = false;
+        if (condition != null && !condition.isBlank()) {
+            LocalTime target = parseTime(condition.trim());
+            if (target != null) {
+                LocalTime now = LocalTime.now();
+                result = now.getHour() == target.getHour() && now.getMinute() == target.getMinute();
+            }
         }
-        LocalTime target = parseTime(condition.trim());
-        if (target == null) {
-            return false;
-        }
-        LocalTime now = LocalTime.now();
-        return now.getHour() == target.getHour() && now.getMinute() == target.getMinute();
+        return result;
     }
 
     private LocalTime parseTime(String text) {
+        LocalTime result = null;
         try {
-            return LocalTime.parse(text.toUpperCase(), TIME_FORMAT_12H);
+            result = LocalTime.parse(text.toUpperCase(), TIME_FORMAT_12H);
         } catch (DateTimeParseException e1) {
             try {
-                return LocalTime.parse(text, TIME_FORMAT_24H);
+                result = LocalTime.parse(text, TIME_FORMAT_24H);
             } catch (DateTimeParseException e2) {
-                return null;
+                result = null;
             }
         }
+        return result;
     }
 
     private boolean evaluateDeviceState(String condition, Device sourceDevice) {
-        if (condition == null || sourceDevice == null) {
-            return false;
+        boolean result = false;
+        if (condition != null && sourceDevice != null) {
+            String normalized = condition.trim().toLowerCase();
+            if (normalized.equals("state = active") || normalized.equals("state = on")) {
+                result = sourceDevice.getState();
+            } else if (normalized.equals("state = inactive") || normalized.equals("state = off")) {
+                result = !sourceDevice.getState();
+            }
         }
-        String normalized = condition.trim().toLowerCase();
-        if (normalized.equals("state = active") || normalized.equals("state = on")) {
-            return sourceDevice.getState();
-        }
-        if (normalized.equals("state = inactive") || normalized.equals("state = off")) {
-            return !sourceDevice.getState();
-        }
-        return false;
+        return result;
     }
 
     private boolean evaluateSensorThreshold(String condition, Device sourceDevice) {
-        if (condition == null || sourceDevice == null) {
-            return false;
+        boolean result = false;
+        if (condition != null && sourceDevice != null) {
+            String[] parts = condition.trim().split("\\s+");
+            if (parts.length == 3 && parts[0].equalsIgnoreCase("Value")) {
+                String operator = parts[1];
+                try {
+                    double threshold = Double.parseDouble(parts[2]);
+                    double sensorValue = sourceDevice.getTemperature();
+                    result = switch (operator) {
+                        case ">" -> sensorValue > threshold;
+                        case ">=" -> sensorValue >= threshold;
+                        case "<" -> sensorValue < threshold;
+                        case "<=" -> sensorValue <= threshold;
+                        case "=", "==" -> Double.compare(sensorValue, threshold) == 0;
+                        default -> false;
+                    };
+                } catch (NumberFormatException e) {
+                    result = false;
+                }
+            }
         }
-        // Expected format: "Value [op] [number]"
-        String[] parts = condition.trim().split("\\s+");
-        if (parts.length != 3 || !parts[0].equalsIgnoreCase("Value")) {
-            return false;
-        }
-        String operator = parts[1];
-        double threshold;
-        try {
-            threshold = Double.parseDouble(parts[2]);
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        double sensorValue = sourceDevice.getTemperature();
-        switch (operator) {
-            case ">":  return sensorValue > threshold;
-            case ">=": return sensorValue >= threshold;
-            case "<":  return sensorValue < threshold;
-            case "<=": return sensorValue <= threshold;
-            case "=":
-            case "==": return Double.compare(sensorValue, threshold) == 0;
-            default:   return false;
-        }
+        return result;
     }
 }

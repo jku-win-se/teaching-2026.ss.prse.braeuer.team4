@@ -112,25 +112,26 @@ public final class JdbcRoomService implements RoomService {
      * @return created Room instance or null when name is invalid
      */
     public Room addRoom(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return null;
-        }
-        String trimmed = name.trim();
-        try (Connection connection = openConnection()) {
-            ensureSchema(connection);
-            String id = UUID.randomUUID().toString();
-            try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO rooms (id, name) VALUES (?, ?)")) {
-                stmt.setString(1, id);
-                stmt.setString(2, trimmed);
-                stmt.executeUpdate();
+        Room result = null;
+        if (name != null && !name.trim().isEmpty()) {
+            String trimmed = name.trim();
+            try (Connection connection = openConnection()) {
+                ensureSchema(connection);
+                String id = UUID.randomUUID().toString();
+                try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO rooms (id, name) VALUES (?, ?)")) {
+                    stmt.setString(1, id);
+                    stmt.setString(2, trimmed);
+                    stmt.executeUpdate();
+                }
+                Room room = new Room(id, trimmed, 0);
+                rooms.add(room);
+                logService.addLogEntry("", trimmed, "Room created", userService.getCurrentUserEmail());
+                result = room;
+            } catch (SQLException e) {
+                throw new IllegalStateException("Failed to persist room.", e);
             }
-            Room room = new Room(id, trimmed, 0);
-            rooms.add(room);
-            logService.addLogEntry("", trimmed, "Room created", userService.getCurrentUserEmail());
-            return room;
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to persist room.", e);
         }
+        return result;
     }
 
     @Override
@@ -143,33 +144,35 @@ public final class JdbcRoomService implements RoomService {
      * @return true when the update succeeded, otherwise false
      */
     public boolean updateRoomName(String roomId, String newName) {
-        if (newName == null || newName.trim().isEmpty()) {
-            return false;
-        }
-        String trimmed = newName.trim();
-        try (Connection connection = openConnection()) {
-            ensureSchema(connection);
-            try (PreparedStatement stmt = connection.prepareStatement("UPDATE rooms SET name = ? WHERE id = ?")) {
-                stmt.setString(1, trimmed);
-                stmt.setString(2, roomId);
-                if (stmt.executeUpdate() == 0) {
-                    return false;
+        boolean updated = false;
+        if (newName != null && !newName.trim().isEmpty()) {
+            String trimmed = newName.trim();
+            try (Connection connection = openConnection()) {
+                ensureSchema(connection);
+                try (PreparedStatement stmt = connection.prepareStatement("UPDATE rooms SET name = ? WHERE id = ?")) {
+                    stmt.setString(1, trimmed);
+                    stmt.setString(2, roomId);
+                    if (stmt.executeUpdate() > 0) {
+                        updated = true;
+                    }
+                }
+            } catch (SQLException e) {
+                throw new IllegalStateException("Failed to update room.", e);
+            }
+
+            if (updated) {
+                Room room = getRoomById(roomId);
+                if (room != null) {
+                    String old = room.getName();
+                    room.setName(trimmed);
+                    room.getDevices().forEach(d -> d.setRoom(trimmed));
+                    logService.addLogEntry("", trimmed, "Room renamed from " + old, userService.getCurrentUserEmail());
+                } else {
+                    updated = false;
                 }
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to update room.", e);
         }
-
-        Room room = getRoomById(roomId);
-        if (room != null) {
-            String old = room.getName();
-            room.setName(trimmed);
-            // update device room names in-memory
-            room.getDevices().forEach(d -> d.setRoom(trimmed));
-            logService.addLogEntry("", trimmed, "Room renamed from " + old, userService.getCurrentUserEmail());
-            return true;
-        }
-        return false;
+        return updated;
     }
 
     @Override
@@ -181,30 +184,33 @@ public final class JdbcRoomService implements RoomService {
      * @return true when the room existed and was removed, otherwise false
      */
     public boolean deleteRoom(String roomId) {
+        boolean deleted = false;
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
-            // delete devices first
             try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM devices WHERE room_id = ?")) {
                 stmt.setString(1, roomId);
                 stmt.executeUpdate();
             }
             try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM rooms WHERE id = ?")) {
                 stmt.setString(1, roomId);
-                if (stmt.executeUpdate() == 0) {
-                    return false;
+                if (stmt.executeUpdate() > 0) {
+                    deleted = true;
                 }
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to delete room.", e);
         }
 
-        Room room = getRoomById(roomId);
-        if (room != null) {
-            logService.addLogEntry("", room.getName(), "Room deleted", userService.getCurrentUserEmail());
-            rooms.remove(room);
-            return true;
+        boolean removed = false;
+        if (deleted) {
+            Room room = getRoomById(roomId);
+            if (room != null) {
+                logService.addLogEntry("", room.getName(), "Room deleted", userService.getCurrentUserEmail());
+                rooms.remove(room);
+                removed = true;
+            }
         }
-        return false;
+        return removed;
     }
 
     @Override
@@ -263,40 +269,38 @@ public final class JdbcRoomService implements RoomService {
      * @return created Device or null when inputs are invalid
      */
     public Device addDeviceToRoom(String roomId, String deviceName, String deviceType) {
-        if (deviceName == null || deviceName.trim().isEmpty() || deviceType == null || deviceType.trim().isEmpty()) {
-            return null;
-        }
-        Room room = getRoomById(roomId);
-        if (room == null) {
-            return null;
-        }
-        String normalizedType = normalizeDeviceType(deviceType);
-        if (normalizedType == null) {
-            return null; // invalid type
-        }
+        Device result = null;
+        if (deviceName != null && !deviceName.trim().isEmpty() && deviceType != null && !deviceType.trim().isEmpty()) {
+            Room room = getRoomById(roomId);
+            if (room != null) {
+                String normalizedType = normalizeDeviceType(deviceType);
+                if (normalizedType != null) {
+                    String id = UUID.randomUUID().toString();
+                    try (Connection connection = openConnection()) {
+                        ensureSchema(connection);
+                        try (PreparedStatement stmt = connection.prepareStatement(
+                                "INSERT INTO devices (id, name, type, room_id, state, brightness, temperature) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+                            stmt.setString(1, id);
+                            stmt.setString(2, deviceName.trim());
+                            stmt.setString(3, normalizedType);
+                            stmt.setString(4, roomId);
+                            stmt.setBoolean(5, true);
+                            stmt.setInt(6, 100);
+                            stmt.setDouble(7, 20.0);
+                            stmt.executeUpdate();
+                        }
+                    } catch (SQLException e) {
+                        throw new IllegalStateException("Failed to persist device.", e);
+                    }
 
-        String id = UUID.randomUUID().toString();
-        try (Connection connection = openConnection()) {
-            ensureSchema(connection);
-            try (PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO devices (id, name, type, room_id, state, brightness, temperature) VALUES (?, ?, ?, ?, ?, ?, ?)") ) {
-                stmt.setString(1, id);
-                stmt.setString(2, deviceName.trim());
-                stmt.setString(3, normalizedType);
-                stmt.setString(4, roomId);
-                stmt.setBoolean(5, true);
-                stmt.setInt(6, 100);
-                stmt.setDouble(7, 20.0);
-                stmt.executeUpdate();
+                    Device device = new Device(id, deviceName.trim(), normalizedType, room.getName(), true);
+                    room.addDevice(device);
+                    logService.addLogEntry(device.getName(), room.getName(), "Device created", userService.getCurrentUserEmail());
+                    result = device;
+                }
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to persist device.", e);
         }
-
-        Device device = new Device(id, deviceName.trim(), normalizedType, room.getName(), true);
-        room.addDevice(device);
-        logService.addLogEntry(device.getName(), room.getName(), "Device created", userService.getCurrentUserEmail());
-        return device;
+        return result;
     }
 
     @Override
@@ -309,25 +313,28 @@ public final class JdbcRoomService implements RoomService {
      * @return true when the device existed and was removed, otherwise false
      */
     public boolean removeDeviceFromRoom(String roomId, String deviceId) {
+        boolean deleted = false;
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
             try (PreparedStatement stmt = connection.prepareStatement("DELETE FROM devices WHERE id = ? AND room_id = ?")) {
                 stmt.setString(1, deviceId);
                 stmt.setString(2, roomId);
-                if (stmt.executeUpdate() == 0) {
-                    return false;
+                if (stmt.executeUpdate() > 0) {
+                    deleted = true;
                 }
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to delete device.", e);
         }
 
-        Room room = getRoomById(roomId);
-        if (room != null) {
-            boolean removed = room.getDevices().removeIf(d -> d.getId().equals(deviceId));
-            return removed;
+        boolean removed = false;
+        if (deleted) {
+            Room room = getRoomById(roomId);
+            if (room != null) {
+                removed = room.getDevices().removeIf(d -> d.getId().equals(deviceId));
+            }
         }
-        return false;
+        return removed;
     }
 
     @Override
@@ -340,58 +347,66 @@ public final class JdbcRoomService implements RoomService {
      * @return true when the device existed and was updated, otherwise false
      */
     public boolean renameDevice(String roomId, String deviceId, String newName) {
-        if (newName == null || newName.isBlank()) {
-            return false;
-        }
-        try (Connection connection = openConnection()) {
-            ensureSchema(connection);
-            try (PreparedStatement stmt = connection.prepareStatement("UPDATE devices SET name = ? WHERE id = ? AND room_id = ?")) {
-                stmt.setString(1, newName.trim());
-                stmt.setString(2, deviceId);
-                stmt.setString(3, roomId);
-                if (stmt.executeUpdate() == 0) {
-                    return false;
+        boolean renamed = false;
+        if (newName != null && !newName.isBlank()) {
+            try (Connection connection = openConnection()) {
+                ensureSchema(connection);
+                try (PreparedStatement stmt = connection.prepareStatement("UPDATE devices SET name = ? WHERE id = ? AND room_id = ?")) {
+                    stmt.setString(1, newName.trim());
+                    stmt.setString(2, deviceId);
+                    stmt.setString(3, roomId);
+                    if (stmt.executeUpdate() > 0) {
+                        renamed = true;
+                    }
+                }
+            } catch (SQLException e) {
+                throw new IllegalStateException("Failed to rename device.", e);
+            }
+
+            if (renamed) {
+                Room room = getRoomById(roomId);
+                if (room != null) {
+                    Device device = room.getDevices().stream().filter(d -> d.getId().equals(deviceId)).findFirst().orElse(null);
+                    if (device != null) {
+                        device.setName(newName.trim());
+                    } else {
+                        renamed = false;
+                    }
                 }
             }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to rename device.", e);
         }
-
-        Room room = getRoomById(roomId);
-        if (room != null) {
-            Device device = room.getDevices().stream().filter(d -> d.getId().equals(deviceId)).findFirst().orElse(null);
-            if (device != null) {
-                device.setName(newName.trim());
-                return true;
-            }
-        }
-        return false;
+        return renamed;
     }
 
     @Override
     public boolean updateDeviceState(String deviceId, boolean state) {
+        boolean updated = false;
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
             try (PreparedStatement stmt = connection.prepareStatement(
                     "UPDATE devices SET state = ? WHERE id = ?")) {
                 stmt.setBoolean(1, state);
                 stmt.setString(2, deviceId);
-                if (stmt.executeUpdate() == 0) return false;
+                if (stmt.executeUpdate() > 0) {
+                    updated = true;
+                }
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to update device state.", e);
         }
-        Device device = getDeviceById(deviceId);
-        if (device != null) {
-            device.setState(state);
-            return true;
+        if (updated) {
+            Device device = getDeviceById(deviceId);
+            if (device != null) {
+                device.setState(state);
+            }
         }
-        return false;
+        return updated;
     }
 
     @Override
     public boolean updateDeviceBrightness(String deviceId, int brightness) {
         boolean newState = brightness > 0;
+        boolean updated = false;
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
             try (PreparedStatement stmt = connection.prepareStatement(
@@ -399,18 +414,21 @@ public final class JdbcRoomService implements RoomService {
                 stmt.setInt(1, brightness);
                 stmt.setBoolean(2, newState);
                 stmt.setString(3, deviceId);
-                if (stmt.executeUpdate() == 0) return false;
+                if (stmt.executeUpdate() > 0) {
+                    updated = true;
+                }
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to update device brightness.", e);
         }
-        Device device = getDeviceById(deviceId);
-        if (device != null) {
-            device.setBrightness(brightness);
-            device.setState(newState);
-            return true;
+        if (updated) {
+            Device device = getDeviceById(deviceId);
+            if (device != null) {
+                device.setBrightness(brightness);
+                device.setState(newState);
+            }
         }
-        return false;
+        return updated;
     }
 
     @Override
@@ -422,23 +440,27 @@ public final class JdbcRoomService implements RoomService {
      * @return true when the device existed and was updated, otherwise false
      */
     public boolean updateDeviceTemperature(String deviceId, double temperature) {
+        boolean updated = false;
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
             try (PreparedStatement stmt = connection.prepareStatement(
                     "UPDATE devices SET temperature = ? WHERE id = ?")) {
                 stmt.setDouble(1, temperature);
                 stmt.setString(2, deviceId);
-                if (stmt.executeUpdate() == 0) return false;
+                if (stmt.executeUpdate() > 0) {
+                    updated = true;
+                }
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to update device temperature.", e);
         }
-        Device device = getDeviceById(deviceId);
-        if (device != null) {
-            device.setTemperature(temperature);
-            return true;
+        if (updated) {
+            Device device = getDeviceById(deviceId);
+            if (device != null) {
+                device.setTemperature(temperature);
+            }
         }
-        return false;
+        return updated;
     }
 
     /**
@@ -490,16 +512,19 @@ public final class JdbcRoomService implements RoomService {
      * @return normalized device type or null if invalid
      */
     private String normalizeDeviceType(String deviceType) {
-        if (deviceType == null) return null;
-        String t = deviceType.trim().toLowerCase(Locale.ENGLISH);
-        return switch (t) {
-            case "switch", "schalter" -> "Switch";
-            case "dimmer" -> "Dimmer";
-            case "thermostat" -> "Thermostat";
-            case "sensor" -> "Sensor";
-            case "blind", "blinds", "shutter", "shutters", "cover", "cover/blind", "coverblind" -> "Cover/Blind";
-            default -> null;
-        };
+        String result = null;
+        if (deviceType != null) {
+            String t = deviceType.trim().toLowerCase(Locale.ENGLISH);
+            result = switch (t) {
+                case "switch", "schalter" -> "Switch";
+                case "dimmer" -> "Dimmer";
+                case "thermostat" -> "Thermostat";
+                case "sensor" -> "Sensor";
+                case "blind", "blinds", "shutter", "shutters", "cover", "cover/blind", "coverblind" -> "Cover/Blind";
+                default -> null;
+            };
+        }
+        return result;
     }
 
     /**
@@ -520,17 +545,20 @@ public final class JdbcRoomService implements RoomService {
      * @param connection database connection to use
      */
     private void ensureSchema(Connection connection) {
-        if (schemaReady.get()) return;
-        synchronized (this) {
-            if (schemaReady.get()) return;
-            try (Statement stmt = connection.createStatement()) {
-                for (String sql : loadInitScript().split(";")) {
-                    String s = sql.trim();
-                    if (!s.isEmpty()) stmt.execute(s);
+        boolean needsSchema = !schemaReady.get();
+        if (needsSchema) {
+            synchronized (this) {
+                if (!schemaReady.get()) {
+                    try (Statement stmt = connection.createStatement()) {
+                        for (String sql : loadInitScript().split(";")) {
+                            String s = sql.trim();
+                            if (!s.isEmpty()) stmt.execute(s);
+                        }
+                        schemaReady.set(true);
+                    } catch (SQLException e) {
+                        throw new IllegalStateException("Failed to initialize rooms schema.", e);
+                    }
                 }
-                schemaReady.set(true);
-            } catch (SQLException e) {
-                throw new IllegalStateException("Failed to initialize rooms schema.", e);
             }
         }
     }

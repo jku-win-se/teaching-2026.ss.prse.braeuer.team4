@@ -127,6 +127,7 @@ public final class MockSceneService {
         * @return true when the scene exists and activation ran, otherwise false
      */
     public boolean activateScene(String sceneId) {
+        boolean activated = false;
         Scene scene = scenes.stream()
                 .filter(s -> s.getId().equals(sceneId))
                 .findFirst()
@@ -160,9 +161,9 @@ public final class MockSceneService {
                         "info"
                 );
             }
-            return true;
+            activated = true;
         }
-        return false;
+        return activated;
     }
     
     /**
@@ -187,6 +188,7 @@ public final class MockSceneService {
         * @return true when the scene exists and was updated, otherwise false
      */
     public boolean updateScene(String sceneId, String name, String description, List<String> deviceStates) {
+        boolean updated = false;
         Scene scene = scenes.stream()
                 .filter(s -> s.getId().equals(sceneId))
                 .findFirst()
@@ -196,9 +198,9 @@ public final class MockSceneService {
             scene.setName(name);
             scene.setDescription(description);
             scene.setDeviceStates(deviceStates);
-            return true;
+            updated = true;
         }
-        return false;
+        return updated;
     }
     
     /**
@@ -219,27 +221,24 @@ public final class MockSceneService {
      * @return true if state was applied successfully
      */
     private boolean applyDeviceState(String sceneName, String stateDefinition) {
+        boolean applied = false;
         String[] parts = stateDefinition.split(":", 2);
-        if (parts.length != 2) {
-            return false;
-        }
+        if (parts.length == 2) {
+            String deviceName = parts[0].trim();
+            String targetState = parts[1].trim();
 
-        String deviceName = parts[0].trim();
-        String targetState = parts[1].trim();
-
-        Device device = roomService.getDeviceByName(deviceName);
-        if (device == null) {
-            return false;
-        }
-
-        boolean applied = applyStateToDevice(device, targetState);
-        if (applied) {
-            logService.addLogEntry(
-                    device.getName(),
-                    device.getRoom(),
-                    "Scene '" + sceneName + "' set state to " + targetState,
-                    "Scene"
-            );
+            Device device = roomService.getDeviceByName(deviceName);
+            if (device != null) {
+                applied = applyStateToDevice(device, targetState);
+                if (applied) {
+                    logService.addLogEntry(
+                            device.getName(),
+                            device.getRoom(),
+                            "Scene '" + sceneName + "' set state to " + targetState,
+                            "Scene"
+                    );
+                }
+            }
         }
         return applied;
     }
@@ -252,6 +251,7 @@ public final class MockSceneService {
      * @return true if state was applied successfully
      */
     private boolean applyStateToDevice(Device device, String targetState) {
+        boolean applied = false;
         String normalized = targetState.trim().toLowerCase(Locale.ROOT);
 
         if (normalized.endsWith("%")) {
@@ -259,33 +259,32 @@ public final class MockSceneService {
                 int brightness = Integer.parseInt(normalized.substring(0, normalized.length() - 1).trim());
                 device.setBrightness(brightness);
                 device.setState(brightness > 0);
-                return true;
+                applied = true;
             } catch (NumberFormatException exception) {
-                return false;
+                applied = false;
             }
-        }
-
-        if (normalized.endsWith("°c")) {
+        } else if (normalized.endsWith("°c")) {
             try {
                 double temperature = Double.parseDouble(normalized.replace("°c", "").trim());
                 device.setTemperature(temperature);
                 device.setState(true);
-                return true;
+                applied = true;
             } catch (NumberFormatException exception) {
-                return false;
+                applied = false;
             }
+        } else {
+            applied = switch (normalized) {
+                case "on", "open", "opened" -> {
+                    device.setState(true);
+                    yield true;
+                }
+                case "off", "close", "closed" -> {
+                    device.setState(false);
+                    yield true;
+                }
+                default -> false;
+            };
         }
-
-        return switch (normalized) {
-            case "on", "open", "opened" -> {
-                device.setState(true);
-                yield true;
-            }
-            case "off", "close", "closed" -> {
-                device.setState(false);
-                yield true;
-            }
-            default -> false;
-        };
+        return applied;
     }
 }

@@ -161,10 +161,11 @@ public class TestMockUserServiceLoginLogout {
          */
         @Override
         public Optional<PersistedUser> findByEmail(String normalizedEmail) {
-            if (persistedUser == null || !persistedUser.email().equals(normalizedEmail)) {
-                return Optional.empty();
+            Optional<PersistedUser> result = Optional.empty();
+            if (persistedUser != null && persistedUser.email().equals(normalizedEmail)) {
+                result = Optional.of(persistedUser);
             }
-            return Optional.of(persistedUser);
+            return result;
         }
 
         /**

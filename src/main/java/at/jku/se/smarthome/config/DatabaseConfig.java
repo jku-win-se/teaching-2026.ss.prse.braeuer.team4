@@ -48,38 +48,37 @@ public final class DatabaseConfig {
      * @return optional containing database settings if found
      */
     public static Optional<DatabaseSettings> load() {
-        DatabaseSettings result;
+        Optional<DatabaseSettings> result = Optional.empty();
         
-        result = readFromSystemProperties();
-        if (result != null) {
-            return Optional.of(result);
-        }
+        DatabaseSettings settings = readFromSystemProperties();
+        if (settings != null) {
+            result = Optional.of(settings);
+        } else {
+            settings = readFromDotEnv();
+            if (settings != null) {
+                result = Optional.of(settings);
+            } else {
+                settings = readFromEnvironment();
+                if (settings != null) {
+                    result = Optional.of(settings);
+                } else if (Files.exists(LOCAL_CONFIG_PATH)) {
+                    Properties properties = new Properties();
+                    try (InputStream inputStream = Files.newInputStream(LOCAL_CONFIG_PATH)) {
+                        properties.load(inputStream);
+                    } catch (IOException exception) {
+                        throw new IllegalStateException("Unable to read smarthome-db.properties", exception);
+                    }
 
-        result = readFromDotEnv();
-        if (result != null) {
-            return Optional.of(result);
+                    settings = readSettings(properties.getProperty(PROPERTY_URL),
+                            properties.getProperty(PROPERTY_USER),
+                            properties.getProperty(PROPERTY_PASSWORD));
+                    if (settings != null) {
+                        result = Optional.of(settings);
+                    }
+                }
+            }
         }
-
-        result = readFromEnvironment();
-        if (result != null) {
-            return Optional.of(result);
-        }
-
-        if (!Files.exists(LOCAL_CONFIG_PATH)) {
-            return Optional.empty();
-        }
-
-        Properties properties = new Properties();
-        try (InputStream inputStream = Files.newInputStream(LOCAL_CONFIG_PATH)) {
-            properties.load(inputStream);
-        } catch (IOException exception) {
-            throw new IllegalStateException("Unable to read smarthome-db.properties", exception);
-        }
-
-        result = readSettings(properties.getProperty(PROPERTY_URL),
-                properties.getProperty(PROPERTY_USER),
-                properties.getProperty(PROPERTY_PASSWORD));
-        return Optional.of(result);
+        return result;
     }
 
     private static DatabaseSettings readFromSystemProperties() {
@@ -93,22 +92,22 @@ public final class DatabaseConfig {
     }
 
     private static DatabaseSettings readFromDotEnv() {
-        if (!Files.exists(DOT_ENV_PATH)) {
-            return null;
+        DatabaseSettings result = null;
+        if (Files.exists(DOT_ENV_PATH)) {
+            try {
+                Map<String, String> values = parseDotEnv(Files.readAllLines(DOT_ENV_PATH));
+                result = readSettings(
+                        values.get(ENV_URL),
+                        values.get(ENV_USER),
+                        values.get(ENV_PASSWORD),
+                        values.get(ENV_SMARTHOME_DATABASE_URL),
+                        values.get(ENV_DATABASE_URL)
+                );
+            } catch (IOException exception) {
+                throw new IllegalStateException("Unable to read .env", exception);
+            }
         }
-
-        try {
-            Map<String, String> values = parseDotEnv(Files.readAllLines(DOT_ENV_PATH));
-            return readSettings(
-                    values.get(ENV_URL),
-                    values.get(ENV_USER),
-                    values.get(ENV_PASSWORD),
-                    values.get(ENV_SMARTHOME_DATABASE_URL),
-                    values.get(ENV_DATABASE_URL)
-            );
-        } catch (IOException exception) {
-            throw new IllegalStateException("Unable to read .env", exception);
-        }
+        return result;
     }
 
     private static DatabaseSettings readFromEnvironment() {
@@ -119,11 +118,6 @@ public final class DatabaseConfig {
                 System.getenv(ENV_SMARTHOME_DATABASE_URL),
                 System.getenv(ENV_DATABASE_URL)
         );
-
-        if (settings == null) {
-            return null;
-        }
-
         return settings;
     }
 
@@ -132,6 +126,7 @@ public final class DatabaseConfig {
     }
 
     private static DatabaseSettings readSettings(String url, String user, String password, String smartHomeDatabaseUrl, String databaseUrl) {
+        DatabaseSettings result = null;
         String normalizedUrl = normalize(url);
         String normalizedUser = normalize(user);
         String normalizedPassword = password == null ? null : password.trim();
@@ -140,55 +135,54 @@ public final class DatabaseConfig {
             if (normalizedUrl == null || normalizedUser == null || normalizedPassword == null) {
                 throw new IllegalStateException("Database configuration is incomplete. Provide URL, user, and password together.");
             }
-            return new DatabaseSettings(normalizedUrl, normalizedUser, normalizedPassword);
+            result = new DatabaseSettings(normalizedUrl, normalizedUser, normalizedPassword);
+        } else {
+            String normalizedConnectionString = normalize(smartHomeDatabaseUrl);
+            if (normalizedConnectionString == null) {
+                normalizedConnectionString = normalize(databaseUrl);
+            }
+            if (normalizedConnectionString != null) {
+                result = parseConnectionString(normalizedConnectionString);
+            }
         }
-
-        String normalizedConnectionString = normalize(smartHomeDatabaseUrl);
-        if (normalizedConnectionString == null) {
-            normalizedConnectionString = normalize(databaseUrl);
-        }
-
-        if (normalizedConnectionString == null) {
-            return null;
-        }
-
-        return parseConnectionString(normalizedConnectionString);
+        return result;
     }
 
     private static DatabaseSettings parseConnectionString(String connectionString) {
+        DatabaseSettings result = null;
         try {
             URI uri = new URI(connectionString);
             String scheme = normalize(uri.getScheme());
-            if (scheme == null || !(scheme.equals("postgres") || scheme.equals("postgresql"))) {
+            if (scheme != null && (scheme.equals("postgres") || scheme.equals("postgresql"))) {
+                String userInfo = uri.getUserInfo();
+                if (!isBlank(userInfo) && userInfo.contains(":")) {
+                    String[] userInfoParts = userInfo.split(":", 2);
+                    String username = normalize(userInfoParts[0]);
+                    String password = normalize(userInfoParts[1]);
+                    String host = normalize(uri.getHost());
+                    int port = uri.getPort();
+                    String databaseName = normalize(uri.getPath() == null ? null : uri.getPath().replaceFirst("^/", ""));
+
+                    if (username != null && password != null && host != null && port >= 0 && databaseName != null) {
+                        String query = normalize(uri.getQuery());
+                        String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + databaseName;
+                        if (query != null) {
+                            jdbcUrl += "?" + query;
+                        }
+                        result = new DatabaseSettings(jdbcUrl, username, password);
+                    } else {
+                        throw new IllegalStateException("Database URL is missing required connection parts.");
+                    }
+                } else {
+                    throw new IllegalStateException("Database URL must contain username and password.");
+                }
+            } else {
                 throw new IllegalStateException("Unsupported database URL scheme in .env. Use postgres:// or postgresql://.");
             }
-
-            String userInfo = uri.getUserInfo();
-            if (isBlank(userInfo) || !userInfo.contains(":")) {
-                throw new IllegalStateException("Database URL must contain username and password.");
-            }
-
-            String[] userInfoParts = userInfo.split(":", 2);
-            String username = normalize(userInfoParts[0]);
-            String password = normalize(userInfoParts[1]);
-            String host = normalize(uri.getHost());
-            int port = uri.getPort();
-            String databaseName = normalize(uri.getPath() == null ? null : uri.getPath().replaceFirst("^/", ""));
-
-            if (username == null || password == null || host == null || port < 0 || databaseName == null) {
-                throw new IllegalStateException("Database URL is missing required connection parts.");
-            }
-
-            String query = normalize(uri.getQuery());
-            String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + databaseName;
-            if (query != null) {
-                jdbcUrl += "?" + query;
-            }
-
-            return new DatabaseSettings(jdbcUrl, username, password);
         } catch (URISyntaxException exception) {
             throw new IllegalStateException("Database URL in .env is not a valid URI.", exception);
         }
+        return result;
     }
 
     private static Map<String, String> parseDotEnv(List<String> lines) {
@@ -212,23 +206,24 @@ public final class DatabaseConfig {
     }
 
     private static String stripQuotes(String value) {
+        String result = value;
         if (value.length() >= 2) {
             boolean hasDoubleQuotes = value.startsWith("\"") && value.endsWith("\"");
             boolean hasSingleQuotes = value.startsWith("'") && value.endsWith("'");
             if (hasDoubleQuotes || hasSingleQuotes) {
-                return value.substring(1, value.length() - 1);
+                result = value.substring(1, value.length() - 1);
             }
         }
-        return value;
+        return result;
     }
 
     private static String normalize(String value) {
-        if (value == null) {
-            return null;
+        String result = null;
+        if (value != null) {
+            String trimmed = value.trim();
+            result = trimmed.isEmpty() ? null : trimmed;
         }
-
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
+        return result;
     }
 
     private static boolean isBlank(String value) {
