@@ -11,6 +11,8 @@ import javafx.collections.ObservableList;
  */
 public final class MockRoomService implements RoomService {
     
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance of the mock room service. */
     private static MockRoomService instance;
     /** Observable list of all rooms. */
@@ -51,19 +53,23 @@ public final class MockRoomService implements RoomService {
     }
 
 
-    public static synchronized MockRoomService getInstance() {
-        if (instance == null) {
-            instance = new MockRoomService();
+    public static MockRoomService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new MockRoomService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
     }
 
     /**
@@ -82,21 +88,21 @@ public final class MockRoomService implements RoomService {
         * @return created room instance
      */
     public Room addRoom(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return null; // Invalid name
+        Room result = null;
+        if (name != null && !name.trim().isEmpty()) {
+            String trimmedName = name.trim();
+            boolean duplicate = rooms.stream().anyMatch(r -> r.getName().equalsIgnoreCase(trimmedName));
+            if (!duplicate) {
+                result = new Room(
+                        "room-" + String.format("%03d", rooms.size() + 1),
+                        trimmedName,
+                        0
+                );
+                rooms.add(result);
+                logService.addLogEntry("", trimmedName, "Room created", userService.getCurrentUserEmail());
+            }
         }
-        String trimmedName = name.trim();
-        if (rooms.stream().anyMatch(r -> r.getName().equalsIgnoreCase(trimmedName))) {
-            return null; // Duplicate name
-        }
-        Room room = new Room(
-                "room-" + String.format("%03d", rooms.size() + 1),
-                trimmedName,
-                0
-        );
-        rooms.add(room);
-        logService.addLogEntry("", trimmedName, "Room created", userService.getCurrentUserEmail());
-        return room;
+        return result;
     }
     
     /**
@@ -107,25 +113,25 @@ public final class MockRoomService implements RoomService {
         * @return true when the room exists and was updated, otherwise false
      */
     public boolean updateRoomName(String roomId, String newName) {
-        if (newName == null || newName.trim().isEmpty()) {
-            return false; // Invalid name
-        }
-        String trimmedName = newName.trim();
-        Room room = rooms.stream()
-                .filter(r -> r.getId().equals(roomId))
-                .findFirst()
-                .orElse(null);
-        
-        if (room != null && !room.getName().equalsIgnoreCase(trimmedName)) {
-            if (rooms.stream().anyMatch(r -> !r.getId().equals(roomId) && r.getName().equalsIgnoreCase(trimmedName))) {
-                return false; // Duplicate name
+        boolean updated = false;
+        if (newName != null && !newName.trim().isEmpty()) {
+            String trimmedName = newName.trim();
+            Room room = rooms.stream()
+                    .filter(r -> r.getId().equals(roomId))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (room != null && !room.getName().equalsIgnoreCase(trimmedName)) {
+                boolean duplicate = rooms.stream().anyMatch(r -> !r.getId().equals(roomId) && r.getName().equalsIgnoreCase(trimmedName));
+                if (!duplicate) {
+                    String oldName = room.getName();
+                    room.setName(trimmedName);
+                    logService.addLogEntry("", trimmedName, "Room renamed from " + oldName, userService.getCurrentUserEmail());
+                    updated = true;
+                }
             }
-            String oldName = room.getName();
-            room.setName(trimmedName);
-            logService.addLogEntry("", trimmedName, "Room renamed from " + oldName, userService.getCurrentUserEmail());
-            return true;
         }
-        return false;
+        return updated;
     }
     
     /**
@@ -135,12 +141,13 @@ public final class MockRoomService implements RoomService {
      * @return true when the room existed and was removed, otherwise false
      */
     public boolean deleteRoom(String roomId) {
+        boolean deleted = false;
         Room room = getRoomById(roomId);
         if (room != null) {
             logService.addLogEntry("", room.getName(), "Room deleted", userService.getCurrentUserEmail());
-            return rooms.remove(room);
+            deleted = rooms.remove(room);
         }
-        return false;
+        return deleted;
     }
     
     /**
@@ -204,19 +211,19 @@ public final class MockRoomService implements RoomService {
         * @return created device, or null when the room does not exist
      */
     public Device addDeviceToRoom(String roomId, String deviceName, String deviceType) {
+        Device result = null;
         Room room = getRoomById(roomId);
         if (room != null) {
-            Device device = new Device(
+            result = new Device(
                     "dev-" + String.format("%03d", 1000 + (int)(Math.random() * 9000)),
                     deviceName,
                     deviceType,
                     room.getName(),
                     true
             );
-            room.addDevice(device);
-            return device;
+            room.addDevice(result);
         }
-        return null;
+        return result;
     }
     
     /**
@@ -227,11 +234,12 @@ public final class MockRoomService implements RoomService {
         * @return true when the device existed and was removed, otherwise false
      */
     public boolean removeDeviceFromRoom(String roomId, String deviceId) {
+        boolean removed = false;
         Room room = getRoomById(roomId);
         if (room != null) {
-            return room.getDevices().removeIf(d -> d.getId().equals(deviceId));
+            removed = room.getDevices().removeIf(d -> d.getId().equals(deviceId));
         }
-        return false;
+        return removed;
     }
     
     /**
@@ -242,12 +250,13 @@ public final class MockRoomService implements RoomService {
      * @return true when the device existed and was updated, otherwise false
      */
     public boolean updateDeviceState(String deviceId, boolean state) {
+        boolean updated = false;
         Device device = getDeviceById(deviceId);
         if (device != null) {
             device.setState(state);
-            return true;
+            updated = true;
         }
-        return false;
+        return updated;
     }
 
     /**
@@ -258,13 +267,14 @@ public final class MockRoomService implements RoomService {
      * @return true when the device existed and was updated, otherwise false
      */
     public boolean updateDeviceBrightness(String deviceId, int brightness) {
+        boolean updated = false;
         Device device = getDeviceById(deviceId);
         if (device != null) {
             device.setBrightness(brightness);
             device.setState(brightness > 0);
-            return true;
+            updated = true;
         }
-        return false;
+        return updated;
     }
 
     /**
@@ -275,12 +285,13 @@ public final class MockRoomService implements RoomService {
      * @return true when the device existed and was updated, otherwise false
      */
     public boolean updateDeviceTemperature(String deviceId, double temperature) {
+        boolean updated = false;
         Device device = getDeviceById(deviceId);
         if (device != null) {
             device.setTemperature(temperature);
-            return true;
+            updated = true;
         }
-        return false;
+        return updated;
     }
 
     /**
@@ -292,20 +303,20 @@ public final class MockRoomService implements RoomService {
         * @return true when the device existed and was renamed, otherwise false
      */
     public boolean renameDevice(String roomId, String deviceId, String newName) {
-        if (newName == null || newName.isBlank()) {
-            return false;
-        }
-        Room room = getRoomById(roomId);
-        if (room != null) {
-            Device device = room.getDevices().stream()
-                    .filter(d -> d.getId().equals(deviceId))
-                    .findFirst()
-                    .orElse(null);
-            if (device != null) {
-                device.setName(newName);
-                return true;
+        boolean renamed = false;
+        if (newName != null && !newName.isBlank()) {
+            Room room = getRoomById(roomId);
+            if (room != null) {
+                Device device = room.getDevices().stream()
+                        .filter(d -> d.getId().equals(deviceId))
+                        .findFirst()
+                        .orElse(null);
+                if (device != null) {
+                    device.setName(newName);
+                    renamed = true;
+                }
             }
         }
-        return false;
+        return renamed;
     }
 }

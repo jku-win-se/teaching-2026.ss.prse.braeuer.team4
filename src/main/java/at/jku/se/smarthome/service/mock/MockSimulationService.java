@@ -138,18 +138,21 @@ public final class MockSimulationService {
      * @throws IllegalArgumentException if time cannot be parsed
      */
     public LocalTime parseStartTime(String value) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Start time is required");
-        }
-
-        for (String pattern : List.of("HH:mm:ss", "HH:mm")) {
-            try {
-                return LocalTime.parse(value.trim(), DateTimeFormatter.ofPattern(pattern));
-            } catch (DateTimeParseException ignored) {
+        LocalTime result = null;
+        if (value != null && !value.isBlank()) {
+            for (String pattern : List.of("HH:mm:ss", "HH:mm")) {
+                try {
+                    result = LocalTime.parse(value.trim(), DateTimeFormatter.ofPattern(pattern));
+                    break;
+                } catch (DateTimeParseException ignored) {
+                }
             }
         }
 
-        throw new IllegalArgumentException("Use HH:mm or HH:mm:ss for the start time");
+        if (result == null) {
+            throw new IllegalArgumentException("Use HH:mm or HH:mm:ss for the start time");
+        }
+        return result;
     }
 
     private ObservableList<SimulationDeviceState> createSimulationSnapshot(LocalTime startTime) {
@@ -180,77 +183,83 @@ public final class MockSimulationService {
     }
 
     private LocalTime determineTriggerTime(SimulationConfiguration configuration, Rule rule, int fallbackMinutes) {
-        return switch (rule.getTriggerType()) {
-            case "Time" -> parseRuleTime(rule.getCondition(), configuration.startTime().plusMinutes(fallbackMinutes));
-            case "Sensor Threshold" -> evaluateThresholdTrigger(configuration, rule)
-                    ? configuration.startTime().plusHours(2).plusMinutes(fallbackMinutes % 20)
-                    : null;
-            case "Device State" -> configuration.startTime().plusMinutes(fallbackMinutes);
-            default -> configuration.startTime().plusMinutes(fallbackMinutes);
-        };
+        LocalTime result = configuration.startTime().plusMinutes(fallbackMinutes);
+        if (rule.getTriggerType() != null) {
+            result = switch (rule.getTriggerType()) {
+                case "Time" -> parseRuleTime(rule.getCondition(), configuration.startTime().plusMinutes(fallbackMinutes));
+                case "Sensor Threshold" -> evaluateThresholdTrigger(configuration, rule)
+                        ? configuration.startTime().plusHours(2).plusMinutes(fallbackMinutes % 20)
+                        : null;
+                case "Device State" -> configuration.startTime().plusMinutes(fallbackMinutes);
+                default -> configuration.startTime().plusMinutes(fallbackMinutes);
+            };
+            if (result == null) {
+                result = configuration.startTime().plusMinutes(fallbackMinutes);
+            }
+        }
+        return result;
     }
 
     private LocalTime parseRuleTime(String condition, LocalTime fallback) {
-        if (condition == null || condition.isBlank()) {
-            return fallback;
-        }
-
-        for (String pattern : List.of("hh:mm a", "HH:mm", "HH:mm:ss")) {
-            try {
-                return LocalTime.parse(condition.trim(), DateTimeFormatter.ofPattern(pattern, Locale.ENGLISH));
-            } catch (DateTimeParseException ignored) {
+        LocalTime result = fallback;
+        if (condition != null && !condition.isBlank()) {
+            for (String pattern : List.of("hh:mm a", "HH:mm", "HH:mm:ss")) {
+                try {
+                    result = LocalTime.parse(condition.trim(), DateTimeFormatter.ofPattern(pattern, Locale.ENGLISH));
+                    break;
+                } catch (DateTimeParseException ignored) {
+                }
             }
         }
-        return fallback;
+        return result;
     }
 
     private boolean evaluateThresholdTrigger(SimulationConfiguration configuration, Rule rule) {
         double sensorValue = resolveSensorValue(configuration, rule.getSourceDevice(), rule.getCondition());
+        boolean result = sensorValue > 0;
         Matcher matcher = NUMERIC_CONDITION_PATTERN.matcher(rule.getCondition() == null ? "" : rule.getCondition());
-        if (!matcher.find()) {
-            return sensorValue > 0;
+        if (matcher.find()) {
+            String operator = matcher.group(1);
+            double threshold = Double.parseDouble(matcher.group(2));
+            result = switch (operator) {
+                case ">" -> sensorValue > threshold;
+                case ">=" -> sensorValue >= threshold;
+                case "<" -> sensorValue < threshold;
+                case "<=" -> sensorValue <= threshold;
+                case "=" -> sensorValue == threshold;
+                default -> false;
+            };
         }
-
-        String operator = matcher.group(1);
-        double threshold = Double.parseDouble(matcher.group(2));
-
-        return switch (operator) {
-            case ">" -> sensorValue > threshold;
-            case ">=" -> sensorValue >= threshold;
-            case "<" -> sensorValue < threshold;
-            case "<=" -> sensorValue <= threshold;
-            case "=" -> sensorValue == threshold;
-            default -> false;
-        };
+        return result;
     }
 
     private double resolveSensorValue(SimulationConfiguration configuration, String sourceDevice, String condition) {
+        double result = configuration.initialTemperature();
         String normalizedSource = sourceDevice == null ? "" : sourceDevice.toLowerCase(Locale.ROOT);
         String normalizedCondition = condition == null ? "" : condition.toLowerCase(Locale.ROOT);
 
         if (normalizedSource.contains("humidity") || normalizedCondition.contains("humidity")) {
-            return configuration.initialHumidity();
+            result = configuration.initialHumidity();
+        } else if (normalizedSource.contains("motion") || normalizedCondition.contains("motion")) {
+            result = 1.0;
         }
-        if (normalizedSource.contains("motion") || normalizedCondition.contains("motion")) {
-            return 1.0;
-        }
-        return configuration.initialTemperature();
+        return result;
     }
 
     private String toSimulationState(String action) {
-        if (action == null || action.isBlank()) {
-            return "UNCHANGED";
+        String result = "UNCHANGED";
+        if (action != null && !action.isBlank()) {
+            String normalized = action.trim();
+            result = switch (normalized) {
+                case "Turn On" -> "ON";
+                case "Turn Off" -> "OFF";
+                case "Open" -> "OPEN";
+                case "Close" -> "CLOSED";
+                case "Notify User" -> "NOTIFY";
+                case "Trigger Alert" -> "ALERT";
+                default -> normalized.replace("Set to ", "");
+            };
         }
-
-        String normalized = action.trim();
-        return switch (normalized) {
-            case "Turn On" -> "ON";
-            case "Turn Off" -> "OFF";
-            case "Open" -> "OPEN";
-            case "Close" -> "CLOSED";
-            case "Notify User" -> "NOTIFY";
-            case "Trigger Alert" -> "ALERT";
-            default -> normalized.replace("Set to ", "");
-        };
+        return result;
     }
 }

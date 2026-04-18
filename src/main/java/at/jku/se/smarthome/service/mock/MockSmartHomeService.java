@@ -100,12 +100,13 @@ public final class MockSmartHomeService {
      * @return true if the toggle was successful, false otherwise
      */
     public boolean toggleDevice(String deviceId) {
+        boolean toggled = false;
         Device device = getDeviceById(deviceId);
         if (device != null) {
             device.setState(!device.getState());
-            return true;
+            toggled = true;
         }
-        return false;
+        return toggled;
     }
     
     /**
@@ -116,20 +117,20 @@ public final class MockSmartHomeService {
      * @return true if successful, false otherwise
      */
     public boolean setBrightness(String deviceId, int brightness) {
+        boolean set = false;
         Device device = getDeviceById(deviceId);
         if (device != null && "Dimmer".equals(device.getType())) {
-            if (brightness < 0 || brightness > 100) {
-                return false;
+            if (brightness >= 0 && brightness <= 100) {
+                device.setBrightness(brightness);
+                if (brightness == 0) {
+                    device.setState(false);
+                } else if (brightness > 0) {
+                    device.setState(true);
+                }
+                set = true;
             }
-            device.setBrightness(brightness);
-            if (brightness == 0) {
-                device.setState(false);
-            } else if (brightness > 0) {
-                device.setState(true);
-            }
-            return true;
         }
-        return false;
+        return set;
     }
     
     /**
@@ -140,15 +141,15 @@ public final class MockSmartHomeService {
      * @return true if successful, false otherwise
      */
     public boolean setTemperature(String deviceId, double temperature) {
+        boolean set = false;
         Device device = getDeviceById(deviceId);
         if (device != null && "Thermostat".equals(device.getType())) {
-            if (temperature < 10.0 || temperature > 35.0) {
-                return false;
+            if (temperature >= 10.0 && temperature <= 35.0) {
+                device.setTemperature(temperature);
+                set = true;
             }
-            device.setTemperature(temperature);
-            return true;
         }
-        return false;
+        return set;
     }
     
     /**
@@ -160,11 +161,12 @@ public final class MockSmartHomeService {
      * @return true if authentication is successful
      */
     public boolean authenticate(String email, String password) {
+        boolean authenticated = false;
         if (email != null && !email.isEmpty() && password != null && !password.isEmpty()) {
             this.currentUser = email.split("@")[0];
-            return true;
+            authenticated = true;
         }
-        return false;
+        return authenticated;
     }
     
     /**
@@ -190,12 +192,13 @@ public final class MockSmartHomeService {
      * @return true if successful, false if the device is not found or not a Cover/Blind
      */
     public boolean openBlind(String deviceId) {
+        boolean opened = false;
         Device device = getDeviceById(deviceId);
         if (device != null && "Cover/Blind".equals(device.getType())) {
             device.setState(true);
-            return true;
+            opened = true;
         }
-        return false;
+        return opened;
     }
 
     /**
@@ -205,12 +208,13 @@ public final class MockSmartHomeService {
      * @return true if successful, false if the device is not found or not a Cover/Blind
      */
     public boolean closeBlind(String deviceId) {
+        boolean closed = false;
         Device device = getDeviceById(deviceId);
         if (device != null && "Cover/Blind".equals(device.getType())) {
             device.setState(false);
-            return true;
+            closed = true;
         }
-        return false;
+        return closed;
     }
 
     /**
@@ -222,11 +226,12 @@ public final class MockSmartHomeService {
      * @return true if successful, false if the device is not found or not a Sensor
      */
     public boolean injectSensorValue(String deviceId, double value) {
+        boolean injected = false;
         Device device = getDeviceById(deviceId);
         if (device != null && "Sensor".equals(device.getType())) {
             device.setTemperature(value);
-            return true;
+            injected = true;
         }
-        return false;
+        return injected;
     }
 }

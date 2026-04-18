@@ -29,44 +29,46 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
 
     @Override
     public boolean emailExists(String normalizedEmail) throws StoreException {
+        boolean exists = false;
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
             try (PreparedStatement statement = connection.prepareStatement(
                     "SELECT 1 FROM users WHERE email = ?")) {
                 statement.setString(1, normalizedEmail);
                 try (ResultSet resultSet = statement.executeQuery()) {
-                    return resultSet.next();
+                    exists = resultSet.next();
                 }
             }
         } catch (SQLException exception) {
             throw new StoreException("Failed to check whether the e-mail already exists.", exception);
         }
+        return exists;
     }
 
     @Override
     public Optional<PersistedUser> findByEmail(String normalizedEmail) throws StoreException {
+        Optional<PersistedUser> result = Optional.empty();
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
             try (PreparedStatement statement = connection.prepareStatement(
                     "SELECT email, username, password_hash, role, status FROM users WHERE email = ?")) {
                 statement.setString(1, normalizedEmail);
                 try (ResultSet resultSet = statement.executeQuery()) {
-                    if (!resultSet.next()) {
-                        return Optional.empty();
+                    if (resultSet.next()) {
+                        result = Optional.of(new PersistedUser(
+                                resultSet.getString("email"),
+                                resultSet.getString("username"),
+                                resultSet.getString("password_hash"),
+                                resultSet.getString("role"),
+                                resultSet.getString("status")
+                        ));
                     }
-
-                    return Optional.of(new PersistedUser(
-                            resultSet.getString("email"),
-                            resultSet.getString("username"),
-                            resultSet.getString("password_hash"),
-                            resultSet.getString("role"),
-                            resultSet.getString("status")
-                    ));
                 }
             }
         } catch (SQLException exception) {
             throw new StoreException("Failed to load the user for authentication.", exception);
         }
+        return result;
     }
 
     @Override
@@ -147,38 +149,37 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
     }
 
     private void ensureSchema(Connection connection) throws StoreException {
-        if (schemaReady.get()) {
-            return;
-        }
-
-        synchronized (this) {
-            if (schemaReady.get()) {
-                return;
-            }
-
-            String script = loadInitScript();
-            try (Statement statement = connection.createStatement()) {
-                for (String sqlStatement : script.split(";")) {
-                    String trimmedStatement = sqlStatement.trim();
-                    if (!trimmedStatement.isEmpty()) {
-                        statement.execute(trimmedStatement);
+        boolean needsSchema = !schemaReady.get();
+        if (needsSchema) {
+            synchronized (this) {
+                if (!schemaReady.get()) {
+                    String script = loadInitScript();
+                    try (Statement statement = connection.createStatement()) {
+                        for (String sqlStatement : script.split(";")) {
+                            String trimmedStatement = sqlStatement.trim();
+                            if (!trimmedStatement.isEmpty()) {
+                                statement.execute(trimmedStatement);
+                            }
+                        }
+                        schemaReady.set(true);
+                    } catch (SQLException exception) {
+                        throw new StoreException("Failed to initialize the auth schema.", exception);
                     }
                 }
-                schemaReady.set(true);
-            } catch (SQLException exception) {
-                throw new StoreException("Failed to initialize the auth schema.", exception);
             }
         }
     }
 
     private String loadInitScript() throws StoreException {
+        String result = null;
         try (InputStream inputStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
             if (inputStream == null) {
                 throw new StoreException("Auth schema script was not found at " + INIT_SCRIPT_PATH + ".");
             }
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            result = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException exception) {
             throw new StoreException("Failed to read the auth schema script.", exception);
         }
+        return result;
     }
 }

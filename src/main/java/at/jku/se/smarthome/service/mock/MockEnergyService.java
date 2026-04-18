@@ -39,6 +39,8 @@ public final class MockEnergyService {
             XYChart.Series<String, Number> timelineSeries) {
     }
 
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance of the mock energy service. */
     private static MockEnergyService instance;
 
@@ -50,18 +52,22 @@ public final class MockEnergyService {
      *
      * @return singleton MockEnergyService instance
      */
-    public static synchronized MockEnergyService getInstance() {
-        if (instance == null) {
-            instance = new MockEnergyService();
+    public static MockEnergyService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new MockEnergyService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton instance for test isolation.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
     }
 
     /**

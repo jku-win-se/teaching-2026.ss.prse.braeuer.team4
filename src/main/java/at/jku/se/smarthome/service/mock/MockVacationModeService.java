@@ -15,6 +15,8 @@ import at.jku.se.smarthome.service.api.ServiceRegistry;
  */
 public final class MockVacationModeService {
 
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance. */
     private static MockVacationModeService instance;
 
@@ -39,18 +41,22 @@ public final class MockVacationModeService {
      *
      * @return the instance
      */
-    public static synchronized MockVacationModeService getInstance() {
-        if (instance == null) {
-            instance = new MockVacationModeService();
+    public static MockVacationModeService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new MockVacationModeService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton instance for testing.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
     }
 
     /**
@@ -217,15 +223,16 @@ public final class MockVacationModeService {
      */
     public String getOverrideSummary() {
         Schedule selectedSchedule = getSelectedSchedule();
-        if (!isEnabled() || selectedSchedule == null) {
-            return "When enabled, the chosen schedule becomes the effective schedule for the selected date range.";
+        String result = "When enabled, the chosen schedule becomes the effective schedule for the selected date range.";
+        if (isEnabled() && selectedSchedule != null) {
+            int overriddenSchedules = getOverriddenSchedules().size();
+            result = String.format(
+                "Normal schedules are overridden during the configured period. '%s' is treated as the effective vacation schedule and replaces %d other active schedule(s).",
+                selectedSchedule.getName(),
+                overriddenSchedules
+            );
         }
-        int overriddenSchedules = getOverriddenSchedules().size();
-        return String.format(
-            "Normal schedules are overridden during the configured period. '%s' is treated as the effective vacation schedule and replaces %d other active schedule(s).",
-            selectedSchedule.getName(),
-            overriddenSchedules
-        );
+        return result;
     }
 
     /**

@@ -23,6 +23,8 @@ public class MockUserService extends UserService {
     private static final long SESSION_TIMEOUT_MILLIS = 30 * 60 * 1000L;
     /** Maximum failed login attempts before throttling. */
     private static final int THROTTLE_THRESHOLD = 3;
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
     
     /** Singleton instance of MockUserService. */
     private static MockUserService instance;
@@ -66,19 +68,23 @@ public class MockUserService extends UserService {
         initializeMockUsers();
     }
     
-    public static synchronized MockUserService getInstance() {
-        if (instance == null) {
-            instance = new MockUserService();
+    public static MockUserService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new MockUserService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
     }
     
     private void initializeMockUsers() {
@@ -157,8 +163,10 @@ public class MockUserService extends UserService {
      * @param password raw password value
      * @return true when authentication succeeds, otherwise false
      */
-    public synchronized boolean login(String email, String password) {
-        return authenticate(email, password) == LoginStatus.SUCCESS;
+    public boolean login(String email, String password) {
+        synchronized (this) {
+            return authenticate(email, password) == LoginStatus.SUCCESS;
+        }
     }
 
     /**
@@ -169,43 +177,45 @@ public class MockUserService extends UserService {
         * @return authentication outcome status
      */
     @Override
-    public synchronized LoginStatus authenticate(String email, String password) {
-        LoginStatus status = LoginStatus.INVALID_INPUT;
-        String normalizedEmail = normalizeEmail(email);
+    public LoginStatus authenticate(String email, String password) {
+        synchronized (this) {
+            LoginStatus status = LoginStatus.INVALID_INPUT;
+            String normalizedEmail = normalizeEmail(email);
 
-        if (normalizedEmail != null && !isBlank(password)) {
-            long now = System.currentTimeMillis();
-            if (isBlocked(normalizedEmail, now)) {
-                status = LoginStatus.THROTTLED;
-            } else {
-                try {
-                    Optional<UserRegistrationStore.PersistedUser> persistedUser = registrationStore.findByEmail(normalizedEmail);
-                    if (persistedUser.isEmpty()) {
-                        recordFailedLogin(normalizedEmail, now);
-                        status = LoginStatus.AUTHENTICATION_FAILED;
-                    } else {
-                        UserRegistrationStore.PersistedUser user = persistedUser.get();
-                        if (!passwordsMatch(user.passwordHash(), password)) {
+            if (normalizedEmail != null && !isBlank(password)) {
+                long now = System.currentTimeMillis();
+                if (isBlocked(normalizedEmail, now)) {
+                    status = LoginStatus.THROTTLED;
+                } else {
+                    try {
+                        Optional<UserRegistrationStore.PersistedUser> persistedUser = registrationStore.findByEmail(normalizedEmail);
+                        if (persistedUser.isEmpty()) {
                             recordFailedLogin(normalizedEmail, now);
                             status = LoginStatus.AUTHENTICATION_FAILED;
-                        } else if (!isActive(user.status())) {
-                            recordFailedLogin(normalizedEmail, now);
-                            status = LoginStatus.ACCOUNT_INACTIVE;
                         } else {
-                            clearFailedLogins(normalizedEmail);
-                            establishSession(user.email(), user.username(), user.role(), user.status(), now);
-                            updateLastLoginTimestamp(normalizedEmail);
-                            status = LoginStatus.SUCCESS;
+                            UserRegistrationStore.PersistedUser user = persistedUser.get();
+                            if (!passwordsMatch(user.passwordHash(), password)) {
+                                recordFailedLogin(normalizedEmail, now);
+                                status = LoginStatus.AUTHENTICATION_FAILED;
+                            } else if (!isActive(user.status())) {
+                                recordFailedLogin(normalizedEmail, now);
+                                status = LoginStatus.ACCOUNT_INACTIVE;
+                            } else {
+                                clearFailedLogins(normalizedEmail);
+                                establishSession(user.email(), user.username(), user.role(), user.status(), now);
+                                updateLastLoginTimestamp(normalizedEmail);
+                                status = LoginStatus.SUCCESS;
+                            }
                         }
+                    } catch (UserRegistrationStore.StoreConfigurationException exception) {
+                        status = LoginStatus.DATABASE_NOT_CONFIGURED;
+                    } catch (UserRegistrationStore.StoreException exception) {
+                        status = LoginStatus.DATABASE_ERROR;
                     }
-                } catch (UserRegistrationStore.StoreConfigurationException exception) {
-                    status = LoginStatus.DATABASE_NOT_CONFIGURED;
-                } catch (UserRegistrationStore.StoreException exception) {
-                    status = LoginStatus.DATABASE_ERROR;
                 }
             }
+            return status;
         }
-        return status;
     }
     
     /**
@@ -214,9 +224,11 @@ public class MockUserService extends UserService {
         * @return current user email, or null when no session exists
      */
     @Override
-    public synchronized String getCurrentUserEmail() {
-        invalidateExpiredSessionIfNeeded();
-        return currentUserEmail;
+    public String getCurrentUserEmail() {
+        synchronized (this) {
+            invalidateExpiredSessionIfNeeded();
+            return currentUserEmail;
+        }
     }
     
     @Override
@@ -226,8 +238,10 @@ public class MockUserService extends UserService {
     }
 
     @Override
-    public synchronized String getCurrentUserRole() {
-        return super.getCurrentUserRole();
+    public String getCurrentUserRole() {
+        synchronized (this) {
+            return super.getCurrentUserRole();
+        }
     }
 
     /**
@@ -235,26 +249,28 @@ public class MockUserService extends UserService {
         *
         * @return current user object, or null when no session exists
      */
-    public synchronized User getCurrentUser() {
-        invalidateExpiredSessionIfNeeded();
-        User result = null;
-        if (currentUserEmail != null) {
-            result = users.stream()
-                    .filter(user -> user.getEmail().equals(currentUserEmail))
-                    .findFirst()
-                    .orElse(null);
+    public User getCurrentUser() {
+        synchronized (this) {
+            invalidateExpiredSessionIfNeeded();
+            User result = null;
+            if (currentUserEmail != null) {
+                result = users.stream()
+                        .filter(user -> user.getEmail().equals(currentUserEmail))
+                        .findFirst()
+                        .orElse(null);
 
-            if (result == null) {
-                result = new User(
-                        currentUserEmail,
-                        currentUsername != null ? currentUsername : currentUserEmail,
-                        "",
-                        currentUserRole != null ? currentUserRole : "Guest",
-                        currentUserStatus != null ? currentUserStatus : "Active"
-                );
+                if (result == null) {
+                    result = new User(
+                            currentUserEmail,
+                            currentUsername != null ? currentUsername : currentUserEmail,
+                            "",
+                            currentUserRole != null ? currentUserRole : "Guest",
+                            currentUserStatus != null ? currentUserStatus : "Active"
+                    );
+                }
             }
+            return result;
         }
-        return result;
     }
 
     /**
@@ -262,8 +278,10 @@ public class MockUserService extends UserService {
      *
      * @return true when the current user is an owner, otherwise false
      */
-    public synchronized boolean isOwner() {
-        return "Owner".equalsIgnoreCase(getCurrentUserRole());
+    public boolean isOwner() {
+        synchronized (this) {
+            return "Owner".equalsIgnoreCase(getCurrentUserRole());
+        }
     }
 
     /**
@@ -271,8 +289,10 @@ public class MockUserService extends UserService {
      *
      * @return true when the current user can manage the system, otherwise false
      */
-    public synchronized boolean canManageSystem() {
-        return isOwner();
+    public boolean canManageSystem() {
+        synchronized (this) {
+            return isOwner();
+        }
     }
     
     /**
@@ -291,9 +311,11 @@ public class MockUserService extends UserService {
      * @return true when a session is active, otherwise false
      */
     @Override
-    public synchronized boolean hasActiveSession() {
-        invalidateExpiredSessionIfNeeded();
-        return currentUserEmail != null;
+    public boolean hasActiveSession() {
+        synchronized (this) {
+            invalidateExpiredSessionIfNeeded();
+            return currentUserEmail != null;
+        }
     }
 
     /**
@@ -303,18 +325,20 @@ public class MockUserService extends UserService {
      * @return remaining throttle time in seconds, or zero when not throttled
      */
     @Override
-    public synchronized long getRemainingThrottleSeconds(String email) {
-        String normalizedEmail = normalizeEmail(email);
-        long remainingSeconds = 0;
-        if (normalizedEmail != null) {
-            long now = System.currentTimeMillis();
-            if (isBlocked(normalizedEmail, now)) {
-                long blockedUntil = blockedUntilByEmail.getOrDefault(normalizedEmail, now);
-                long remainingMillis = Math.max(0, blockedUntil - now);
-                remainingSeconds = Math.max(1, (remainingMillis + 999) / 1000);
+    public long getRemainingThrottleSeconds(String email) {
+        synchronized (this) {
+            String normalizedEmail = normalizeEmail(email);
+            long remainingSeconds = 0;
+            if (normalizedEmail != null) {
+                long now = System.currentTimeMillis();
+                if (isBlocked(normalizedEmail, now)) {
+                    long blockedUntil = blockedUntilByEmail.getOrDefault(normalizedEmail, now);
+                    long remainingMillis = Math.max(0, blockedUntil - now);
+                    remainingSeconds = Math.max(1, (remainingMillis + 999) / 1000);
+                }
             }
+            return remainingSeconds;
         }
-        return remainingSeconds;
     }
     
     /**
@@ -384,12 +408,14 @@ public class MockUserService extends UserService {
         * Logs out the current user.
      */
     @Override
-    public synchronized void logout() {
-        this.currentUserEmail = null;
-        this.currentUsername = null;
-        this.currentUserRole = null;
-        this.currentUserStatus = null;
-        this.currentSessionExpiresAt = 0;
+    public void logout() {
+        synchronized (this) {
+            this.currentUserEmail = null;
+            this.currentUsername = null;
+            this.currentUserRole = null;
+            this.currentUserStatus = null;
+            this.currentSessionExpiresAt = 0;
+        }
     }
 
     /**

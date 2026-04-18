@@ -16,6 +16,8 @@ public final class MockIoTIntegrationService {
     public record IoTConfiguration(/** Enable/disable flag. */ boolean enabled, /** MQTT broker address. */ String broker, /** MQTT broker port. */ int port, /** Username for authentication. */ String username, /** Password for authentication. */ String password) {
     }
 
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance. */
     private static MockIoTIntegrationService instance;
 
@@ -52,18 +54,22 @@ public final class MockIoTIntegrationService {
      *
      * @return the singleton instance
      */
-    public static synchronized MockIoTIntegrationService getInstance() {
-        if (instance == null) {
-            instance = new MockIoTIntegrationService();
+    public static MockIoTIntegrationService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new MockIoTIntegrationService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets singleton for testing.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
     }
 
     /**
@@ -150,15 +156,16 @@ public final class MockIoTIntegrationService {
      * @return true if connection parameters are valid
      */
     public boolean testConnection(String broker, String portValue) {
-        if (broker == null || broker.isBlank()) {
-            return false;
+        boolean result = false;
+        if (broker != null && !broker.isBlank()) {
+            try {
+                int parsedPort = Integer.parseInt(portValue);
+                result = parsedPort > 0 && parsedPort <= 65535;
+            } catch (NumberFormatException exception) {
+                result = false;
+            }
         }
-        try {
-            int parsedPort = Integer.parseInt(portValue);
-            return parsedPort > 0 && parsedPort <= 65535;
-        } catch (NumberFormatException exception) {
-            return false;
-        }
+        return result;
     }
 
     /**

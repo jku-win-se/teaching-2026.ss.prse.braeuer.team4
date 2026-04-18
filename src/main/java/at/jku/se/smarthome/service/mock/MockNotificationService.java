@@ -12,6 +12,8 @@ import javafx.collections.ObservableList;
  */
 public final class MockNotificationService {
     
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance of the mock notification service. */
     private static MockNotificationService instance;
     /** Observable collection of all notifications. */
@@ -29,18 +31,22 @@ public final class MockNotificationService {
      *
      * @return singleton MockNotificationService instance
      */
-    public static synchronized MockNotificationService getInstance() {
-        if (instance == null) {
-            instance = new MockNotificationService();
+    public static MockNotificationService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new MockNotificationService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton for unit testing.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
     }
     
     /**
