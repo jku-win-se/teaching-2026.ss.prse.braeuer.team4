@@ -19,10 +19,10 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 public class TestMockUserServiceLoginLogout {
 
     /**
-     * Test: authenticate valid persisted credentials starts session and updates last login.
+     * Test: authenticate valid credentials returns SUCCESS.
      */
     @Test
-    public void authenticateValidPersistedCredentialsStartsSessionAndUpdatesLastLogin() {
+    public void authenticateValidPersistedCredentialsReturnsSuccess() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "owner@smarthome.com",
@@ -36,17 +36,93 @@ public class TestMockUserServiceLoginLogout {
         LoginStatus result = service.authenticate("owner@smarthome.com", "secret123");
 
         assertEquals(LoginStatus.SUCCESS, result);
+    }
+
+    /**
+     * Test: authenticate valid credentials starts session.
+     */
+    @Test
+    public void authenticateValidPersistedCredentialsStartsSession() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
+
         assertTrue(service.hasActiveSession());
+    }
+
+    /**
+     * Test: authenticate valid credentials sets user email.
+     */
+    @Test
+    public void authenticateValidPersistedCredentialsSetsEmail() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
+
         assertEquals("owner@smarthome.com", service.getCurrentUserEmail());
+    }
+
+    /**
+     * Test: authenticate valid credentials sets user role.
+     */
+    @Test
+    public void authenticateValidPersistedCredentialsSetsRole() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
+
         assertEquals("Owner", service.getCurrentUserRole());
+    }
+
+    /**
+     * Test: authenticate valid credentials updates last login.
+     */
+    @Test
+    public void authenticateValidPersistedCredentialsUpdatesLastLogin() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
+
         assertEquals("owner@smarthome.com", store.lastLoginUpdatedEmail);
     }
 
     /**
-     * Test: authenticate invalid password returns generic failure without session.
+     * Test: authenticate invalid password returns AUTHENTICATION_FAILED.
      */
     @Test
-    public void authenticateInvalidPasswordReturnsGenericFailureWithoutSession() {
+    public void authenticateInvalidPasswordReturnsFailure() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "owner@smarthome.com",
@@ -60,15 +136,53 @@ public class TestMockUserServiceLoginLogout {
         LoginStatus result = service.authenticate("owner@smarthome.com", "wrong-password");
 
         assertEquals(LoginStatus.AUTHENTICATION_FAILED, result);
+    }
+
+    /**
+     * Test: authenticate invalid password does not start session.
+     */
+    @Test
+    public void authenticateInvalidPasswordNoSession() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "wrong-password");
+
         assertFalse(service.hasActiveSession());
+    }
+
+    /**
+     * Test: authenticate invalid password clears user email.
+     */
+    @Test
+    public void authenticateInvalidPasswordClearsEmail() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "wrong-password");
+
         assertNull(service.getCurrentUserEmail());
     }
 
     /**
-     * Test: authenticate inactive user rejects login.
+     * Test: authenticate inactive user returns ACCOUNT_INACTIVE.
      */
     @Test
-    public void authenticateInactiveUserRejectsLogin() {
+    public void authenticateInactiveUserReturnsAccountInactive() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "member@smarthome.com",
@@ -82,11 +196,30 @@ public class TestMockUserServiceLoginLogout {
         LoginStatus result = service.authenticate("member@smarthome.com", "secret123");
 
         assertEquals(LoginStatus.ACCOUNT_INACTIVE, result);
+    }
+
+    /**
+     * Test: authenticate inactive user does not start session.
+     */
+    @Test
+    public void authenticateInactiveUserNoSession() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "member@smarthome.com",
+                "member",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Member",
+                "Revoked"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("member@smarthome.com", "secret123");
+
         assertFalse(service.hasActiveSession());
     }
 
     /**
-     * Test: authenticate repeated failures triggers throttle.
+     * Test: repeated failed attempts trigger throttle on next attempt.
      */
     @Test
     public void authenticateRepeatedFailuresTriggerThrottle() {
@@ -100,21 +233,20 @@ public class TestMockUserServiceLoginLogout {
         );
         MockUserService service = new MockUserService(store);
 
-        assertEquals(LoginStatus.AUTHENTICATION_FAILED, service.authenticate("owner@smarthome.com", "wrong-1"));
-        assertEquals(LoginStatus.AUTHENTICATION_FAILED, service.authenticate("owner@smarthome.com", "wrong-2"));
-        assertEquals(LoginStatus.AUTHENTICATION_FAILED, service.authenticate("owner@smarthome.com", "wrong-3"));
+        service.authenticate("owner@smarthome.com", "wrong-1");
+        service.authenticate("owner@smarthome.com", "wrong-2");
+        service.authenticate("owner@smarthome.com", "wrong-3");
 
         LoginStatus result = service.authenticate("owner@smarthome.com", "secret123");
 
         assertEquals(LoginStatus.THROTTLED, result);
-        assertTrue(service.getRemainingThrottleSeconds("owner@smarthome.com") >= 1);
     }
 
     /**
-     * Test: logout and session expiry clear authenticated state.
+     * Test: throttled authentication sets remaining time.
      */
     @Test
-    public void logoutAndSessionExpiryClearAuthenticatedState() {
+    public void authenticateThrottledSetsRemainingTime() {
         StubAuthStore store = new StubAuthStore();
         store.persistedUser = new UserRegistrationStore.PersistedUser(
                 "owner@smarthome.com",
@@ -125,17 +257,116 @@ public class TestMockUserServiceLoginLogout {
         );
         MockUserService service = new MockUserService(store);
 
-        assertEquals(LoginStatus.SUCCESS, service.authenticate("owner@smarthome.com", "secret123"));
+        service.authenticate("owner@smarthome.com", "wrong-1");
+        service.authenticate("owner@smarthome.com", "wrong-2");
+        service.authenticate("owner@smarthome.com", "wrong-3");
+        service.authenticate("owner@smarthome.com", "secret123");
+
+        assertTrue(service.getRemainingThrottleSeconds("owner@smarthome.com") >= 1);
+    }
+
+    /**
+     * Test: logout clears active session.
+     */
+    @Test
+    public void logoutClearsActiveSession() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
         service.logout();
 
         assertFalse(service.hasActiveSession());
-        assertNull(service.getCurrentUserEmail());
+    }
 
-        assertEquals(LoginStatus.SUCCESS, service.authenticate("owner@smarthome.com", "secret123"));
+    /**
+     * Test: logout clears user email.
+     */
+    @Test
+    public void logoutClearsUserEmail() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
+        service.logout();
+
+        assertNull(service.getCurrentUserEmail());
+    }
+
+    /**
+     * Test: session expiry clears active session.
+     */
+    @Test
+    public void sessionExpiryClearsActiveSession() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
         service.expireSessionForTesting();
 
         assertFalse(service.hasActiveSession());
+    }
+
+    /**
+     * Test: session expiry clears user email.
+     */
+    @Test
+    public void sessionExpiryClearsUserEmail() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
+        service.expireSessionForTesting();
+
         assertNull(service.getCurrentUserEmail());
+    }
+
+    /**
+     * Test: session expiry sets user role to Guest.
+     */
+    @Test
+    public void sessionExpirySetRoleToGuest() {
+        StubAuthStore store = new StubAuthStore();
+        store.persistedUser = new UserRegistrationStore.PersistedUser(
+                "owner@smarthome.com",
+                "owner",
+                BCrypt.hashpw("secret123", BCrypt.gensalt()),
+                "Owner",
+                "Active"
+        );
+        MockUserService service = new MockUserService(store);
+
+        service.authenticate("owner@smarthome.com", "secret123");
+        service.expireSessionForTesting();
+
         assertEquals("Guest", service.getCurrentUserRole());
     }
 
