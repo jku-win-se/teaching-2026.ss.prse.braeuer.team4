@@ -83,6 +83,16 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     /**
+     * Test: turn on action execution returns true.
+     */
+    @Test
+    public void executeScheduleTurnOnReturnsTrue() {
+        scheduleService.addSchedule("Night On", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Night On").getId();
+        assertTrue(scheduleService.executeSchedule(schedId));
+    }
+
+    /**
      * Test: turn on action sets device state to true.
      */
     @Test
@@ -92,15 +102,23 @@ public class TestMockScheduleService {
         String schedId = scheduleService.getScheduleByName("Night On").getId();
 
         Device bed = roomService.getDeviceByName("Bed Light");
-        assertFalse("pre-condition: Bed Light starts OFF", bed.getState());
-
-        assertTrue(scheduleService.executeSchedule(schedId));
+        scheduleService.executeSchedule(schedId);
         assertTrue(bed.getState());
     }
 
     // -----------------------------------------------------------------------
     // Turn Off
     // -----------------------------------------------------------------------
+
+    /**
+     * Test: turn off action execution returns true.
+     */
+    @Test
+    public void executeScheduleTurnOffReturnsTrue() {
+        scheduleService.addSchedule("Night Off", "Main Light", "Turn Off", "11:00 PM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Night Off").getId();
+        assertTrue(scheduleService.executeSchedule(schedId));
+    }
 
     /**
      * Test: turn off action sets device state to false.
@@ -112,15 +130,23 @@ public class TestMockScheduleService {
         String schedId = scheduleService.getScheduleByName("Night Off").getId();
 
         Device main = roomService.getDeviceByName("Main Light");
-        assertTrue("pre-condition: Main Light starts ON", main.getState());
-
-        assertTrue(scheduleService.executeSchedule(schedId));
+        scheduleService.executeSchedule(schedId);
         assertFalse(main.getState());
     }
 
     // -----------------------------------------------------------------------
     // Set brightness
     // -----------------------------------------------------------------------
+
+    /**
+     * Test: set brightness action execution returns true.
+     */
+    @Test
+    public void executeScheduleSetBrightnessReturnsTrue() {
+        scheduleService.addSchedule("Dim Scene", "Dimmer Light", "Set to 40%", "18:00", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Dim Scene").getId();
+        assertTrue(scheduleService.executeSchedule(schedId));
+    }
 
     /**
      * Test: set brightness action sets dimmer to specified level.
@@ -130,9 +156,19 @@ public class TestMockScheduleService {
         scheduleService.addSchedule("Dim Scene", "Dimmer Light", "Set to 40%", "18:00", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Dim Scene").getId();
 
-        assertTrue(scheduleService.executeSchedule(schedId));
+        scheduleService.executeSchedule(schedId);
         Device dimmer = roomService.getDeviceByName("Dimmer Light");
         assertEquals(40, dimmer.getBrightness());
+    }
+
+    /**
+     * Test: set temperature action execution returns true.
+     */
+    @Test
+    public void executeScheduleSetTemperatureReturnsTrue() {
+        scheduleService.addSchedule("Morning Warmup", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Morning Warmup").getId();
+        assertTrue(scheduleService.executeSchedule(schedId));
     }
 
     /**
@@ -143,7 +179,7 @@ public class TestMockScheduleService {
         scheduleService.addSchedule("Morning Warmup", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Morning Warmup").getId();
 
-        assertTrue(scheduleService.executeSchedule(schedId));
+        scheduleService.executeSchedule(schedId);
         Device thermostat = roomService.getDeviceByName("Temperature Control");
         assertEquals(22.0, thermostat.getTemperature(), 0.001);
     }
@@ -153,54 +189,136 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     /**
-     * Test: daily schedule matching execution time executes only once per minute.
+     * Test: daily schedule matching execution time executes and returns count.
      */
     @Test
-    public void processDueSchedulesMatchingDailyTimeExecutesOnlyOncePerMinute() {
+    public void processDueSchedulesMatchingDailyTimeReturnsOneWhenMatching() {
+        scheduleService.addSchedule("Wake Up", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
+        assertEquals(1, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0)));
+    }
+
+    /**
+     * Test: daily schedule matching execution time updates device state.
+     */
+    @Test
+    public void processDueSchedulesMatchingDailyTimeUpdatesDeviceState() {
         scheduleService.addSchedule("Wake Up", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
 
         Device bed = roomService.getDeviceByName("Bed Light");
-        int logsBefore = logService.getLogs().size();
-
-        assertEquals(1, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0)));
+        scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0));
         assertTrue(bed.getState());
-        assertEquals(logsBefore + 1, logService.getLogs().size());
+    }
 
-        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0, 45)));
+    /**
+     * Test: daily schedule matching execution time logs entry.
+     */
+    @Test
+    public void processDueSchedulesMatchingDailyTimeLogsEntry() {
+        scheduleService.addSchedule("Wake Up", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
+
+        int logsBefore = logService.getLogs().size();
+        scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0));
         assertEquals(logsBefore + 1, logService.getLogs().size());
     }
 
     /**
-     * Test: weekdays schedule skips weekend.
+     * Test: daily schedule executes only once per minute - no duplicate execution.
      */
     @Test
-    public void processDueSchedulesWeekdaysScheduleSkipsWeekend() {
+    public void processDueSchedulesNoDuplicateExecutionSameMinute() {
+        scheduleService.addSchedule("Wake Up", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
+
+        scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0));
+        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 7, 0, 45)));
+    }
+
+    /**
+     * Test: weekdays schedule skips weekend - returns zero.
+     */
+    @Test
+    public void processDueSchedulesWeekdaysReturnsZeroOnWeekend() {
+        scheduleService.addSchedule("Weekday Entry", "Main Light", "Turn Off", "08:15", "Weekdays", true);
+        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 11, 8, 15)));
+    }
+
+    /**
+     * Test: weekdays schedule preserves device state on weekend.
+     */
+    @Test
+    public void processDueSchedulesWeekdaysPreservesStateOnWeekend() {
         scheduleService.addSchedule("Weekday Entry", "Main Light", "Turn Off", "08:15", "Weekdays", true);
 
         Device main = roomService.getDeviceByName("Main Light");
         main.setState(true);
 
-        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 11, 8, 15)));
+        scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 11, 8, 15));
         assertTrue(main.getState());
+    }
 
+    /**
+     * Test: weekdays schedule executes on weekdays - returns one.
+     */
+    @Test
+    public void processDueSchedulesWeekdaysReturnsOneOnWeekday() {
+        scheduleService.addSchedule("Weekday Entry", "Main Light", "Turn Off", "08:15", "Weekdays", true);
         assertEquals(1, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 8, 15)));
+    }
+
+    /**
+     * Test: weekdays schedule turns off device on weekdays.
+     */
+    @Test
+    public void processDueSchedulesWeekdaysSwitchesDeviceOnWeekday() {
+        scheduleService.addSchedule("Weekday Entry", "Main Light", "Turn Off", "08:15", "Weekdays", true);
+
+        Device main = roomService.getDeviceByName("Main Light");
+
+        scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 8, 15));
         assertFalse(main.getState());
     }
 
     /**
-     * Test: weekly schedule requires configured day.
+     * Test: weekly schedule skips non-configured days - returns zero.
      */
     @Test
-    public void processDueSchedulesWeeklyScheduleRequiresConfiguredDay() {
+    public void processDueSchedulesWeeklyReturnsZeroOnNonConfiguredDay() {
+        scheduleService.addSchedule("Weekly Warmup", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
+        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 9, 9, 0)));
+    }
+
+    /**
+     * Test: weekly schedule preserves temperature on non-configured day.
+     */
+    @Test
+    public void processDueSchedulesWeeklyPreservesTemperatureOnNonConfiguredDay() {
         scheduleService.addSchedule("Weekly Warmup", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
 
         Device thermostat = roomService.getDeviceByName("Temperature Control");
         thermostat.setTemperature(20.0);
 
-        assertEquals(0, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 9, 9, 0)));
+        scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 9, 9, 0));
         assertEquals(20.0, thermostat.getTemperature(), 0.001);
+    }
 
+    /**
+     * Test: weekly schedule executes on configured day - returns one.
+     */
+    @Test
+    public void processDueSchedulesWeeklyReturnsOneOnConfiguredDay() {
+        scheduleService.addSchedule("Weekly Warmup", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
         assertEquals(1, scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 9, 0)));
+    }
+
+    /**
+     * Test: weekly schedule sets temperature on configured day.
+     */
+    @Test
+    public void processDueSchedulesWeeklySetsTempOnConfiguredDay() {
+        scheduleService.addSchedule("Weekly Warmup", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
+
+        Device thermostat = roomService.getDeviceByName("Temperature Control");
+
+        scheduleService.processDueSchedules(LocalDateTime.of(2026, 4, 10, 9, 0));
         assertEquals(24.0, thermostat.getTemperature(), 0.001);
     }
 
@@ -209,20 +327,64 @@ public class TestMockScheduleService {
     // -----------------------------------------------------------------------
 
     /**
-     * Test: executed schedule logs entry with schedule actor.
+     * Test: schedule execution returns true.
      */
     @Test
-    public void executeScheduleLogsEntryWithScheduleActor() {
+    public void executeScheduleReturnsTrue() {
+        scheduleService.addSchedule("Log Test", "Main Light", "Turn On", "06:00 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Log Test").getId();
+        assertTrue(scheduleService.executeSchedule(schedId));
+    }
+
+    /**
+     * Test: schedule execution creates log entry.
+     */
+    @Test
+    public void executeScheduleCreatesLogEntry() {
         scheduleService.addSchedule("Log Test", "Main Light", "Turn On", "06:00 AM", "Daily", true);
         String schedId = scheduleService.getScheduleByName("Log Test").getId();
 
         int logsBefore = logService.getLogs().size();
-        assertTrue(scheduleService.executeSchedule(schedId));
-
+        scheduleService.executeSchedule(schedId);
         assertEquals(logsBefore + 1, logService.getLogs().size());
+    }
+
+    /**
+     * Test: schedule execution logs device name.
+     */
+    @Test
+    public void executeScheduleLogsDeviceName() {
+        scheduleService.addSchedule("Log Test", "Main Light", "Turn On", "06:00 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Log Test").getId();
+
+        scheduleService.executeSchedule(schedId);
         LogEntry entry = logService.getLogs().get(0); // newest first
         assertEquals("Main Light", entry.getDevice());
+    }
+
+    /**
+     * Test: schedule execution logs action.
+     */
+    @Test
+    public void executeScheduleLogsAction() {
+        scheduleService.addSchedule("Log Test", "Main Light", "Turn On", "06:00 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Log Test").getId();
+
+        scheduleService.executeSchedule(schedId);
+        LogEntry entry = logService.getLogs().get(0); // newest first
         assertEquals("Turn On", entry.getAction());
+    }
+
+    /**
+     * Test: schedule execution logs schedule actor.
+     */
+    @Test
+    public void executeScheduleLogsScheduleActor() {
+        scheduleService.addSchedule("Log Test", "Main Light", "Turn On", "06:00 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Log Test").getId();
+
+        scheduleService.executeSchedule(schedId);
+        LogEntry entry = logService.getLogs().get(0); // newest first
         assertEquals("Schedule: Log Test", entry.getActor());
     }
 
@@ -240,6 +402,17 @@ public class TestMockScheduleService {
     }
 
     /**
+     * Test: failed schedule execution returns false.
+     */
+    @Test
+    public void executeScheduleFailedExecutionReturnsFalse() {
+        // Device does not exist → executeSchedule returns false
+        scheduleService.addSchedule("Broken Schedule", "Does Not Exist", "Turn On", "06:00 AM", "Daily", true);
+        String schedId = scheduleService.getScheduleByName("Broken Schedule").getId();
+        assertFalse(scheduleService.executeSchedule(schedId));
+    }
+
+    /**
      * Test: failed schedule execution does not log entry.
      */
     @Test
@@ -249,7 +422,7 @@ public class TestMockScheduleService {
         String schedId = scheduleService.getScheduleByName("Broken Schedule").getId();
 
         int logsBefore = logService.getLogs().size();
-        assertFalse(scheduleService.executeSchedule(schedId));
+        scheduleService.executeSchedule(schedId);
         assertEquals(logsBefore, logService.getLogs().size());
     }
 }

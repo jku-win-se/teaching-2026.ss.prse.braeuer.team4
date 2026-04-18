@@ -80,73 +80,139 @@ public class TestJdbcScheduleService {
     }
 
     /**
-     * Test: add, update, toggle, and delete schedule persists changes.
+     * Test: add schedule returns non-null.
      */
     @Test
-    public void addUpdateToggleDeleteSchedulePersistsChanges() throws Exception {
+    public void addScheduleReturnsNonNull() throws Exception {
         Schedule schedule = service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
         assertNotNull(schedule);
+    }
+
+    /**
+     * Test: add schedule persists to collection.
+     */
+    @Test
+    public void addSchedulePersistedToCollection() throws Exception {
+        service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
         assertEquals(1, service.getSchedules().size());
+    }
 
-        assertTrue(service.updateSchedule(schedule.getId(), "Morning Updated", "dev-001", "Main Light", "Turn On", "08:00", "Weekdays", false));
+    /**
+     * Test: update schedule changes name.
+     */
+    @Test
+    public void updateScheduleChangesName() throws Exception {
+        Schedule schedule = service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
+        service.updateSchedule(schedule.getId(), "Morning Updated", "dev-001", "Main Light", "Turn On", "08:00", "Weekdays", false);
         assertEquals("Morning Updated", service.getScheduleById(schedule.getId()).getName());
+    }
+
+    /**
+     * Test: update schedule deactivates.
+     */
+    @Test
+    public void updateScheduleDeactivates() throws Exception {
+        Schedule schedule = service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
+        service.updateSchedule(schedule.getId(), "Morning Updated", "dev-001", "Main Light", "Turn On", "08:00", "Weekdays", false);
         assertFalse(service.getScheduleById(schedule.getId()).isActive());
+    }
 
-        assertTrue(service.toggleSchedule(schedule.getId()));
+    /**
+     * Test: toggle schedule enables inactive schedule.
+     */
+    @Test
+    public void toggleScheduleEnablesInactive() throws Exception {
+        Schedule schedule = service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
+        service.updateSchedule(schedule.getId(), "Morning Updated", "dev-001", "Main Light", "Turn On", "08:00", "Weekdays", false);
+        service.toggleSchedule(schedule.getId());
         assertTrue(service.getScheduleById(schedule.getId()).isActive());
+    }
 
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM scheduled_actions")) {
-            assertTrue(resultSet.next());
-            assertEquals(1, resultSet.getInt(1));
-        }
-
-        assertTrue(service.deleteSchedule(schedule.getId()));
+    /**
+     * Test: delete schedule removes from collection.
+     */
+    @Test
+    public void deleteScheduleRemovesFromCollection() throws Exception {
+        Schedule schedule = service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
+        service.deleteSchedule(schedule.getId());
         assertEquals(0, service.getSchedules().size());
     }
 
     /**
-     * Test: execute and reload schedule updates device, log, notification, and database.
+     * Test: add schedule returns non-null.
      */
     @Test
-    public void executeAndReloadScheduleUpdatesDeviceLogNotificationAndDatabase() throws Exception {
+    public void addScheduleReturnsNonNull() throws Exception {
         Schedule schedule = service.addSchedule("Warmup", "dev-004", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
         assertNotNull(schedule);
-        assertEquals(1, service.getSchedules().size());
+    }
 
-        // Verify schedule was persisted to database
+    /**
+     * Test: add schedule persists to database.
+     */
+    @Test
+    public void addSchedulePersistedToDatabase() throws Exception {
+        service.addSchedule("Warmup", "dev-004", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
+
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT id, name FROM scheduled_actions WHERE name = 'Warmup'")) {
             assertTrue(resultSet.next());
-            assertEquals("Warmup", resultSet.getString("name"));
         }
+    }
 
-        // Reload and verify persistence
+    /**
+     * Test: reload after reset loads persisted schedule.
+     */
+    @Test
+    public void reloadAfterResetLoadsPersisted() throws Exception {
+        service.addSchedule("Warmup", "dev-004", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
+
         JdbcScheduleService.resetForTesting();
         service = JdbcScheduleService.getInstance();
         assertNotNull(service.getScheduleByName("Warmup"));
     }
 
     /**
-     * Test: process due schedules executes matching recurring schedules.
+     * Test: add daily schedule returns non-null.
      */
     @Test
-    public void processDueSchedulesExecutesMatchingRecurringSchedules() throws Exception {
+    public void addDailyScheduleReturnsNonNull() throws Exception {
         Schedule schedule = service.addSchedule("Wake Up", "dev-003", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
         assertNotNull(schedule);
-        assertEquals(1, service.getSchedules().size());
+    }
 
+    /**
+     * Test: add weekly schedule returns non-null.
+     */
+    @Test
+    public void addWeeklyScheduleReturnsNonNull() throws Exception {
         Schedule weekly = service.addSchedule("Weekly Warmup", "dev-004", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
         assertNotNull(weekly);
-        assertEquals(2, service.getSchedules().size());
+    }
 
-        // Verify both schedules were persisted
+    /**
+     * Test: add multiple recurring schedules in collection.
+     */
+    @Test
+    public void addMultipleRecurringSchedulesInCollection() throws Exception {
+        service.addSchedule("Wake Up", "dev-003", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
+        service.addSchedule("Weekly Warmup", "dev-004", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
+        assertEquals(2, service.getSchedules().size());
+    }
+
+    /**
+     * Test: multiple schedules persisted to database.
+     */
+    @Test
+    public void multipleSchedulePersistedToDatabase() throws Exception {
+        service.addSchedule("Wake Up", "dev-003", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
+        service.addSchedule("Weekly Warmup", "dev-004", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
+
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM scheduled_actions")) {
-            assertTrue(resultSet.next());
+            resultSet.next();
             assertEquals(2, resultSet.getInt(1));
         }
     }

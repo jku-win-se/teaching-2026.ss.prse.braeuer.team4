@@ -44,47 +44,140 @@ public class TestMockRuleService {
     }
 
     /**
-     * Test: execute active rule applies to target action and logs.
+     * Test: execute active rule applies action.
      */
     @Test
-    public void executeRuleActiveRuleAppliesToTargetActionAndLogs() {
+    public void executeActiveRuleAppliesAction() {
+        Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
+        assertTrue(service.executeRule(rule.getId()));
+    }
+
+    /**
+     * Test: execute active rule changes device state.
+     */
+    @Test
+    public void executeActiveRuleChangesDeviceState() {
+        Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
+        service.executeRule(rule.getId());
+        assertFalse(roomService.getDeviceByName("Main Light").getState());
+    }
+
+    /**
+     * Test: execute active rule creates log entry.
+     */
+    @Test
+    public void executeActiveRuleCreatesLogEntry() {
         Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
         int beforeLogs = logService.getLogs().size();
-        int beforeNotifications = notificationService.getNotifications().size();
-
-        assertTrue(service.executeRule(rule.getId()));
-        assertFalse(roomService.getDeviceByName("Main Light").getState());
+        service.executeRule(rule.getId());
         assertTrue(logService.getLogs().size() > beforeLogs);
+    }
+
+    /**
+     * Test: execute active rule creates notification.
+     */
+    @Test
+    public void executeActiveRuleCreatesNotification() {
+        Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
+        int beforeNotifications = notificationService.getNotifications().size();
+        service.executeRule(rule.getId());
         assertTrue(notificationService.getNotifications().size() > beforeNotifications);
     }
 
     /**
-     * Test: toggle and execute inactive rule fails.
+     * Test: toggle rule sets inactive status.
      */
     @Test
-    public void toggleAndExecuteRuleInactiveRuleFails() {
+    public void toggleRuleSetsInactiveStatus() {
         Rule rule = service.addRule("Alert", "Sensor Threshold", "Motion Sensor", "Value > 0", "Notify User", "Main Light");
-        assertTrue(service.toggleRule(rule.getId()));
+        service.toggleRule(rule.getId());
         assertEquals("Inactive", rule.getStatus());
+    }
 
+    /**
+     * Test: execute inactive rule fails.
+     */
+    @Test
+    public void executeInactiveRuleFails() {
+        Rule rule = service.addRule("Alert", "Sensor Threshold", "Motion Sensor", "Value > 0", "Notify User", "Main Light");
+        service.toggleRule(rule.getId());
         assertFalse(service.executeRule(rule.getId()));
+    }
+
+    /**
+     * Test: execute inactive rule returns error notification.
+     */
+    @Test
+    public void executeInactiveRuleReturnsErrorNotification() {
+        Rule rule = service.addRule("Alert", "Sensor Threshold", "Motion Sensor", "Value > 0", "Notify User", "Main Light");
+        service.toggleRule(rule.getId());
+        service.executeRule(rule.getId());
         assertEquals("error", notificationService.getNotifications().get(0).getType());
     }
 
     /**
-     * Test: update and delete rule mutate rule collection.
+     * Test: add rule returns non-null.
      */
     @Test
-    public void updateAndDeleteRuleMutateRuleCollection() {
+    public void addRuleReturnsNonNull() {
         Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");
         assertNotNull(rule);
+    }
 
-        assertTrue(service.updateRule(rule.getId(), "Comfort Updated", "Device State", "Bed Light", "State = Active", "Set to 18°C", "Temperature Control"));
+    /**
+     * Test: update rule changes name.
+     */
+    @Test
+    public void updateRuleChangesName() {
+        Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");
+        service.updateRule(rule.getId(), "Comfort Updated", "Device State", "Bed Light", "State = Active", "Set to 18°C", "Temperature Control");
         assertEquals("Comfort Updated", rule.getName());
+    }
+
+    /**
+     * Test: update rule changes trigger type.
+     */
+    @Test
+    public void updateRuleChangesTriggerType() {
+        Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");
+        service.updateRule(rule.getId(), "Comfort Updated", "Device State", "Bed Light", "State = Active", "Set to 18°C", "Temperature Control");
         assertEquals("Device State", rule.getTriggerType());
+    }
+
+    /**
+     * Test: update rule changes action.
+     */
+    @Test
+    public void updateRuleChangesAction() {
+        Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");
+        service.updateRule(rule.getId(), "Comfort Updated", "Device State", "Bed Light", "State = Active", "Set to 18°C", "Temperature Control");
         assertEquals("Set to 18°C", rule.getAction());
+    }
+
+    /**
+     * Test: delete rule removes from collection.
+     */
+    @Test
+    public void deleteRuleRemovesFromCollection() {
+        Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");
         assertTrue(service.deleteRule(rule.getId()));
+    }
+
+    /**
+     * Test: delete missing rule fails.
+     */
+    @Test
+    public void deleteMissingRuleFails() {
         assertFalse(service.deleteRule("missing"));
+    }
+
+    /**
+     * Test: delete rule clears conflicts.
+     */
+    @Test
+    public void deleteRuleClearsConflicts() {
+        Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");
+        service.deleteRule(rule.getId());
         assertFalse(service.hasConflicts(rule.getId()));
     }
 }

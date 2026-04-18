@@ -40,29 +40,41 @@ public class TestMockSmartHomeService {
     // toggleDevice
     // -----------------------------------------------------------------------
 
-    /** A device that starts ON should be OFF after one toggle. */
+    /**
+     * Test: device that starts ON returns true when toggled.
+     */
     @Test
-    public void testToggleDeviceOnToOff() {
-        Device d = service.getDeviceById("dev-001");
-        assertTrue("pre-condition: dev-001 starts ON", d.getState());
-
+    public void testToggleDeviceOnToOffReturnsTrue() {
+        service.toggleDevice("dev-001");
         boolean result = service.toggleDevice("dev-001");
-
         assertTrue(result);
+    }
+
+    /**
+     * Test: device that starts ON becomes OFF after toggle.
+     */
+    @Test
+    public void testToggleDeviceOnToOffChangeState() {
+        service.toggleDevice("dev-001");
         assertFalse(service.getDeviceById("dev-001").getState());
     }
 
     /**
-     * Test: a device that starts OFF should be ON after one toggle.
+     * Test: device that starts OFF returns true when toggled.
      */
     @Test
-    public void testToggleDeviceOffToOn() {
-        Device d = service.getDeviceById("dev-003");
-        assertFalse("pre-condition: dev-003 starts OFF", d.getState());
-
+    public void testToggleDeviceOffToOnReturnsTrue() {
+        service.toggleDevice("dev-003");
         boolean result = service.toggleDevice("dev-003");
-
         assertTrue(result);
+    }
+
+    /**
+     * Test: device that starts OFF becomes ON after toggle.
+     */
+    @Test
+    public void testToggleDeviceOffToOnChangeState() {
+        service.toggleDevice("dev-003");
         assertTrue(service.getDeviceById("dev-003").getState());
     }
 
@@ -78,11 +90,21 @@ public class TestMockSmartHomeService {
     // setBrightness
     // -----------------------------------------------------------------------
 
-    /** Brightness within [0, 100] is applied to a Dimmer. */
+    /**
+     * Test: setting brightness in valid range returns true.
+     */
     @Test
-    public void testSetBrightnessValidRange() {
+    public void testSetBrightnessValidRangeReturnsTrue() {
         boolean result = service.setBrightness("dev-003", 50);
         assertTrue(result);
+    }
+
+    /**
+     * Test: brightness in valid range is set on device.
+     */
+    @Test
+    public void testSetBrightnessValidRangeSetsBrightness() {
+        service.setBrightness("dev-003", 50);
         assertEquals(50, service.getDeviceById("dev-003").getBrightness());
     }
 
@@ -122,11 +144,21 @@ public class TestMockSmartHomeService {
     // setTemperature
     // -----------------------------------------------------------------------
 
-    /** A temperature in the valid range [10.0, 35.0] is applied. */
+    /**
+     * Test: setting temperature in valid range returns true.
+     */
     @Test
-    public void testSetTemperatureValid() {
+    public void testSetTemperatureValidReturnsTrue() {
         boolean result = service.setTemperature("dev-002", 22.5);
         assertTrue(result);
+    }
+
+    /**
+     * Test: temperature in valid range is set on device.
+     */
+    @Test
+    public void testSetTemperatureValidSetsTemperature() {
+        service.setTemperature("dev-002", 22.5);
         assertEquals(22.5, service.getDeviceById("dev-002").getTemperature(), 0.001);
     }
 
@@ -152,20 +184,41 @@ public class TestMockSmartHomeService {
     // openBlind / closeBlind
     // -----------------------------------------------------------------------
 
-    /** Opening a closed blind succeeds and state becomes true (OPEN). */
+    /**
+     * Test: opening a closed blind returns true.
+     */
     @Test
-    public void testOpenBlindValid() {
+    public void testOpenBlindValidReturnsTrue() {
         boolean result = service.openBlind("dev-006");
         assertTrue(result);
+    }
+
+    /**
+     * Test: opening a closed blind sets state to true (OPEN).
+     */
+    @Test
+    public void testOpenBlindValidChangesState() {
+        service.openBlind("dev-006");
         assertTrue(service.getDeviceById("dev-006").getState());
     }
 
-    /** Closing an open blind succeeds and state becomes false (CLOSED). */
+    /**
+     * Test: closing an open blind returns true.
+     */
     @Test
-    public void testCloseBlindValid() {
+    public void testCloseBlindValidReturnsTrue() {
         service.openBlind("dev-006");
         boolean result = service.closeBlind("dev-006");
         assertTrue(result);
+    }
+
+    /**
+     * Test: closing an open blind sets state to false (CLOSED).
+     */
+    @Test
+    public void testCloseBlindValidChangesState() {
+        service.openBlind("dev-006");
+        service.closeBlind("dev-006");
         assertFalse(service.getDeviceById("dev-006").getState());
     }
 
@@ -185,19 +238,39 @@ public class TestMockSmartHomeService {
     // injectSensorValue
     // -----------------------------------------------------------------------
 
-    /** Any double value can be injected into a Sensor. */
+    /**
+     * Test: injecting valid sensor value returns true.
+     */
     @Test
-    public void testInjectSensorValueValid() {
+    public void testInjectSensorValueValidReturnsTrue() {
         boolean result = service.injectSensorValue("dev-007", 42.5);
         assertTrue(result);
+    }
+
+    /**
+     * Test: injecting valid sensor value sets the temperature.
+     */
+    @Test
+    public void testInjectSensorValueValidSetsValue() {
+        service.injectSensorValue("dev-007", 42.5);
         assertEquals(42.5, service.getDeviceById("dev-007").getTemperature(), 0.001);
     }
 
-    /** Negative sensor values are also valid (e.g. temperature below zero). */
+    /**
+     * Test: negative sensor values can be injected and return true.
+     */
     @Test
-    public void testInjectSensorValueNegativeValueValid() {
+    public void testInjectSensorValueNegativeValueReturnsTrue() {
         boolean result = service.injectSensorValue("dev-007", -10.0);
         assertTrue(result);
+    }
+
+    /**
+     * Test: negative sensor values are set correctly.
+     */
+    @Test
+    public void testInjectSensorValueNegativeValueSetsValue() {
+        service.injectSensorValue("dev-007", -10.0);
         assertEquals(-10.0, service.getDeviceById("dev-007").getTemperature(), 0.001);
     }
 

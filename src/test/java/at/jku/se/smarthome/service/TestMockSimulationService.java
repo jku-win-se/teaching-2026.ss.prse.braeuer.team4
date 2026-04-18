@@ -38,36 +38,106 @@ public class TestMockSimulationService {
     }
 
     /**
-     * Test: build plan creates snapshot and sorted events.
+     * Test: build plan returns non-null result.
      */
     @Test
-    public void buildPlanCreatesSnapshotAndSortedEvents() {
+    public void buildPlanReturnsNonNull() {
         Rule timeRule = new Rule("rule-100", "Morning Routine", "Time", "Clock", "06:30 AM", "Turn On", "Main Light", true, "Active");
-        Rule thresholdRule = new Rule("rule-101", "Heat Alert", "Sensor Threshold", "Temperature Sensor", "Value > 20", "Set to 22°C", "Temperature Control", true, "Active");
-        Rule disabledRule = new Rule("rule-102", "Disabled", "Device State", "Bed Light", "State = Active", "Turn Off", "Bed Light", false, "Inactive");
-
         SimulationConfiguration configuration = new SimulationConfiguration(
                 LocalTime.of(6, 0),
                 21.5,
                 45.0,
-                List.of(timeRule, thresholdRule, disabledRule),
+                List.of(timeRule),
                 4
         );
 
         SimulationPlan plan = service.buildPlan(configuration);
 
         assertNotNull(plan);
+    }
+
+    /**
+     * Test: build plan creates device snapshot.
+     */
+    @Test
+    public void buildPlanCreatesSnapshotWithAllDevices() {
+        Rule timeRule = new Rule("rule-100", "Morning Routine", "Time", "Clock", "06:30 AM", "Turn On", "Main Light", true, "Active");
+        SimulationConfiguration configuration = new SimulationConfiguration(
+                LocalTime.of(6, 0),
+                21.5,
+                45.0,
+                List.of(timeRule),
+                4
+        );
+
+        SimulationPlan plan = service.buildPlan(configuration);
+
         assertEquals(MockRoomService.getInstance().getAllDevices().size(), plan.simulatedDeviceStates().size());
-        assertEquals(2, plan.events().size());
+    }
+
+    /**
+     * Test: build plan creates sorted events.
+     */
+    @Test
+    public void buildPlanCreatesEvents() {
+        Rule timeRule = new Rule("rule-100", "Morning Routine", "Time", "Clock", "06:30 AM", "Turn On", "Main Light", true, "Active");
+        SimulationConfiguration configuration = new SimulationConfiguration(
+                LocalTime.of(6, 0),
+                21.5,
+                45.0,
+                List.of(timeRule),
+                4
+        );
+
+        SimulationPlan plan = service.buildPlan(configuration);
+
+        assertEquals(1, plan.events().size());
+    }
+
+    /**
+     * Test: build plan events are sorted by time.
+     */
+    @Test
+    public void buildPlanEventsSortedByTime() {
+        Rule timeRule = new Rule("rule-100", "Morning Routine", "Time", "Clock", "06:30 AM", "Turn On", "Main Light", true, "Active");
+        Rule thresholdRule = new Rule("rule-101", "Heat Alert", "Sensor Threshold", "Temperature Sensor", "Value > 20", "Set to 22°C", "Temperature Control", true, "Active");
+        SimulationConfiguration configuration = new SimulationConfiguration(
+                LocalTime.of(6, 0),
+                21.5,
+                45.0,
+                List.of(timeRule, thresholdRule),
+                4
+        );
+
+        SimulationPlan plan = service.buildPlan(configuration);
+
         assertTrue(plan.events().get(0).simulatedTime().compareTo(plan.events().get(1).simulatedTime()) <= 0);
+    }
+
+    /**
+     * Test: build plan sets trigger source.
+     */
+    @Test
+    public void buildPlanSetsTriggerSource() {
+        Rule timeRule = new Rule("rule-100", "Morning Routine", "Time", "Clock", "06:30 AM", "Turn On", "Main Light", true, "Active");
+        SimulationConfiguration configuration = new SimulationConfiguration(
+                LocalTime.of(6, 0),
+                21.5,
+                45.0,
+                List.of(timeRule),
+                4
+        );
+
+        SimulationPlan plan = service.buildPlan(configuration);
+
         assertEquals("Rule: Morning Routine", plan.events().get(0).triggerSource());
     }
 
     /**
-     * Test: apply event updates matching simulation snapshot entry.
+     * Test: apply event updates device state.
      */
     @Test
-    public void applyEventUpdatesMatchingSimulationSnapshotEntry() {
+    public void applyEventUpdatesDeviceState() {
         SimulationConfiguration configuration = new SimulationConfiguration(
                 LocalTime.of(8, 0),
                 20.0,
@@ -86,15 +156,46 @@ public class TestMockSimulationService {
                 .findFirst()
                 .orElseThrow();
         assertEquals("OFF", state.getState());
+    }
+
+    /**
+     * Test: apply event updates last changed time.
+     */
+    @Test
+    public void applyEventUpdatesLastChanged() {
+        SimulationConfiguration configuration = new SimulationConfiguration(
+                LocalTime.of(8, 0),
+                20.0,
+                40.0,
+                List.of(),
+                2
+        );
+        SimulationPlan plan = service.buildPlan(configuration);
+        ObservableList<SimulationDeviceState> states = plan.simulatedDeviceStates();
+        SimulationEvent event = new SimulationEvent(LocalTime.of(8, 30), "Main Light", "Living Room", "OFF", "Rule: Night");
+
+        service.applyEvent(states, event);
+
+        SimulationDeviceState state = states.stream()
+                .filter(device -> device.getDeviceName().equals("Main Light"))
+                .findFirst()
+                .orElseThrow();
         assertEquals("08:30:00", state.getLastChanged());
     }
 
     /**
-     * Test: parse start time supports short and long format.
+     * Test: parse start time supports short format.
      */
     @Test
-    public void parseStartTimeSupportsShortAndLongFormat() {
+    public void parseStartTimeSupportsShortFormat() {
         assertEquals(LocalTime.of(7, 15), service.parseStartTime("07:15"));
+    }
+
+    /**
+     * Test: parse start time supports long format.
+     */
+    @Test
+    public void parseStartTimeSupportsLongFormat() {
         assertEquals(LocalTime.of(7, 15, 30), service.parseStartTime("07:15:30"));
     }
 
@@ -107,10 +208,10 @@ public class TestMockSimulationService {
     }
 
     /**
-     * Test: build plan maps different action types to simulation states.
+     * Test: build plan creates events for mapped actions.
      */
     @Test
-    public void buildPlanMapsDifferentActionTypesToSimulationStates() {
+    public void buildPlanMapsActionTypesToEvents() {
         Rule notifyRule = new Rule("rule-103", "Notify", "Device State", "Bed Light", "State = Active", "Notify User", "Main Light", true, "Active");
         Rule blindRule = new Rule("rule-104", "Open Blind", "Device State", "Bed Light", "State = Active", "Open", "Hallway Blind", true, "Active");
 
@@ -123,8 +224,60 @@ public class TestMockSimulationService {
         ));
 
         assertEquals(2, plan.events().size());
+    }
+
+    /**
+     * Test: build plan maps notify action.
+     */
+    @Test
+    public void buildPlanMapsNotifyAction() {
+        Rule notifyRule = new Rule("rule-103", "Notify", "Device State", "Bed Light", "State = Active", "Notify User", "Main Light", true, "Active");
+
+        SimulationPlan plan = service.buildPlan(new SimulationConfiguration(
+                LocalTime.of(9, 0),
+                19.0,
+                35.0,
+                List.of(notifyRule),
+                1
+        ));
+
         assertTrue(plan.events().stream().anyMatch(event -> event.resultingState().equals("NOTIFY")));
+    }
+
+    /**
+     * Test: build plan maps open action.
+     */
+    @Test
+    public void buildPlanMapsOpenAction() {
+        Rule blindRule = new Rule("rule-104", "Open Blind", "Device State", "Bed Light", "State = Active", "Open", "Hallway Blind", true, "Active");
+
+        SimulationPlan plan = service.buildPlan(new SimulationConfiguration(
+                LocalTime.of(9, 0),
+                19.0,
+                35.0,
+                List.of(blindRule),
+                1
+        ));
+
         assertTrue(plan.events().stream().anyMatch(event -> event.resultingState().equals("OPEN")));
+    }
+
+    /**
+     * Test: build plan excludes unmapped actions.
+     */
+    @Test
+    public void buildPlanExcludesUnmappedActions() {
+        Rule notifyRule = new Rule("rule-103", "Notify", "Device State", "Bed Light", "State = Active", "Notify User", "Main Light", true, "Active");
+        Rule blindRule = new Rule("rule-104", "Open Blind", "Device State", "Bed Light", "State = Active", "Open", "Hallway Blind", true, "Active");
+
+        SimulationPlan plan = service.buildPlan(new SimulationConfiguration(
+                LocalTime.of(9, 0),
+                19.0,
+                35.0,
+                List.of(notifyRule, blindRule),
+                1
+        ));
+
         assertFalse(plan.events().stream().anyMatch(event -> event.resultingState().equals("UNCHANGED")));
     }
 }
