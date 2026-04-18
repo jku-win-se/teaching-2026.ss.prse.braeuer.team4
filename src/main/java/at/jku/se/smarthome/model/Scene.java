@@ -11,9 +11,13 @@ import javafx.collections.ObservableList;
  */
 public class Scene {
     
+    /** Unique scene identifier. */
     private final SimpleStringProperty id;
+    /** Scene display name. */
     private final SimpleStringProperty name;
+    /** Scene description or purpose. */
     private final SimpleStringProperty description;
+    /** Observable list of device state configurations for this scene. */
     private final ObservableList<String> deviceStates;
     
     /**

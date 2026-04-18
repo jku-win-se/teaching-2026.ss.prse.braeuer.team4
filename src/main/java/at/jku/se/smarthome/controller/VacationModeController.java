@@ -5,9 +5,9 @@ import java.time.LocalDate;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.model.VacationModeConfig;
+import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.UserService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import javafx.fxml.FXML;
@@ -106,34 +106,29 @@ public class VacationModeController {
     private void handleActivate() {
         if (!vacationToggle.isSelected()) {
             showValidationError("Enable the vacation mode toggle before applying the override.");
-            return;
-        }
+        } else {
+            Schedule selectedSchedule = scheduleCombo.getValue();
+            if (selectedSchedule == null) {
+                showValidationError("Select the named schedule that should be applied during vacation mode.");
+            } else {
+                LocalDate startDate = startDatePicker.getValue();
+                LocalDate endDate = endDatePicker.getValue();
+                if (startDate == null || endDate == null) {
+                    showValidationError("Select a valid start and end date for vacation mode.");
+                } else if (endDate.isBefore(startDate)) {
+                    showValidationError("The end date must be on or after the start date.");
+                } else {
+                    vacationModeService.activateVacationMode(startDate, endDate, selectedSchedule, resolveActor());
+                    refreshFromConfiguration();
 
-        Schedule selectedSchedule = scheduleCombo.getValue();
-        if (selectedSchedule == null) {
-            showValidationError("Select the named schedule that should be applied during vacation mode.");
-            return;
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Vacation Mode");
+                    alert.setHeaderText("Vacation Mode Activated");
+                    alert.setContentText(vacationModeService.getStatusSummary());
+                    alert.showAndWait();
+                }
+            }
         }
-
-        LocalDate startDate = startDatePicker.getValue();
-        LocalDate endDate = endDatePicker.getValue();
-        if (startDate == null || endDate == null) {
-            showValidationError("Select a valid start and end date for vacation mode.");
-            return;
-        }
-        if (endDate.isBefore(startDate)) {
-            showValidationError("The end date must be on or after the start date.");
-            return;
-        }
-
-        vacationModeService.activateVacationMode(startDate, endDate, selectedSchedule, resolveActor());
-        refreshFromConfiguration();
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Vacation Mode");
-        alert.setHeaderText("Vacation Mode Activated");
-        alert.setContentText(vacationModeService.getStatusSummary());
-        alert.showAndWait();
     }
     
     @FXML

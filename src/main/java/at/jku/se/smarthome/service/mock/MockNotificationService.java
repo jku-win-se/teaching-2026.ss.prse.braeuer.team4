@@ -12,8 +12,9 @@ import javafx.collections.ObservableList;
  */
 public final class MockNotificationService {
     
+    /** Singleton instance of the mock notification service. */
     private static MockNotificationService instance;
-    /** Singleton notifications collection. */
+    /** Observable collection of all notifications. */
     private final ObservableList<NotificationEntry> notifications;
     /** Time formatter for notification timestamps. */
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -35,6 +36,9 @@ public final class MockNotificationService {
         return instance;
     }
 
+    /**
+     * Resets the singleton for unit testing.
+     */
     public static synchronized void resetForTesting() {
         instance = null;
     }

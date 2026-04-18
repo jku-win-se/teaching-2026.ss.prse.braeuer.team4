@@ -7,10 +7,15 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class User {
     
+    /** Email address of the user. */
     private final SimpleStringProperty email;
+    /** Display name or login name. */
     private final SimpleStringProperty username;
+    /** Stored password or password hash. */
     private final SimpleStringProperty password;
+    /** Assigned user role. */
     private final SimpleStringProperty role;
+    /** Current account status. */
     private final SimpleStringProperty status;
     
     /**

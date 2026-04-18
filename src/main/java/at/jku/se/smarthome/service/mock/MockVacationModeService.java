@@ -78,10 +78,7 @@ public final class MockVacationModeService {
      * @return true if active on date
      */
     public boolean isActiveOn(LocalDate date) {
-        if (!isEnabled() || date == null) {
-            return false;
-        }
-        return !date.isBefore(configuration.getStartDate()) && !date.isAfter(configuration.getEndDate());
+        return isEnabled() && date != null && !date.isBefore(configuration.getStartDate()) && !date.isAfter(configuration.getEndDate());
     }
 
     /**
@@ -90,10 +87,7 @@ public final class MockVacationModeService {
      * @return the schedule or null
      */
     public Schedule getSelectedSchedule() {
-        if (configuration.getScheduleId() == null) {
-            return null;
-        }
-        return getScheduleService().getScheduleById(configuration.getScheduleId());
+        return configuration.getScheduleId() != null ? getScheduleService().getScheduleById(configuration.getScheduleId()) : null;
     }
 
     /**
@@ -206,16 +200,14 @@ public final class MockVacationModeService {
      */
     public String getStatusSummary() {
         Schedule selectedSchedule = getSelectedSchedule();
-        if (!isEnabled() || selectedSchedule == null) {
-            return "Vacation mode is currently disabled.";
-        }
-
-        return String.format(
+        return (!isEnabled() || selectedSchedule == null)
+            ? "Vacation mode is currently disabled."
+            : String.format(
                 "Active from %s to %s using '%s'.",
                 formatDate(configuration.getStartDate()),
                 formatDate(configuration.getEndDate()),
                 selectedSchedule.getName()
-        );
+            );
     }
 
     /**
@@ -228,12 +220,11 @@ public final class MockVacationModeService {
         if (!isEnabled() || selectedSchedule == null) {
             return "When enabled, the chosen schedule becomes the effective schedule for the selected date range.";
         }
-
         int overriddenSchedules = getOverriddenSchedules().size();
         return String.format(
-                "Normal schedules are overridden during the configured period. '%s' is treated as the effective vacation schedule and replaces %d other active schedule(s).",
-                selectedSchedule.getName(),
-                overriddenSchedules
+            "Normal schedules are overridden during the configured period. '%s' is treated as the effective vacation schedule and replaces %d other active schedule(s).",
+            selectedSchedule.getName(),
+            overriddenSchedules
         );
     }
 

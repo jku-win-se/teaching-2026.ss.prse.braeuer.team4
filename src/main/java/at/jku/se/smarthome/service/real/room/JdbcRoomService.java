@@ -31,14 +31,21 @@ import javafx.collections.ObservableList;
  */
 public final class JdbcRoomService implements RoomService {
 
+    /** Path to database schema initialization script in classpath. */
     private static final String INIT_SCRIPT_PATH = "/db/init-rooms.sql";
+    /** Singleton instance of the JDBC room service. */
     private static JdbcRoomService instance;
 
+    /** Observable list of rooms with their devices. */
     private final ObservableList<Room> rooms = FXCollections.observableArrayList();
+    /** Service for logging room and device operations. */
     private final MockLogService logService = MockLogService.getInstance();
+    /** Service for user authentication and permissions. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Flag indicating database schema is initialized. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
+    /** Initializes JDBC room service and loads existing rooms and devices. */
     private JdbcRoomService() {
         refreshRooms();
     }

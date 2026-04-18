@@ -12,15 +12,19 @@ import javafx.scene.control.PasswordField;
  */
 public class SettingsController {
     
+    /** Label displaying current user email address. */
     @FXML
     private Label emailLabel;
     
+    /** Password field for entering new password. */
     @FXML
     private PasswordField newPasswordField;
     
+    /** Password field for confirming new password. */
     @FXML
     private PasswordField confirmPasswordField;
     
+    /** User service for profile management. */
     private final UserService userService = ServiceRegistry.getUserService();
     
     @FXML

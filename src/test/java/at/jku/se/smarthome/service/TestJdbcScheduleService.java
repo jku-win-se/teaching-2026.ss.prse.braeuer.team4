@@ -20,6 +20,9 @@ import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 
+/**
+ * Unit tests for JdbcScheduleService.
+ */
 public class TestJdbcScheduleService {
 
     /** JDBC URL property. */

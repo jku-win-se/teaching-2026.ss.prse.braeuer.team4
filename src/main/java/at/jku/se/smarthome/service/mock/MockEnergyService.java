@@ -10,10 +10,12 @@ import javafx.scene.chart.XYChart;
  */
 public final class MockEnergyService {
 
+    /** Enumeration of energy aggregation periods. */
     public enum AggregationPeriod {
         DAY("Day"),
         WEEK("Week");
 
+        /** Display name for the aggregation period. */
         private final String displayName;
 
         AggregationPeriod(String displayName) {
@@ -37,6 +39,7 @@ public final class MockEnergyService {
             XYChart.Series<String, Number> timelineSeries) {
     }
 
+    /** Singleton instance of the mock energy service. */
     private static MockEnergyService instance;
 
     private MockEnergyService() {
@@ -54,10 +57,19 @@ public final class MockEnergyService {
         return instance;
     }
 
+    /**
+     * Resets the singleton instance for test isolation.
+     */
     public static synchronized void resetForTesting() {
         instance = null;
     }
 
+    /**
+     * Returns snapshot of energy consumption data.
+     *
+     * @param period the aggregation period for consumption data
+     * @return energy snapshot with consumption metrics
+     */
     public EnergySnapshot getSnapshot(AggregationPeriod period) {
         Map<String, Double> deviceData = getConsumptionByDevice(period);
         Map<String, Double> roomData = getConsumptionByRoom(period, deviceData);

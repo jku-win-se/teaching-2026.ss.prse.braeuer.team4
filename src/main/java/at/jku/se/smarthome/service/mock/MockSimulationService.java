@@ -44,28 +44,41 @@ public final class MockSimulationService {
 
     /** Pattern for numeric conditions in rules. */
     private static final Pattern NUMERIC_CONDITION_PATTERN = Pattern.compile("(>=|<=|>|<|=)\\s*(-?\\d+(?:\\.\\d+)?)");
-    /** Singleton instance. */
+    /** Singleton instance of the mock simulation service. */
     private static MockSimulationService instance;
 
-    /** Room service for room data. */
+    /** Room service for room and device data. */
     private final MockRoomService roomService = MockRoomService.getInstance();
-    /** Time formatter for parsing times. */
+    /** Date/time formatter for parsing simulation times. */
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private MockSimulationService() {
     }
 
-    public static synchronized MockSimulationService getInstance() {
-        if (instance == null) {
-            instance = new MockSimulationService();
+    public static MockSimulationService getInstance() {
+        synchronized (MockSimulationService.class) {
+            if (instance == null) {
+                instance = new MockSimulationService();
+            }
+            return instance;
         }
-        return instance;
     }
 
-    public static synchronized void resetForTesting() {
-        instance = null;
+    /**
+     * Resets the singleton for unit testing.
+     */
+    public static void resetForTesting() {
+        synchronized (MockSimulationService.class) {
+            instance = null;
+        }
     }
 
+    /**
+     * Builds a complete simulation plan from the provided configuration.
+     *
+     * @param configuration simulation configuration
+     * @return simulation plan with device states and events
+     */
     public SimulationPlan buildPlan(SimulationConfiguration configuration) {
         ObservableList<SimulationDeviceState> simulatedDeviceStates = createSimulationSnapshot(configuration.startTime());
         List<SimulationEvent> events = new ArrayList<>();
@@ -101,6 +114,12 @@ public final class MockSimulationService {
         return new SimulationPlan(simulatedDeviceStates, events);
     }
 
+    /**
+     * Applies a simulation event to the simulated device states.
+     *
+     * @param simulatedDeviceStates observable list of simulated device states
+     * @param event simulation event to apply
+     */
     public void applyEvent(ObservableList<SimulationDeviceState> simulatedDeviceStates, SimulationEvent event) {
         simulatedDeviceStates.stream()
                 .filter(device -> device.getDeviceName().equals(event.deviceName()))
@@ -111,6 +130,13 @@ public final class MockSimulationService {
                 });
     }
 
+    /**
+     * Parses a start time string in various formats.
+     *
+     * @param value time string (e.g., "06:00:00" or "HH:mm")
+     * @return parsed local time
+     * @throws IllegalArgumentException if time cannot be parsed
+     */
     public LocalTime parseStartTime(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Start time is required");

@@ -13,6 +13,7 @@ import javafx.collections.ObservableList;
  */
 public final class MockSceneService {
     
+    /** Singleton instance of the mock scene service. */
     private static MockSceneService instance;
     /**
      * Singleton scenes collection.
@@ -35,19 +36,23 @@ public final class MockSceneService {
      *
      * @return singleton MockSceneService instance
      */
-    public static synchronized MockSceneService getInstance() {
-        if (instance == null) {
-            instance = new MockSceneService();
+    public static MockSceneService getInstance() {
+        synchronized (MockSceneService.class) {
+            if (instance == null) {
+                instance = new MockSceneService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (MockSceneService.class) {
+            instance = null;
+        }
     }
     
     /**

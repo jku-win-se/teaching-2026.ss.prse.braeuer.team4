@@ -5,9 +5,9 @@ import java.util.Optional;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.model.Schedule;
+import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.UserService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import javafx.fxml.FXML;
@@ -321,18 +321,21 @@ public class SchedulesController {
     }
 
     private Device getDeviceByName(String deviceName) {
-        if (deviceName == null) {
-            return null;
-        }
-
-        for (Room room : roomService.getRooms()) {
-            for (Device device : room.getDevices()) {
-                if (deviceName.equals(device.getName())) {
-                    return device;
+        Device result = null;
+        if (deviceName != null) {
+            for (Room room : roomService.getRooms()) {
+                for (Device device : room.getDevices()) {
+                    if (deviceName.equals(device.getName())) {
+                        result = device;
+                        break;
+                    }
+                }
+                if (result != null) {
+                    break;
                 }
             }
         }
-        return null;
+        return result;
     }
 
     private Device getDeviceById(String deviceId) {
@@ -358,9 +361,13 @@ public class SchedulesController {
             boolean active) {
     }
 
+    /** Inner class rendering action buttons for schedule table. */
     private final class ScheduleActionCell extends TableCell<Schedule, Void> {
+        /** Button for editing schedule entry. */
         private final Button editButton = new Button("Edit");
+        /** Button for deleting schedule entry. */
         private final Button deleteButton = new Button("Delete");
+        /** Container for action buttons. */
         private final HBox container = new HBox(8);
 
         private ScheduleActionCell() {

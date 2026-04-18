@@ -11,9 +11,13 @@ import javafx.collections.ObservableList;
  */
 public final class MockRoomService implements RoomService {
     
+    /** Singleton instance of the mock room service. */
     private static MockRoomService instance;
+    /** Observable list of all rooms. */
     private final ObservableList<Room> rooms;
+    /** User service for permission checks. */
     private final MockUserService userService = MockUserService.getInstance();
+    /** Log service for activity logging. */
     private final MockLogService logService = MockLogService.getInstance();
     
     private MockRoomService() {

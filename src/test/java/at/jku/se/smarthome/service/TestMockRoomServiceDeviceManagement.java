@@ -20,8 +20,12 @@ import at.jku.se.smarthome.service.mock.MockRoomService;
  */
 public class TestMockRoomServiceDeviceManagement {
 
+    /** Mock room service for testing. */
     private MockRoomService service;
 
+    /**
+     * Sets up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         MockRoomService.resetForTesting();
@@ -32,7 +36,9 @@ public class TestMockRoomServiceDeviceManagement {
     // renameDevice
     // -----------------------------------------------------------------------
 
-    /** A valid rename changes the device name. */
+    /**
+     * Tests valid device rename changes the device name.
+     */
     @Test
     public void testRenameDeviceValid() {
         boolean result = service.renameDevice("room-001", "dev-001", "Hallway Lamp");

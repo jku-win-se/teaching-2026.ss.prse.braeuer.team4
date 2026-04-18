@@ -7,8 +7,11 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class NotificationEntry {
     
+    /** Timestamp when the notification was created. */
     private final SimpleStringProperty timestamp;
+    /** Notification message text. */
     private final SimpleStringProperty message;
+    /** Notification type or severity (info, success, error, warning). */
     private final SimpleStringProperty type;
     
     /**

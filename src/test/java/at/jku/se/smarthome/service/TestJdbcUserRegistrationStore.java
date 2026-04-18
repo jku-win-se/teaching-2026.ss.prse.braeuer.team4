@@ -15,6 +15,9 @@ import org.junit.Test;
 import at.jku.se.smarthome.service.real.auth.JdbcUserRegistrationStore;
 import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 
+/**
+ * Unit tests for JdbcUserRegistrationStore.
+ */
 public class TestJdbcUserRegistrationStore {
 
     /** JDBC URL property. */

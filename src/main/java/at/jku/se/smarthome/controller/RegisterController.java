@@ -39,7 +39,11 @@ public class RegisterController {
     /** Callback for navigation to login view. */
     private RegisterCallback registerCallback;
     
+    /**
+     * Callback interface for navigation from register view.
+     */
     public interface RegisterCallback {
+        /** Invoked when user clicks button to return to login view. */
         void onBackToLogin();
     }
     
@@ -56,28 +60,21 @@ public class RegisterController {
         
         if (email.isEmpty() || username.isEmpty() || password.isEmpty()) {
             showError("All fields are required");
-            return;
-        }
-        
-        if (!email.contains("@")) {
+        } else if (!email.contains("@")) {
             showError("Please enter a valid email");
-            return;
-        }
-        
-        if (!password.equals(confirmPassword)) {
+        } else if (!password.equals(confirmPassword)) {
             showError("Passwords do not match");
-            return;
-        }
-
-        RegistrationStatus registrationStatus = userService.registerUser(email, username, password, confirmPassword);
-        if (registrationStatus == RegistrationStatus.SUCCESS) {
-            errorLabel.setText("");
-            showSuccess("Registration successful! Redirecting to login...");
-            if (registerCallback != null) {
-                registerCallback.onBackToLogin();
-            }
         } else {
-            showError(mapErrorMessage(registrationStatus));
+            RegistrationStatus registrationStatus = userService.registerUser(email, username, password, confirmPassword);
+            if (registrationStatus == RegistrationStatus.SUCCESS) {
+                errorLabel.setText("");
+                showSuccess("Registration successful! Redirecting to login...");
+                if (registerCallback != null) {
+                    registerCallback.onBackToLogin();
+                }
+            } else {
+                showError(mapErrorMessage(registrationStatus));
+            }
         }
     }
     

@@ -3,6 +3,9 @@ package at.jku.se.smarthome.service.api;
 import at.jku.se.smarthome.model.User;
 import javafx.collections.ObservableList;
 
+/**
+ * Abstract base service for user authentication and management.
+ */
 public abstract class UserService {
 
     /** Registration status outcomes. */

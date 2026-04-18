@@ -20,8 +20,11 @@ import at.jku.se.smarthome.config.DatabaseSettings;
  */
 public class JdbcUserRegistrationStore implements UserRegistrationStore {
 
+    /** SQL state for duplicate key constraint violation. */
     private static final String DUPLICATE_EMAIL_SQL_STATE = "23505";
+    /** Path to user registration initialization SQL script. */
     private static final String INIT_SCRIPT_PATH = "/db/init-auth.sql";
+    /** Flag indicating database schema is ready. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     @Override

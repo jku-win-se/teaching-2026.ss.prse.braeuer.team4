@@ -18,6 +18,9 @@ import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.mock.MockScheduleService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
 
+/**
+ * Unit tests for MockVacationModeService.
+ */
 public class TestMockVacationModeService {
 
     /** Vacation mode service under test. */

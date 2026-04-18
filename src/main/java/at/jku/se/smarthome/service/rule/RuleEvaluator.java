@@ -25,8 +25,10 @@ import java.time.format.DateTimeParseException;
  */
 public class RuleEvaluator {
 
+    /** Time formatter for 12-hour format with AM/PM. */
     private static final DateTimeFormatter TIME_FORMAT_12H =
             DateTimeFormatter.ofPattern("hh:mm a");
+    /** Time formatter for 24-hour format (HH:mm). */
     private static final DateTimeFormatter TIME_FORMAT_24H =
             DateTimeFormatter.ofPattern("HH:mm");
 

@@ -13,6 +13,9 @@ import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.mock.MockRuleService;
 
+/**
+ * Unit tests for MockRuleService.
+ */
 public class TestMockRuleService {
 
     /** Rule service under test. */

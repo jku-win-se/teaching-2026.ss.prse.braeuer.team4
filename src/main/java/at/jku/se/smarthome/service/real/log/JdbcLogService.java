@@ -1,12 +1,5 @@
 package at.jku.se.smarthome.service.real.log;
 
-import at.jku.se.smarthome.config.DatabaseConfig;
-import at.jku.se.smarthome.config.DatabaseSettings;
-import at.jku.se.smarthome.model.LogEntry;
-import at.jku.se.smarthome.service.api.LogService;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -23,19 +16,33 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import at.jku.se.smarthome.config.DatabaseConfig;
+import at.jku.se.smarthome.config.DatabaseSettings;
+import at.jku.se.smarthome.model.LogEntry;
+import at.jku.se.smarthome.service.api.LogService;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
 /**
  * JDBC-backed LogService implementation. Persists activity log entries to the configured database.
  */
 public final class JdbcLogService implements LogService {
 
+    /** Path to database schema initialization script in classpath. */
     private static final String INIT_SCRIPT_PATH = "/db/init-activity-log.sql";
+    /** Maximum number of log entries to load from database. */
     private static final int MAX_LOADED_ENTRIES = 200;
+    /** Singleton instance of the JDBC log service. */
     private static JdbcLogService instance;
 
+    /** Observable list of activity log entries. */
     private final ObservableList<LogEntry> logs = FXCollections.observableArrayList();
+    /** Formatter for timestamps in database. */
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    /** Flag indicating database schema is initialized. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
+    /** Initializes JDBC log service and loads existing log entries. */
     private JdbcLogService() {
         refreshLogs();
     }
@@ -45,18 +52,22 @@ public final class JdbcLogService implements LogService {
      *
      * @return singleton JdbcLogService instance
      */
-    public static synchronized JdbcLogService getInstance() {
-        if (instance == null) {
-            instance = new JdbcLogService();
+    public static JdbcLogService getInstance() {
+        synchronized (JdbcLogService.class) {
+            if (instance == null) {
+                instance = new JdbcLogService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton instance for test isolation.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (JdbcLogService.class) {
+            instance = null;
+        }
     }
 
     @Override
@@ -167,17 +178,19 @@ public final class JdbcLogService implements LogService {
      * @param connection database connection to use
      */
     private void ensureSchema(Connection connection) {
-        if (schemaReady.get()) return;
-        synchronized (this) {
-            if (schemaReady.get()) return;
-            try (Statement stmt = connection.createStatement()) {
-                for (String sql : loadInitScript().split(";")) {
-                    String s = sql.trim();
-                    if (!s.isEmpty()) stmt.execute(s);
+        if (!schemaReady.get()) {
+            synchronized (this) {
+                if (!schemaReady.get()) {
+                    try (Statement stmt = connection.createStatement()) {
+                        for (String sql : loadInitScript().split(";")) {
+                            String s = sql.trim();
+                            if (!s.isEmpty()) stmt.execute(s);
+                        }
+                        schemaReady.set(true);
+                    } catch (SQLException e) {
+                        throw new IllegalStateException("Failed to initialize activity_log schema.", e);
+                    }
                 }
-                schemaReady.set(true);
-            } catch (SQLException e) {
-                throw new IllegalStateException("Failed to initialize activity_log schema.", e);
             }
         }
     }

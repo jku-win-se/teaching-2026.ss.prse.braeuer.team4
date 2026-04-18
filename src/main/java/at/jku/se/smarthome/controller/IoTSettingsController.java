@@ -159,39 +159,35 @@ public class IoTSettingsController {
     
     @FXML
     private void handleSaveSettings() {
-        if (!enableToggle.isSelected()) {
+        if (enableToggle.isSelected() && integrationService.testConnection(brokerField.getText(), portField.getText())) {
+            integrationService.saveConfiguration(
+                    true,
+                    brokerField.getText().trim(),
+                    parsePort(),
+                    usernameField.getText().trim(),
+                    passwordField.getText()
+            );
+
+            boolean connected = integrationService.connect();
+            refreshStatusLabels(true, connected);
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Success");
+            alert.setHeaderText("MQTT Settings Saved");
+            alert.setContentText(connected
+                    ? "Mock MQTT integration is now connected and ready to discover physical devices."
+                    : "Settings were saved, but the mock integration could not connect.");
+            alert.showAndWait();
+
+            resultLabel.setText(connected
+                    ? "MQTT integration connected. You can now discover physical devices."
+                    : "Settings saved, but the connection is still offline.");
+            resultLabel.setStyle(connected ? "-fx-text-fill: #27ae60;" : "-fx-text-fill: #e67e22;");
+        } else if (!enableToggle.isSelected()) {
             showError("Enable the integration layer before saving MQTT settings");
-            return;
-        }
-
-        if (!integrationService.testConnection(brokerField.getText(), portField.getText())) {
+        } else {
             showError("Please provide a valid broker and port before saving");
-            return;
         }
-
-        integrationService.saveConfiguration(
-                true,
-                brokerField.getText().trim(),
-                parsePort(),
-                usernameField.getText().trim(),
-                passwordField.getText()
-        );
-
-        boolean connected = integrationService.connect();
-        refreshStatusLabels(true, connected);
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Success");
-        alert.setHeaderText("MQTT Settings Saved");
-        alert.setContentText(connected
-                ? "Mock MQTT integration is now connected and ready to discover physical devices."
-                : "Settings were saved, but the mock integration could not connect.");
-        alert.showAndWait();
-
-        resultLabel.setText(connected
-                ? "MQTT integration connected. You can now discover physical devices."
-                : "Settings saved, but the connection is still offline.");
-        resultLabel.setStyle(connected ? "-fx-text-fill: #27ae60;" : "-fx-text-fill: #e67e22;");
     }
 
     @FXML
@@ -226,11 +222,13 @@ public class IoTSettingsController {
     }
 
     private int parsePort() {
+        int port = -1;
         try {
-            return Integer.parseInt(portField.getText().trim());
+            port = Integer.parseInt(portField.getText().trim());
         } catch (NumberFormatException exception) {
-            return -1;
+            // port remains -1 on parse failure
         }
+        return port;
     }
     
     private void showError(String message) {

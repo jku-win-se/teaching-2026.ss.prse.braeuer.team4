@@ -30,6 +30,7 @@ import javafx.util.Duration;
  */
 public class MainController {
 
+    /** Logger instance for application logging. */
     private static final Logger LOGGER = LogManager.getLogger(MainController.class);
     
     /** Label displaying current user information. */
@@ -109,6 +110,7 @@ public class MainController {
      * Callback interface for main controller events.
      */
     public interface MainCallback {
+        /** Invoked when user initiates logout. */
         void onLogout();
     }
     
@@ -130,6 +132,9 @@ public class MainController {
         refreshSessionState();
     }
 
+    /**
+     * Refreshes the session state including user label and role-based access control.
+     */
     public void refreshSessionState() {
         updateUserLabel();
         applyRoleAccess();
@@ -187,16 +192,15 @@ public class MainController {
     }
 
     private boolean requireOwnerAccess(String featureName) {
-        if (userService.canManageSystem()) {
-            return true;
+        boolean hasAccess = userService.canManageSystem();
+        if (!hasAccess) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Access Restricted");
+            alert.setHeaderText("Owner access required");
+            alert.setContentText(featureName + " is only available to the Owner role. Members can control devices but cannot manage the system.");
+            alert.showAndWait();
         }
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Access Restricted");
-        alert.setHeaderText("Owner access required");
-        alert.setContentText(featureName + " is only available to the Owner role. Members can control devices but cannot manage the system.");
-        alert.showAndWait();
-        return false;
+        return hasAccess;
     }
     
     /**
@@ -410,18 +414,17 @@ public class MainController {
 
     private String resolveToastTitle(NotificationEntry entry) {
         String message = entry.getMessage() == null ? "" : entry.getMessage().toLowerCase();
-
-        if (message.contains("scene '") || message.contains("scene \"")) {
-            return switch (entry.getType()) {
+        boolean isScene = message.contains("scene '") || message.contains("scene \"");
+        
+        return isScene ? 
+            switch (entry.getType()) {
                 case "error" -> "Scene Failed";
                 default -> "Scene Executed";
+            } :
+            switch (entry.getType()) {
+                case "success" -> "Rule Executed";
+                case "error" -> "Rule Failed";
+                default -> "Notification";
             };
-        }
-
-        return switch (entry.getType()) {
-            case "success" -> "Rule Executed";
-            case "error" -> "Rule Failed";
-            default -> "Notification";
-        };
     }
 }
