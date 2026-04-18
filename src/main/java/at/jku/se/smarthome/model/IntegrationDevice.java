@@ -7,9 +7,13 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class IntegrationDevice {
 
+    /** Discovered device name. */
     private final SimpleStringProperty name;
+    /** Discovered device type. */
     private final SimpleStringProperty type;
+    /** Integration topic or address for the device. */
     private final SimpleStringProperty topic;
+    /** Current device status (discovered, connected, etc.). */
     private final SimpleStringProperty status;
 
     /**

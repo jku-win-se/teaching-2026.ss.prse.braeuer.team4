@@ -158,29 +158,29 @@ public class SimulationController {
     
     @FXML
     private void handleStart() {
-        if (isRunning) {
-            return;
-        }
-
-        if (currentPlan == null || currentEventIndex >= currentPlan.events().size()) {
-            try {
-                prepareSimulation();
-            } catch (IllegalArgumentException exception) {
-                logOutput.appendText("[SIM] " + exception.getMessage() + "\n");
-                summaryLabel.setText(exception.getMessage());
-                return;
+        if (!isRunning) {
+            boolean shouldPrepare = currentPlan == null || currentEventIndex >= currentPlan.events().size();
+            if (shouldPrepare) {
+                try {
+                    prepareSimulation();
+                } catch (IllegalArgumentException exception) {
+                    logOutput.appendText("[SIM] " + exception.getMessage() + "\n");
+                    summaryLabel.setText(exception.getMessage());
+                    shouldPrepare = false;
+                }
+            }
+            
+            if (shouldPrepare || currentPlan != null) {
+                if (playbackTimeline != null) {
+                    playbackTimeline.play();
+                }
+                isRunning = true;
+                startBtn.setDisable(true);
+                pauseBtn.setDisable(false);
+                summaryLabel.setText("Running a full-day replay in accelerated time. Live devices remain unchanged.");
+                logOutput.appendText("[SIM] Simulation started\n");
             }
         }
-
-        if (playbackTimeline != null) {
-            playbackTimeline.play();
-        }
-
-        isRunning = true;
-        startBtn.setDisable(true);
-        pauseBtn.setDisable(false);
-        summaryLabel.setText("Running a full-day replay in accelerated time. Live devices remain unchanged.");
-        logOutput.appendText("[SIM] Simulation started\n");
     }
     
     @FXML
@@ -248,27 +248,20 @@ public class SimulationController {
     }
 
     private void playNextSimulationEvent() {
-        if (currentPlan == null) {
-            return;
+        if (currentPlan != null && currentEventIndex < currentPlan.events().size()) {
+            SimulationEvent event = currentPlan.events().get(currentEventIndex);
+            simulationService.applyEvent(simulatedDeviceStates, event);
+            progressLabel.setText(event.simulatedTime().toString());
+            progressSlider.setValue(resolveProgress(event.simulatedTime()));
+            logOutput.appendText(String.format("[SIM %s] %s -> %s (%s)\n",
+                    event.simulatedTime(),
+                    event.deviceName(),
+                    event.resultingState(),
+                    event.triggerSource()));
+            currentEventIndex++;
         }
-
-        if (currentEventIndex >= currentPlan.events().size()) {
-            finishSimulation();
-            return;
-        }
-
-        SimulationEvent event = currentPlan.events().get(currentEventIndex);
-        simulationService.applyEvent(simulatedDeviceStates, event);
-        progressLabel.setText(event.simulatedTime().toString());
-        progressSlider.setValue(resolveProgress(event.simulatedTime()));
-        logOutput.appendText(String.format("[SIM %s] %s -> %s (%s)\n",
-                event.simulatedTime(),
-                event.deviceName(),
-                event.resultingState(),
-                event.triggerSource()));
-        currentEventIndex++;
-
-        if (currentEventIndex >= currentPlan.events().size()) {
+        
+        if (currentPlan == null || currentEventIndex >= currentPlan.events().size()) {
             finishSimulation();
         }
     }
@@ -306,16 +299,8 @@ public class SimulationController {
 
     private int resolveSpeedMultiplier() {
         String selected = speedCombo.getValue();
-        if (selected == null) {
-            return 10;
-        }
-        if (selected.startsWith("100x")) {
-            return 100;
-        }
-        if (selected.startsWith("10x")) {
-            return 10;
-        }
-        return 1;
+        return (selected != null && selected.startsWith("100x")) ? 100 : 
+               (selected != null && selected.startsWith("10x")) ? 10 : 1;
     }
 
     private double resolvePlaybackMillis() {

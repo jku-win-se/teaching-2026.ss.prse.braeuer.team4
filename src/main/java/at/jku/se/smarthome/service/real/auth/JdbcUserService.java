@@ -73,92 +73,91 @@ public final class JdbcUserService extends UserService {
         return instance;
     }
 
+    /**
+     * Resets the singleton for unit testing.
+     */
     public static synchronized void resetForTesting() {
         instance = null;
     }
 
     @Override
     public RegistrationStatus registerUser(String email, String username, String password, String confirmPassword) {
+        RegistrationStatus status = RegistrationStatus.INVALID_INPUT;
         String normalizedEmail = normalizeEmail(email);
         String normalizedUsername = normalizeValue(username);
 
-        if (normalizedEmail == null || normalizedUsername == null || isBlank(password) || isBlank(confirmPassword)) {
-            return RegistrationStatus.INVALID_INPUT;
-        }
+        if (normalizedEmail != null && normalizedUsername != null && !isBlank(password) && !isBlank(confirmPassword)) {
+            if (!password.equals(confirmPassword)) {
+                status = RegistrationStatus.PASSWORD_MISMATCH;
+            } else if (users.stream().anyMatch(user -> user.getEmail().equalsIgnoreCase(normalizedEmail))) {
+                status = RegistrationStatus.DUPLICATE_EMAIL;
+            } else {
+                try {
+                    if (registrationStore.emailExists(normalizedEmail)) {
+                        status = RegistrationStatus.DUPLICATE_EMAIL;
+                    } else {
+                        String passwordHash = BCrypt.hashpw(password, BCrypt.gensalt());
+                        registrationStore.save(new UserRegistrationStore.PersistedUser(
+                                normalizedEmail,
+                                normalizedUsername,
+                                passwordHash,
+                                "Member",
+                                "Active"
+                        ));
 
-        if (!password.equals(confirmPassword)) {
-            return RegistrationStatus.PASSWORD_MISMATCH;
-        }
-
-        if (users.stream().anyMatch(user -> user.getEmail().equalsIgnoreCase(normalizedEmail))) {
-            return RegistrationStatus.DUPLICATE_EMAIL;
-        }
-
-        try {
-            if (registrationStore.emailExists(normalizedEmail)) {
-                return RegistrationStatus.DUPLICATE_EMAIL;
+                        users.add(new User(normalizedEmail, normalizedUsername, passwordHash, "Member", "Active"));
+                        status = RegistrationStatus.SUCCESS;
+                    }
+                } catch (UserRegistrationStore.StoreConfigurationException exception) {
+                    status = RegistrationStatus.DATABASE_NOT_CONFIGURED;
+                } catch (UserRegistrationStore.DuplicateEmailException exception) {
+                    status = RegistrationStatus.DUPLICATE_EMAIL;
+                } catch (UserRegistrationStore.StoreException exception) {
+                    status = RegistrationStatus.DATABASE_ERROR;
+                }
             }
-
-            String passwordHash = BCrypt.hashpw(password, BCrypt.gensalt());
-            registrationStore.save(new UserRegistrationStore.PersistedUser(
-                    normalizedEmail,
-                    normalizedUsername,
-                    passwordHash,
-                    "Member",
-                    "Active"
-            ));
-
-            users.add(new User(normalizedEmail, normalizedUsername, passwordHash, "Member", "Active"));
-            return RegistrationStatus.SUCCESS;
-        } catch (UserRegistrationStore.StoreConfigurationException exception) {
-            return RegistrationStatus.DATABASE_NOT_CONFIGURED;
-        } catch (UserRegistrationStore.DuplicateEmailException exception) {
-            return RegistrationStatus.DUPLICATE_EMAIL;
-        } catch (UserRegistrationStore.StoreException exception) {
-            return RegistrationStatus.DATABASE_ERROR;
         }
+        return status;
     }
 
     @Override
     public synchronized LoginStatus authenticate(String email, String password) {
+        LoginStatus status = LoginStatus.INVALID_INPUT;
         String normalizedEmail = normalizeEmail(email);
 
-        if (normalizedEmail == null || isBlank(password)) {
-            return LoginStatus.INVALID_INPUT;
-        }
-
-        long now = System.currentTimeMillis();
-        if (isBlocked(normalizedEmail, now)) {
-            return LoginStatus.THROTTLED;
-        }
-
-        try {
-            Optional<UserRegistrationStore.PersistedUser> persistedUser = registrationStore.findByEmail(normalizedEmail);
-            if (persistedUser.isEmpty()) {
-                recordFailedLogin(normalizedEmail, now);
-                return LoginStatus.AUTHENTICATION_FAILED;
+        if (normalizedEmail != null && !isBlank(password)) {
+            long now = System.currentTimeMillis();
+            if (isBlocked(normalizedEmail, now)) {
+                status = LoginStatus.THROTTLED;
+            } else {
+                try {
+                    Optional<UserRegistrationStore.PersistedUser> persistedUser = registrationStore.findByEmail(normalizedEmail);
+                    if (persistedUser.isEmpty()) {
+                        recordFailedLogin(normalizedEmail, now);
+                        status = LoginStatus.AUTHENTICATION_FAILED;
+                    } else {
+                        UserRegistrationStore.PersistedUser user = persistedUser.get();
+                        if (!passwordsMatch(user.passwordHash(), password)) {
+                            recordFailedLogin(normalizedEmail, now);
+                            status = LoginStatus.AUTHENTICATION_FAILED;
+                        } else if (!isActive(user.status())) {
+                            recordFailedLogin(normalizedEmail, now);
+                            status = LoginStatus.ACCOUNT_INACTIVE;
+                        } else {
+                            clearFailedLogins(normalizedEmail);
+                            establishSession(user.email(), user.username(), user.role(), user.status(), now);
+                            updateLastLoginTimestamp(normalizedEmail);
+                            status = LoginStatus.SUCCESS;
+                        }
+                    }
+                } catch (UserRegistrationStore.StoreConfigurationException exception) {
+                    status = LoginStatus.DATABASE_NOT_CONFIGURED;
+                } catch (UserRegistrationStore.StoreException exception) {
+                    status = LoginStatus.DATABASE_ERROR;
+                }
             }
-
-            UserRegistrationStore.PersistedUser user = persistedUser.get();
-            if (!passwordsMatch(user.passwordHash(), password)) {
-                recordFailedLogin(normalizedEmail, now);
-                return LoginStatus.AUTHENTICATION_FAILED;
-            }
-
-            if (!isActive(user.status())) {
-                recordFailedLogin(normalizedEmail, now);
-                return LoginStatus.ACCOUNT_INACTIVE;
-            }
-
-            clearFailedLogins(normalizedEmail);
-            establishSession(user.email(), user.username(), user.role(), user.status(), now);
-            updateLastLoginTimestamp(normalizedEmail);
-            return LoginStatus.SUCCESS;
-        } catch (UserRegistrationStore.StoreConfigurationException exception) {
-            return LoginStatus.DATABASE_NOT_CONFIGURED;
-        } catch (UserRegistrationStore.StoreException exception) {
-            return LoginStatus.DATABASE_ERROR;
         }
+        return status;
     }
 
     @Override
@@ -176,26 +175,24 @@ public final class JdbcUserService extends UserService {
     @Override
     public synchronized User getCurrentUser() {
         invalidateExpiredSessionIfNeeded();
-        if (currentUserEmail == null) {
-            return null;
+        User result = null;
+        if (currentUserEmail != null) {
+            result = users.stream()
+                    .filter(user -> user.getEmail().equals(currentUserEmail))
+                    .findFirst()
+                    .orElse(null);
+
+            if (result == null) {
+                result = new User(
+                        currentUserEmail,
+                        currentUsername != null ? currentUsername : currentUserEmail,
+                        "",
+                        currentUserRole != null ? currentUserRole : "Guest",
+                        currentUserStatus != null ? currentUserStatus : "Active"
+                );
+            }
         }
-
-        User cachedUser = users.stream()
-                .filter(user -> user.getEmail().equals(currentUserEmail))
-                .findFirst()
-                .orElse(null);
-
-        if (cachedUser != null) {
-            return cachedUser;
-        }
-
-        return new User(
-                currentUserEmail,
-                currentUsername != null ? currentUsername : currentUserEmail,
-                "",
-                currentUserRole != null ? currentUserRole : "Guest",
-                currentUserStatus != null ? currentUserStatus : "Active"
-        );
+        return result;
     }
 
     @Override
@@ -212,66 +209,60 @@ public final class JdbcUserService extends UserService {
     @Override
     public synchronized long getRemainingThrottleSeconds(String email) {
         String normalizedEmail = normalizeEmail(email);
-        if (normalizedEmail == null) {
-            return 0;
+        long remainingSeconds = 0;
+        if (normalizedEmail != null) {
+            long now = System.currentTimeMillis();
+            if (isBlocked(normalizedEmail, now)) {
+                long blockedUntil = blockedUntilByEmail.getOrDefault(normalizedEmail, now);
+                long remainingMillis = Math.max(0, blockedUntil - now);
+                remainingSeconds = Math.max(1, (remainingMillis + 999) / 1000);
+            }
         }
-
-        long now = System.currentTimeMillis();
-        if (!isBlocked(normalizedEmail, now)) {
-            return 0;
-        }
-
-        long blockedUntil = blockedUntilByEmail.getOrDefault(normalizedEmail, now);
-        long remainingMillis = Math.max(0, blockedUntil - now);
-        return Math.max(1, (remainingMillis + 999) / 1000);
+        return remainingSeconds;
     }
 
     @Override
     public boolean inviteUser(String email, String role) {
-        if (users.stream().anyMatch(u -> u.getEmail().equals(email))) {
-            return false;
+        boolean invited = false;
+        if (!users.stream().anyMatch(u -> u.getEmail().equals(email))) {
+            User newUser = new User(email, email.contains("@") ? email.split("@")[0] : email, "temporary", role, "Pending");
+            users.add(newUser);
+            invited = true;
         }
-
-        User newUser = new User(email, email.contains("@") ? email.split("@")[0] : email, "temporary", role, "Pending");
-        users.add(newUser);
-        return true;
+        return invited;
     }
 
     @Override
     public boolean revokeUser(String email) {
+        boolean revoked = false;
         User user = users.stream()
                 .filter(candidate -> candidate.getEmail().equals(email))
                 .findFirst()
                 .orElse(null);
 
-        if (user == null) {
-            return false;
+        if (user != null && !"Owner".equalsIgnoreCase(user.getRole())) {
+            user.setStatus("Revoked");
+            if (email.equals(currentUserEmail)) {
+                logout();
+            }
+            revoked = true;
         }
-
-        if ("Owner".equalsIgnoreCase(user.getRole())) {
-            return false;
-        }
-
-        user.setStatus("Revoked");
-        if (email.equals(currentUserEmail)) {
-            logout();
-        }
-        return true;
+        return revoked;
     }
 
     @Override
     public boolean restoreUser(String email) {
+        boolean restored = false;
         User user = users.stream()
                 .filter(candidate -> candidate.getEmail().equals(email))
                 .findFirst()
                 .orElse(null);
 
-        if (user == null || "Owner".equalsIgnoreCase(user.getRole())) {
-            return false;
+        if (user != null && !"Owner".equalsIgnoreCase(user.getRole())) {
+            user.setStatus("Active");
+            restored = true;
         }
-
-        user.setStatus("Active");
-        return true;
+        return restored;
     }
 
     @Override
@@ -318,11 +309,14 @@ public final class JdbcUserService extends UserService {
     }
 
     private String normalizeValue(String value) {
-        if (value == null) {
-            return null;
+        String normalized = null;
+        if (value != null) {
+            String trimmed = value.trim();
+            if (!trimmed.isEmpty()) {
+                normalized = trimmed;
+            }
         }
-        String normalized = value.trim();
-        return normalized.isEmpty() ? null : normalized;
+        return normalized;
     }
 
     private boolean isBlank(String value) {
@@ -330,13 +324,15 @@ public final class JdbcUserService extends UserService {
     }
 
     private boolean passwordsMatch(String storedPassword, String candidatePassword) {
-        if (storedPassword == null || candidatePassword == null) {
-            return false;
+        boolean matches = false;
+        if (storedPassword != null && candidatePassword != null) {
+            if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
+                matches = BCrypt.checkpw(candidatePassword, storedPassword);
+            } else {
+                matches = storedPassword.equals(candidatePassword);
+            }
         }
-        if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
-            return BCrypt.checkpw(candidatePassword, storedPassword);
-        }
-        return storedPassword.equals(candidatePassword);
+        return matches;
     }
 
     private boolean isActive(String status) {
@@ -362,17 +358,14 @@ public final class JdbcUserService extends UserService {
     }
 
     private boolean isBlocked(String normalizedEmail, long now) {
+        boolean blocked = false;
         Long blockedUntil = blockedUntilByEmail.get(normalizedEmail);
-        if (blockedUntil == null) {
-            return false;
-        }
-
-        if (blockedUntil <= now) {
+        if (blockedUntil != null && blockedUntil > now) {
+            blocked = true;
+        } else if (blockedUntil != null && blockedUntil <= now) {
             blockedUntilByEmail.remove(normalizedEmail);
-            return false;
         }
-
-        return true;
+        return blocked;
     }
 
     private void recordFailedLogin(String normalizedEmail, long now) {
@@ -389,16 +382,17 @@ public final class JdbcUserService extends UserService {
     }
 
     private long determineThrottleDelayMillis(int failedAttempts) {
+        long delayMillis;
         if (failedAttempts < THROTTLE_THRESHOLD) {
-            return 0;
+            delayMillis = 0L;
+        } else if (failedAttempts == THROTTLE_THRESHOLD) {
+            delayMillis = 2_000L;
+        } else if (failedAttempts == THROTTLE_THRESHOLD + 1) {
+            delayMillis = 5_000L;
+        } else {
+            delayMillis = 15_000L;
         }
-        if (failedAttempts == THROTTLE_THRESHOLD) {
-            return 2_000L;
-        }
-        if (failedAttempts == THROTTLE_THRESHOLD + 1) {
-            return 5_000L;
-        }
-        return 15_000L;
+        return delayMillis;
     }
 
     private void updateLastLoginTimestamp(String normalizedEmail) {

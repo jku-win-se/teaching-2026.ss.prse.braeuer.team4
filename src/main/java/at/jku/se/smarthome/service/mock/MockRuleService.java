@@ -10,8 +10,9 @@ import javafx.collections.ObservableList;
  */
 public final class MockRuleService {
     
+    /** Singleton instance of the mock rule service. */
     private static MockRuleService instance;
-    /** Singleton rules collection. */
+    /** Observable collection of all rules. */
     private final ObservableList<Rule> rules;
     /** Room service for device lookups. */
     private final MockRoomService roomService = MockRoomService.getInstance();
@@ -29,19 +30,23 @@ public final class MockRuleService {
      *
      * @return singleton MockRuleService instance
      */
-    public static synchronized MockRuleService getInstance() {
-        if (instance == null) {
-            instance = new MockRuleService();
+    public static MockRuleService getInstance() {
+        synchronized (MockRuleService.class) {
+            if (instance == null) {
+                instance = new MockRuleService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (MockRuleService.class) {
+            instance = null;
+        }
     }
     
     /**

@@ -75,6 +75,7 @@ public class DevicesController {
         refreshRoomFilterOptions();
         loadDevices();
     };
+    /** ID of currently selected room for filtering devices. */
     private String selectedRoomFilterId = null;
     
     /**
@@ -700,13 +701,10 @@ public class DevicesController {
             Room selectedRoom = roomService.getRoomById(selectedRoomFilterId);
             if (selectedRoom != null && roomOptions.contains(selectedRoom.getName())) {
                 roomFilterCombo.setValue(selectedRoom.getName());
-                return;
+            } else {
+                clearRoomFilterSelection();
             }
-            clearRoomFilterSelection();
-            return;
-        }
-
-        if (roomFilterCombo.getValue() == null || !roomOptions.contains(roomFilterCombo.getValue())) {
+        } else if (roomFilterCombo.getValue() == null || !roomOptions.contains(roomFilterCombo.getValue())) {
             roomFilterCombo.setValue(ALL_ROOMS_OPTION);
         }
     }

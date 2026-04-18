@@ -29,10 +29,7 @@ public final class ServiceRegistry {
      * @return lazily initialized schedule service
      */
     public static ScheduleService getScheduleService() {
-        if (testScheduleServiceOverride != null) {
-            return testScheduleServiceOverride;
-        }
-        return ScheduleServiceHolder.INSTANCE;
+        return testScheduleServiceOverride != null ? testScheduleServiceOverride : ScheduleServiceHolder.INSTANCE;
     }
 
     /**
@@ -49,10 +46,7 @@ public final class ServiceRegistry {
      * @return lazily initialized room service
      */
     public static RoomService getRoomService() {
-        if (testRoomServiceOverride != null) {
-            return testRoomServiceOverride;
-        }
-        return RoomServiceHolder.INSTANCE;
+        return testRoomServiceOverride != null ? testRoomServiceOverride : RoomServiceHolder.INSTANCE;
     }
 
     /**
@@ -69,10 +63,7 @@ public final class ServiceRegistry {
      * @return lazily initialized log service (or test override if set)
      */
     public static LogService getLogService() {
-        if (testLogServiceOverride != null) {
-            return testLogServiceOverride;
-        }
-        return LogServiceHolder.INSTANCE;
+        return testLogServiceOverride != null ? testLogServiceOverride : LogServiceHolder.INSTANCE;
     }
 
     /**
@@ -119,10 +110,7 @@ public final class ServiceRegistry {
      * @return lazily initialized user service
      */
     public static UserService getUserService() {
-        if (testUserServiceOverride != null) {
-            return testUserServiceOverride;
-        }
-        return UserServiceHolder.INSTANCE;
+        return testUserServiceOverride != null ? testUserServiceOverride : UserServiceHolder.INSTANCE;
     }
 
     /**

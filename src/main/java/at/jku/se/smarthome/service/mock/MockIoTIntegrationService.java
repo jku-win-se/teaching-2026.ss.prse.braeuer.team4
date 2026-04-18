@@ -153,7 +153,6 @@ public final class MockIoTIntegrationService {
         if (broker == null || broker.isBlank()) {
             return false;
         }
-
         try {
             int parsedPort = Integer.parseInt(portValue);
             return parsedPort > 0 && parsedPort <= 65535;
@@ -168,15 +167,15 @@ public final class MockIoTIntegrationService {
      * @return true if connection successful
      */
     public boolean connect() {
-        if (!enabled || broker == null || broker.isBlank() || port <= 0) {
+        boolean canConnect = enabled && broker != null && !broker.isBlank() && port > 0;
+        if (canConnect) {
+            connected = true;
+            lastSync = LocalDateTime.now().format(formatter);
+            seedDiscoveredDevices();
+        } else {
             connected = false;
-            return false;
         }
-
-        connected = true;
-        lastSync = LocalDateTime.now().format(formatter);
-        seedDiscoveredDevices();
-        return true;
+        return connected;
     }
 
     /**
@@ -192,13 +191,11 @@ public final class MockIoTIntegrationService {
      * @return true if refresh successful
      */
     public boolean refreshDevices() {
-        if (!connected) {
-            return false;
+        if (connected) {
+            seedDiscoveredDevices();
+            lastSync = LocalDateTime.now().format(formatter);
         }
-
-        seedDiscoveredDevices();
-        lastSync = LocalDateTime.now().format(formatter);
-        return true;
+        return connected;
     }
 
     private void seedDiscoveredDevices() {

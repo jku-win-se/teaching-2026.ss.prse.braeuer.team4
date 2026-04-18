@@ -43,7 +43,9 @@ public class LoginController {
      * Callback interface for login and registration events.
      */
     public interface LoginCallback {
+        /** Invoked when user successfully logs in. */
         void onLoginSuccess();
+        /** Invoked when user clicks register button. */
         void onRegisterClick();
     }
     

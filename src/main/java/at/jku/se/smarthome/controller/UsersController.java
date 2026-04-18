@@ -52,7 +52,7 @@ public class UsersController {
     
     /** User service for user management. */
     private final UserService userService = ServiceRegistry.getUserService();
-    /** Filtered view of users for status filtering. */
+    /** Filtered view of users for applying status filters. */
     private FilteredList<User> filteredUsers;
     
     @FXML
@@ -151,9 +151,13 @@ public class UsersController {
         alert.showAndWait();
     }
 
+    /** Inner class rendering action buttons for users table. */
     private final class UserActionCell extends TableCell<User, Void> {
+        /** Button for revoking user access. */
         private final Button revokeButton = new Button("Revoke Access");
+        /** Button for restoring user access. */
         private final Button restoreButton = new Button("Restore Access");
+        /** Container for action buttons. */
         private final HBox container = new HBox(8, revokeButton, restoreButton);
 
         private UserActionCell() {

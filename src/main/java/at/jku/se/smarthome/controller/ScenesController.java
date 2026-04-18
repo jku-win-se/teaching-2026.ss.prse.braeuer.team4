@@ -12,8 +12,8 @@ import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Scene;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.mock.MockSceneService;
 import at.jku.se.smarthome.service.api.UserService;
+import at.jku.se.smarthome.service.mock.MockSceneService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -38,15 +38,21 @@ import javafx.util.StringConverter;
  */
 public class ScenesController {
 
+    /** Button to create a new scene (FXML injected). */
     @FXML
     private Button newSceneBtn;
     
+    /** Grid pane for displaying scene cards (FXML injected). */
     @FXML
     private GridPane scenesGrid;
     
+    /** Service for scene management. */
     private final MockSceneService sceneService = MockSceneService.getInstance();
+    /** Service for room and device management. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
+    /** Service for user authentication and permissions. */
     private final UserService userService = ServiceRegistry.getUserService();
+    /** Flag to prevent recursive updates during device option refresh. */
     private boolean refreshingDeviceOptions;
     
     /**
@@ -502,10 +508,9 @@ public class ScenesController {
      */
     private Map.Entry<String, String> parseSceneState(String deviceState) {
         String[] parts = deviceState.split(":", 2);
-        if (parts.length == 2) {
-            return new AbstractMap.SimpleEntry<>(parts[0].trim(), parts[1].trim());
-        }
-        return new AbstractMap.SimpleEntry<>(deviceState.trim(), null);
+        return parts.length == 2 
+            ? new AbstractMap.SimpleEntry<>(parts[0].trim(), parts[1].trim())
+            : new AbstractMap.SimpleEntry<>(deviceState.trim(), null);
     }
 
     /**
@@ -526,17 +531,15 @@ public class ScenesController {
      * @return formatted state summary string
      */
     private String buildStateSummary(Scene scene) {
-        if (scene.getDeviceStates().isEmpty()) {
-            return "No device states configured yet.";
-        }
-
-        return scene.getDeviceStates().stream()
+        return scene.getDeviceStates().isEmpty() 
+            ? "No device states configured yet."
+            : scene.getDeviceStates().stream()
                 .limit(4)
                 .map(this::formatCompactState)
                 .collect(Collectors.joining("\n"))
                 + (scene.getDeviceStates().size() > 4
-                ? "\n+ " + (scene.getDeviceStates().size() - 4) + " more state(s)"
-                : "");
+                    ? "\n+ " + (scene.getDeviceStates().size() - 4) + " more state(s)"
+                    : "");
     }
 
     /**
@@ -548,10 +551,9 @@ public class ScenesController {
     private String formatCompactState(String stateDefinition) {
         Map.Entry<String, String> parsed = parseSceneState(stateDefinition);
         Device device = roomService.getDeviceByName(parsed.getKey());
-        if (device == null) {
-            return parsed.getKey() + " -> " + parsed.getValue();
-        }
-        return device.getRoom() + " | " + device.getName() + " -> " + parsed.getValue();
+        return device == null 
+            ? parsed.getKey() + " -> " + parsed.getValue()
+            : device.getRoom() + " | " + device.getName() + " -> " + parsed.getValue();
     }
 
     /**

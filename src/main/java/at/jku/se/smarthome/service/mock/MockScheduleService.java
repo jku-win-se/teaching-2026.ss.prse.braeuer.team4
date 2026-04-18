@@ -55,19 +55,23 @@ public final class MockScheduleService implements ScheduleService {
         initializeMockSchedules();
     }
     
-    public static synchronized MockScheduleService getInstance() {
-        if (instance == null) {
-            instance = new MockScheduleService();
+    public static MockScheduleService getInstance() {
+        synchronized (MockScheduleService.class) {
+            if (instance == null) {
+                instance = new MockScheduleService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (MockScheduleService.class) {
+            instance = null;
+        }
     }
 
     private void initializeMockSchedules() {
@@ -82,34 +86,38 @@ public final class MockScheduleService implements ScheduleService {
     /**
      * Starts periodic recurring schedule processing on the JavaFX application thread.
      */
-    public synchronized void startRecurringExecution() {
-        if (scheduler != null && !scheduler.isShutdown()) {
-            return;
+    public void startRecurringExecution() {
+        synchronized (this) {
+            if (scheduler != null && !scheduler.isShutdown()) {
+                return;
+            }
+
+            ThreadFactory threadFactory = runnable -> {
+                Thread thread = new Thread(runnable, "mock-schedule-dispatcher");
+                thread.setDaemon(true);
+                return thread;
+            };
+
+            scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
+            scheduler.scheduleAtFixedRate(() -> {
+                LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
+                Platform.runLater(() -> processDueSchedules(now));
+            }, 0, 15, TimeUnit.SECONDS);
         }
-
-        ThreadFactory threadFactory = runnable -> {
-            Thread thread = new Thread(runnable, "mock-schedule-dispatcher");
-            thread.setDaemon(true);
-            return thread;
-        };
-
-        scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        scheduler.scheduleAtFixedRate(() -> {
-            LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
-            Platform.runLater(() -> processDueSchedules(now));
-        }, 0, 15, TimeUnit.SECONDS);
     }
 
     /**
      * Stops periodic recurring schedule processing.
      */
-    public synchronized void stopRecurringExecution() {
-        if (scheduler == null) {
-            return;
-        }
+    public void stopRecurringExecution() {
+        synchronized (this) {
+            if (scheduler == null) {
+                return;
+            }
 
-        scheduler.shutdownNow();
-        scheduler = null;
+            scheduler.shutdownNow();
+            scheduler = null;
+        }
     }
     
     /**
@@ -190,6 +198,7 @@ public final class MockScheduleService implements ScheduleService {
     @Override
     public boolean updateSchedule(String schedId, String name, String deviceId, String deviceName,
                       String action, String time, String recurrence, boolean active) {
+        boolean updated = false;
         Schedule schedule = schedules.stream()
                 .filter(s -> s.getId().equals(schedId))
                 .findFirst()
@@ -203,9 +212,9 @@ public final class MockScheduleService implements ScheduleService {
             schedule.setTime(time);
             schedule.setRecurrence(recurrence);
             schedule.setActive(active);
-            return true;
+            updated = true;
         }
-        return false;
+        return updated;
     }
 
     /**
@@ -234,6 +243,7 @@ public final class MockScheduleService implements ScheduleService {
         * @return true when the schedule exists and was toggled, otherwise false
      */
     public boolean toggleSchedule(String schedId) {
+        boolean toggled = false;
         Schedule schedule = schedules.stream()
                 .filter(s -> s.getId().equals(schedId))
                 .findFirst()
@@ -241,9 +251,9 @@ public final class MockScheduleService implements ScheduleService {
         
         if (schedule != null) {
             schedule.setActive(!schedule.isActive());
-            return true;
+            toggled = true;
         }
-        return false;
+        return toggled;
     }
     
     /**
@@ -273,22 +283,22 @@ public final class MockScheduleService implements ScheduleService {
         * @return true when execution succeeds, otherwise false
      */
     public boolean executeSchedule(String scheduleId) {
+        boolean executed = false;
         Schedule schedule = getScheduleById(scheduleId);
-        if (schedule == null) return false;
-        if (!schedule.isActive()) return false;
-
-        at.jku.se.smarthome.model.Device device = roomService.getDeviceById(schedule.getDeviceId());
-        if (device == null) {
-            device = roomService.getDeviceByName(schedule.getDevice());
+        if (schedule != null && schedule.isActive()) {
+            at.jku.se.smarthome.model.Device device = roomService.getDeviceById(schedule.getDeviceId());
+            if (device == null) {
+                device = roomService.getDeviceByName(schedule.getDevice());
+            }
+            if (device != null) {
+                if (applyScheduleAction(device, schedule.getAction())) {
+                    logService.addLogEntry(device.getName(), device.getRoom(),
+                            schedule.getAction(), "Schedule: " + schedule.getName());
+                    executed = true;
+                }
+            }
         }
-        if (device == null) return false;
-
-        boolean success = applyScheduleAction(device, schedule.getAction());
-        if (!success) return false;
-
-        logService.addLogEntry(device.getName(), device.getRoom(),
-                schedule.getAction(), "Schedule: " + schedule.getName());
-        return true;
+        return executed;
     }
 
     /**
@@ -299,27 +309,24 @@ public final class MockScheduleService implements ScheduleService {
         * @return number of schedules executed for the supplied minute
      */
     public int processDueSchedules(LocalDateTime now) {
-        if (now == null) {
-            return 0;
-        }
-
-        LocalDateTime minute = now.truncatedTo(ChronoUnit.MINUTES);
         int executedCount = 0;
+        if (now != null) {
+            LocalDateTime minute = now.truncatedTo(ChronoUnit.MINUTES);
 
-        for (Schedule schedule : getEffectiveSchedules(minute.toLocalDate())) {
-            if (!isScheduleDue(schedule, minute)) {
-                continue;
-            }
-            if (minute.equals(lastProcessedMinuteByScheduleId.get(schedule.getId()))) {
-                continue;
-            }
+            for (Schedule schedule : getEffectiveSchedules(minute.toLocalDate())) {
+                if (!isScheduleDue(schedule, minute)) {
+                    continue;
+                }
+                if (minute.equals(lastProcessedMinuteByScheduleId.get(schedule.getId()))) {
+                    continue;
+                }
 
-            lastProcessedMinuteByScheduleId.put(schedule.getId(), minute);
-            if (executeSchedule(schedule.getId())) {
-                executedCount++;
+                lastProcessedMinuteByScheduleId.put(schedule.getId(), minute);
+                if (executeSchedule(schedule.getId())) {
+                    executedCount++;
+                }
             }
         }
-
         return executedCount;
     }
 
@@ -335,32 +342,29 @@ public final class MockScheduleService implements ScheduleService {
                 .filter(Schedule::isActive)
                 .toList();
 
-        if (!vacationModeService.isActiveOn(date)) {
-            return activeSchedules;
+        List<Schedule> effectiveSchedules = activeSchedules;
+        if (vacationModeService.isActiveOn(date)) {
+            Schedule selectedVacationSchedule = vacationModeService.getSelectedSchedule();
+            if (selectedVacationSchedule != null && selectedVacationSchedule.isActive()) {
+                effectiveSchedules = new ArrayList<>();
+                effectiveSchedules.add(selectedVacationSchedule);
+            }
         }
-
-        Schedule selectedVacationSchedule = vacationModeService.getSelectedSchedule();
-        if (selectedVacationSchedule == null || !selectedVacationSchedule.isActive()) {
-            return activeSchedules;
-        }
-
-        List<Schedule> effectiveSchedules = new ArrayList<>();
-        effectiveSchedules.add(selectedVacationSchedule);
         return effectiveSchedules;
     }
 
     private boolean isScheduleDue(Schedule schedule, LocalDateTime now) {
         LocalTime scheduledTime = parseScheduledTime(schedule.getTime());
-        if (scheduledTime == null || !scheduledTime.equals(now.toLocalTime())) {
-            return false;
+        boolean due = false;
+        if (scheduledTime != null && scheduledTime.equals(now.toLocalTime())) {
+            due = switch (normalizeRecurrence(schedule.getRecurrence())) {
+                case "weekdays" -> isWeekday(now.getDayOfWeek());
+                case "weekends" -> isWeekend(now.getDayOfWeek());
+                case "weekly" -> matchesWeeklyDay(schedule.getTime(), now.getDayOfWeek());
+                default -> true;
+            };
         }
-
-        return switch (normalizeRecurrence(schedule.getRecurrence())) {
-            case "weekdays" -> isWeekday(now.getDayOfWeek());
-            case "weekends" -> isWeekend(now.getDayOfWeek());
-            case "weekly" -> matchesWeeklyDay(schedule.getTime(), now.getDayOfWeek());
-            default -> true;
-        };
+        return due;
     }
 
     private String normalizeRecurrence(String recurrence) {
@@ -381,83 +385,94 @@ public final class MockScheduleService implements ScheduleService {
     }
 
     private LocalTime parseScheduledTime(String timePattern) {
-        if (timePattern == null || timePattern.isBlank()) {
-            return null;
-        }
+        LocalTime result = null;
+        if (timePattern != null && !timePattern.isBlank()) {
+            String upper = timePattern.toUpperCase(Locale.ENGLISH);
+            String[] tokens = upper.split("\\s+");
+            for (int index = 0; index < tokens.length && result == null; index++) {
+                String candidate = tokens[index];
+                if (!candidate.contains(":")) {
+                    continue;
+                }
 
-        String upper = timePattern.toUpperCase(Locale.ENGLISH);
-        String[] tokens = upper.split("\\s+");
-        for (int index = 0; index < tokens.length; index++) {
-            String candidate = tokens[index];
-            if (!candidate.contains(":")) {
-                continue;
-            }
-
-            if (index + 1 < tokens.length && ("AM".equals(tokens[index + 1]) || "PM".equals(tokens[index + 1]))) {
-                LocalTime parsed = parseTimeCandidate(candidate + " " + tokens[index + 1]);
-                if (parsed != null) {
-                    return parsed;
+                if (index + 1 < tokens.length && ("AM".equals(tokens[index + 1]) || "PM".equals(tokens[index + 1]))) {
+                    result = parseTimeCandidate(candidate + " " + tokens[index + 1]);
+                }
+                if (result == null) {
+                    result = parseTimeCandidate(candidate);
                 }
             }
-
-            LocalTime parsed = parseTimeCandidate(candidate);
-            if (parsed != null) {
-                return parsed;
-            }
         }
-
-        return null;
+        return result;
     }
 
     private LocalTime parseTimeCandidate(String candidate) {
+        LocalTime result = null;
         for (DateTimeFormatter formatter : TIME_FORMATTERS) {
             try {
-                return LocalTime.parse(candidate.trim(), formatter).truncatedTo(ChronoUnit.MINUTES);
+                result = LocalTime.parse(candidate.trim(), formatter).truncatedTo(ChronoUnit.MINUTES);
+                break;
             } catch (DateTimeParseException ignored) {
                 // Try the next known schedule time format.
             }
         }
-        return null;
+        return result;
     }
 
     private DayOfWeek extractDayOfWeek(String pattern) {
-        if (pattern == null) {
-            return null;
-        }
-
-        String upper = pattern.toUpperCase(Locale.ENGLISH);
-        for (DayOfWeek day : DayOfWeek.values()) {
-            String fullName = day.name();
-            String shortName = fullName.substring(0, 3);
-            if (upper.contains(fullName) || upper.contains(shortName)) {
-                return day;
+        DayOfWeek result = null;
+        if (pattern != null) {
+            String upper = pattern.toUpperCase(Locale.ENGLISH);
+            for (DayOfWeek day : DayOfWeek.values()) {
+                String fullName = day.name();
+                String shortName = fullName.substring(0, 3);
+                if (upper.contains(fullName) || upper.contains(shortName)) {
+                    result = day;
+                    break;
+                }
             }
         }
-        return null;
+        return result;
     }
 
     private boolean applyScheduleAction(at.jku.se.smarthome.model.Device device, String action) {
-        if (action == null) return false;
-        switch (action) {
-            case "Turn On":  device.setState(true);  return true;
-            case "Turn Off": device.setState(false); return true;
-            case "Open":     device.setState(true);  return true;
-            case "Close":    device.setState(false); return true;
-            default:
-                if ("Dimmer".equalsIgnoreCase(device.getType()) && action.matches("Set( to)? \\d+%")) {
-                    int brightness = Integer.parseInt(action.replaceAll("[^0-9]", ""));
-                    device.setBrightness(brightness);
-                    device.setState(brightness > 0);
-                    return true;
-                }
-                if ("Thermostat".equalsIgnoreCase(device.getType()) && action.matches("Set( to)? \\d+(\\.\\d+)?°C")) {
-                    double temperature = Double.parseDouble(action.replaceAll("[^0-9.]", ""));
-                    device.setTemperature(temperature);
+        boolean applied = false;
+        if (action != null) {
+            applied = switch (action) {
+                case "Turn On" -> {
                     device.setState(true);
-                    return true;
+                    yield true;
                 }
-                return false;
+                case "Turn Off" -> {
+                    device.setState(false);
+                    yield true;
+                }
+                case "Open" -> {
+                    device.setState(true);
+                    yield true;
+                }
+                case "Close" -> {
+                    device.setState(false);
+                    yield true;
+                }
+                default -> {
+                    if ("Dimmer".equalsIgnoreCase(device.getType()) && action.matches("Set( to)? \\d+%")) {
+                        int brightness = Integer.parseInt(action.replaceAll("[^0-9]", ""));
+                        device.setBrightness(brightness);
+                        device.setState(brightness > 0);
+                        yield true;
+                    } else if ("Thermostat".equalsIgnoreCase(device.getType()) && action.matches("Set( to)? \\d+(\\.\\d+)?°C")) {
+                        double temperature = Double.parseDouble(action.replaceAll("[^0-9.]", ""));
+                        device.setTemperature(temperature);
+                        device.setState(true);
+                        yield true;
+                    } else {
+                        yield false;
+                    }
+                }
+            };
         }
+        return applied;
     }
 
     /**

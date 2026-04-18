@@ -13,8 +13,11 @@ import javafx.collections.ObservableList;
  */
 public final class MockSmartHomeService {
     
+    /** Singleton instance of the mock smart home service. */
     private static MockSmartHomeService instance;
+    /** Observable list of all mock devices. */
     private final ObservableList<Device> devices;
+    /** Current user identifier or name. */
     private String currentUser;
     
     /**
@@ -31,19 +34,23 @@ public final class MockSmartHomeService {
      * 
      * @return the singleton instance
      */
-    public static synchronized MockSmartHomeService getInstance() {
-        if (instance == null) {
-            instance = new MockSmartHomeService();
+    public static MockSmartHomeService getInstance() {
+        synchronized (MockSmartHomeService.class) {
+            if (instance == null) {
+                instance = new MockSmartHomeService();
+            }
+            return instance;
         }
-        return instance;
     }
     
     /**
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (MockSmartHomeService.class) {
+            instance = null;
+        }
     }
 
     /**

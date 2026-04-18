@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import at.jku.se.smarthome.config.DatabaseConfig;
 import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.Device;
@@ -41,6 +42,9 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
+/**
+ * JDBC-based schedule service for persistent schedule storage and recurring execution.
+ */
 public final class JdbcScheduleService implements ScheduleService {
 
     /** Path to schedule initialization SQL script. */
@@ -82,6 +86,9 @@ public final class JdbcScheduleService implements ScheduleService {
         return instance;
     }
 
+    /**
+     * Resets the singleton for unit testing.
+     */
     public static synchronized void resetForTesting() {
         if (instance != null) {
             instance.stopRecurringExecution();
@@ -142,6 +149,7 @@ public final class JdbcScheduleService implements ScheduleService {
     @Override
     public synchronized boolean updateSchedule(String scheduleId, String name, String deviceId, String deviceName,
                                                String action, String time, String recurrence, boolean active) {
+        boolean updated = false;
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
             try (PreparedStatement statement = connection.prepareStatement(
@@ -154,90 +162,89 @@ public final class JdbcScheduleService implements ScheduleService {
                 statement.setString(6, recurrence);
                 statement.setBoolean(7, active);
                 statement.setString(8, scheduleId);
-                if (statement.executeUpdate() == 0) {
-                    return false;
+                if (statement.executeUpdate() > 0) {
+                    updated = true;
                 }
             }
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to update the schedule.", exception);
         }
 
-        Schedule schedule = getScheduleById(scheduleId);
-        if (schedule != null) {
-            schedule.setName(name);
-            schedule.setDeviceId(deviceId);
-            schedule.setDevice(deviceName);
-            schedule.setAction(action);
-            schedule.setTime(time);
-            schedule.setRecurrence(recurrence);
-            schedule.setActive(active);
+        if (updated) {
+            Schedule schedule = getScheduleById(scheduleId);
+            if (schedule != null) {
+                schedule.setName(name);
+                schedule.setDeviceId(deviceId);
+                schedule.setDevice(deviceName);
+                schedule.setAction(action);
+                schedule.setTime(time);
+                schedule.setRecurrence(recurrence);
+                schedule.setActive(active);
+            }
         }
-        return true;
+        return updated;
     }
 
     @Override
     public synchronized boolean toggleSchedule(String scheduleId) {
+        boolean toggled = false;
         Schedule schedule = getScheduleById(scheduleId);
-        if (schedule == null) {
-            return false;
+        if (schedule != null) {
+            toggled = updateSchedule(
+                    schedule.getId(),
+                    schedule.getName(),
+                    schedule.getDeviceId(),
+                    schedule.getDevice(),
+                    schedule.getAction(),
+                    schedule.getTime(),
+                    schedule.getRecurrence(),
+                    !schedule.isActive()
+            );
         }
-        return updateSchedule(
-                schedule.getId(),
-                schedule.getName(),
-                schedule.getDeviceId(),
-                schedule.getDevice(),
-                schedule.getAction(),
-                schedule.getTime(),
-                schedule.getRecurrence(),
-                !schedule.isActive()
-        );
+        return toggled;
     }
 
     @Override
     public synchronized boolean deleteSchedule(String scheduleId) {
+        boolean deleted = false;
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
             try (PreparedStatement statement = connection.prepareStatement(
                     "DELETE FROM scheduled_actions WHERE id = ?")) {
                 statement.setString(1, scheduleId);
-                if (statement.executeUpdate() == 0) {
-                    return false;
+                if (statement.executeUpdate() > 0) {
+                    deleted = true;
                 }
             }
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to delete the schedule.", exception);
         }
 
-        schedules.removeIf(schedule -> schedule.getId().equals(scheduleId));
-        lastProcessedMinuteByScheduleId.remove(scheduleId);
-        MockVacationModeService.getInstance().clearIfUsingSchedule(
-                scheduleId,
-                "Selected vacation schedule was deleted"
-        );
-        return true;
+        if (deleted) {
+            schedules.removeIf(schedule -> schedule.getId().equals(scheduleId));
+            lastProcessedMinuteByScheduleId.remove(scheduleId);
+            MockVacationModeService.getInstance().clearIfUsingSchedule(
+                    scheduleId,
+                    "Selected vacation schedule was deleted"
+            );
+        }
+        return deleted;
     }
 
     @Override
     public boolean executeSchedule(String scheduleId) {
+        boolean executed = false;
         Schedule schedule = getScheduleById(scheduleId);
-        if (schedule == null || !schedule.isActive()) {
-            return false;
+        if (schedule != null && schedule.isActive()) {
+            Device device = resolveDevice(schedule);
+            if (device != null && applyScheduleAction(device, schedule.getAction())) {
+                logService.addLogEntry(device.getName(), device.getRoom(), schedule.getAction(), "Schedule: " + schedule.getName());
+                notificationService.addNotification("Executed schedule '" + schedule.getName() + "'", "info");
+                updateLastTriggered(scheduleId);
+                executed = true;
+            }
         }
-
-        Device device = resolveDevice(schedule);
-        if (device == null) {
-            return false;
-        }
-
-        boolean success = applyScheduleAction(device, schedule.getAction());
-        if (!success) {
-            return false;
-        }
-
-        logService.addLogEntry(device.getName(), device.getRoom(), schedule.getAction(), "Schedule: " + schedule.getName());
-        notificationService.addNotification("Executed schedule '" + schedule.getName() + "'", "info");
-        updateLastTriggered(scheduleId);
-        return true;
+        return executed;
     }
 
     @Override
@@ -304,27 +311,24 @@ public final class JdbcScheduleService implements ScheduleService {
     }
 
     private int processDueSchedules(LocalDateTime now) {
-        if (now == null) {
-            return 0;
-        }
-
-        LocalDateTime minute = now.truncatedTo(ChronoUnit.MINUTES);
         int executedCount = 0;
+        if (now != null) {
+            LocalDateTime minute = now.truncatedTo(ChronoUnit.MINUTES);
 
-        for (Schedule schedule : getEffectiveSchedules(minute.toLocalDate())) {
-            if (!isScheduleDue(schedule, minute)) {
-                continue;
-            }
-            if (minute.equals(lastProcessedMinuteByScheduleId.get(schedule.getId()))) {
-                continue;
-            }
+            for (Schedule schedule : getEffectiveSchedules(minute.toLocalDate())) {
+                if (!isScheduleDue(schedule, minute)) {
+                    continue;
+                }
+                if (minute.equals(lastProcessedMinuteByScheduleId.get(schedule.getId()))) {
+                    continue;
+                }
 
-            lastProcessedMinuteByScheduleId.put(schedule.getId(), minute);
-            if (executeSchedule(schedule.getId())) {
-                executedCount++;
+                lastProcessedMinuteByScheduleId.put(schedule.getId(), minute);
+                if (executeSchedule(schedule.getId())) {
+                    executedCount++;
+                }
             }
         }
-
         return executedCount;
     }
 
@@ -335,30 +339,28 @@ public final class JdbcScheduleService implements ScheduleService {
                 .filter(Schedule::isActive)
                 .toList();
 
-        if (!vacationModeService.isActiveOn(date)) {
-            return activeSchedules;
+        List<Schedule> effectiveSchedules = activeSchedules;
+        if (vacationModeService.isActiveOn(date)) {
+            Schedule selectedVacationSchedule = vacationModeService.getSelectedSchedule();
+            if (selectedVacationSchedule != null && selectedVacationSchedule.isActive()) {
+                effectiveSchedules = List.of(selectedVacationSchedule);
+            }
         }
-
-        Schedule selectedVacationSchedule = vacationModeService.getSelectedSchedule();
-        if (selectedVacationSchedule == null || !selectedVacationSchedule.isActive()) {
-            return activeSchedules;
-        }
-
-        return List.of(selectedVacationSchedule);
+        return effectiveSchedules;
     }
 
     private boolean isScheduleDue(Schedule schedule, LocalDateTime now) {
         LocalTime scheduledTime = parseScheduledTime(schedule.getTime());
-        if (scheduledTime == null || !scheduledTime.equals(now.toLocalTime())) {
-            return false;
+        boolean due = false;
+        if (scheduledTime != null && scheduledTime.equals(now.toLocalTime())) {
+            due = switch (normalizeRecurrence(schedule.getRecurrence())) {
+                case "weekdays" -> isWeekday(now.getDayOfWeek());
+                case "weekends" -> isWeekend(now.getDayOfWeek());
+                case "weekly" -> matchesWeeklyDay(schedule.getTime(), now.getDayOfWeek());
+                default -> true;
+            };
         }
-
-        return switch (normalizeRecurrence(schedule.getRecurrence())) {
-            case "weekdays" -> isWeekday(now.getDayOfWeek());
-            case "weekends" -> isWeekend(now.getDayOfWeek());
-            case "weekly" -> matchesWeeklyDay(schedule.getTime(), now.getDayOfWeek());
-            default -> true;
-        };
+        return due;
     }
 
     private String normalizeRecurrence(String recurrence) {
@@ -379,101 +381,102 @@ public final class JdbcScheduleService implements ScheduleService {
     }
 
     private LocalTime parseScheduledTime(String timePattern) {
-        if (timePattern == null || timePattern.isBlank()) {
-            return null;
-        }
+        LocalTime result = null;
+        if (timePattern != null && !timePattern.isBlank()) {
+            String upper = timePattern.toUpperCase(Locale.ENGLISH);
+            String[] tokens = upper.split("\\s+");
+            for (int index = 0; index < tokens.length && result == null; index++) {
+                String candidate = tokens[index];
+                if (!candidate.contains(":")) {
+                    continue;
+                }
 
-        String upper = timePattern.toUpperCase(Locale.ENGLISH);
-        String[] tokens = upper.split("\\s+");
-        for (int index = 0; index < tokens.length; index++) {
-            String candidate = tokens[index];
-            if (!candidate.contains(":")) {
-                continue;
-            }
-
-            if (index + 1 < tokens.length && ("AM".equals(tokens[index + 1]) || "PM".equals(tokens[index + 1]))) {
-                LocalTime parsed = parseTimeCandidate(candidate + " " + tokens[index + 1]);
-                if (parsed != null) {
-                    return parsed;
+                if (index + 1 < tokens.length && ("AM".equals(tokens[index + 1]) || "PM".equals(tokens[index + 1]))) {
+                    result = parseTimeCandidate(candidate + " " + tokens[index + 1]);
+                }
+                if (result == null) {
+                    result = parseTimeCandidate(candidate);
                 }
             }
-
-            LocalTime parsed = parseTimeCandidate(candidate);
-            if (parsed != null) {
-                return parsed;
-            }
         }
-
-        return null;
+        return result;
     }
 
     private LocalTime parseTimeCandidate(String candidate) {
+        LocalTime result = null;
         for (DateTimeFormatter formatter : TIME_FORMATTERS) {
             try {
-                return LocalTime.parse(candidate.trim(), formatter).truncatedTo(ChronoUnit.MINUTES);
+                result = LocalTime.parse(candidate.trim(), formatter).truncatedTo(ChronoUnit.MINUTES);
+                break;
             } catch (DateTimeParseException ignored) {
                 // Try next supported format.
             }
         }
-        return null;
+        return result;
     }
 
     private DayOfWeek extractDayOfWeek(String pattern) {
-        if (pattern == null) {
-            return null;
-        }
-
-        String upper = pattern.toUpperCase(Locale.ENGLISH);
-        for (DayOfWeek day : DayOfWeek.values()) {
-            String fullName = day.name();
-            String shortName = fullName.substring(0, 3);
-            if (upper.contains(fullName) || upper.contains(shortName)) {
-                return day;
+        DayOfWeek result = null;
+        if (pattern != null) {
+            String upper = pattern.toUpperCase(Locale.ENGLISH);
+            for (DayOfWeek day : DayOfWeek.values()) {
+                String fullName = day.name();
+                String shortName = fullName.substring(0, 3);
+                if (upper.contains(fullName) || upper.contains(shortName)) {
+                    result = day;
+                    break;
+                }
             }
         }
-        return null;
+        return result;
     }
 
     private Device resolveDevice(Schedule schedule) {
         Device device = roomService.getDeviceById(schedule.getDeviceId());
-        if (device != null) {
-            return device;
+        if (device == null) {
+            device = roomService.getDeviceByName(schedule.getDevice());
         }
-        return roomService.getDeviceByName(schedule.getDevice());
+        return device;
     }
 
     private boolean applyScheduleAction(Device device, String action) {
-        if (action == null) {
-            return false;
-        }
-        switch (action) {
-            case "Turn On":
-                device.setState(true);
-                return true;
-            case "Turn Off":
-                device.setState(false);
-                return true;
-            case "Open":
-                device.setState(true);
-                return true;
-            case "Close":
-                device.setState(false);
-                return true;
-            default:
-                if ("Dimmer".equalsIgnoreCase(device.getType()) && action.matches("Set( to)? \\d+%")) {
-                    int brightness = Integer.parseInt(action.replaceAll("[^0-9]", ""));
-                    device.setBrightness(brightness);
-                    device.setState(brightness > 0);
-                    return true;
-                }
-                if ("Thermostat".equalsIgnoreCase(device.getType()) && action.matches("Set( to)? \\d+(\\.\\d+)?°C")) {
-                    double temperature = Double.parseDouble(action.replaceAll("[^0-9.]", ""));
-                    device.setTemperature(temperature);
+        boolean applied = false;
+        if (action != null) {
+            applied = switch (action) {
+                case "Turn On" -> {
                     device.setState(true);
-                    return true;
+                    yield true;
                 }
-                return false;
+                case "Turn Off" -> {
+                    device.setState(false);
+                    yield true;
+                }
+                case "Open" -> {
+                    device.setState(true);
+                    yield true;
+                }
+                case "Close" -> {
+                    device.setState(false);
+                    yield true;
+                }
+                default -> {
+                    if ("Dimmer".equalsIgnoreCase(device.getType()) && action.matches("Set( to)? \\d+%")) {
+                        int brightness = Integer.parseInt(action.replaceAll("[^0-9]", ""));
+                        device.setBrightness(brightness);
+                        device.setState(brightness > 0);
+                        yield true;
+                    } else if ("Thermostat".equalsIgnoreCase(device.getType()) && action.matches("Set( to)? \\d+(\\.\\d+)?°C")) {
+                        double temperature = Double.parseDouble(action.replaceAll("[^0-9.]", ""));
+                        device.setTemperature(temperature);
+                        device.setState(true);
+                        yield true;
+                    } else {
+                        yield false;
+                    }
+                }
+            };
         }
+        return applied;
     }
 
     private void updateLastTriggered(String scheduleId) {

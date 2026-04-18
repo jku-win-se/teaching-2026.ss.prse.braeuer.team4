@@ -16,6 +16,9 @@ import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.mock.MockSceneService;
 
+/**
+ * Unit tests for MockSceneService.
+ */
 public class TestMockSceneService {
 
     /** Scene service under test. */

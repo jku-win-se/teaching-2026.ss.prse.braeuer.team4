@@ -19,6 +19,9 @@ import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationEvent;
 import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationPlan;
 import javafx.collections.ObservableList;
 
+/**
+ * Unit tests for MockSimulationService.
+ */
 public class TestMockSimulationService {
 
     /** Simulation service under test. */

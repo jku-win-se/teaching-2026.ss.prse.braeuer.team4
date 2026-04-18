@@ -15,8 +15,11 @@ import javafx.collections.ObservableList;
  */
 public final class MockLogService implements LogService {
     
+    /** Singleton instance of MockLogService. */
     private static MockLogService instance;
+    /** Observable list of activity log entries. */
     private final ObservableList<LogEntry> logs;
+    /** Date/time formatter for log timestamps. */
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
     private MockLogService() {

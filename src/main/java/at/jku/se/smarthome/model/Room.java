@@ -10,9 +10,13 @@ import javafx.collections.ObservableList;
  */
 public class Room {
     
+    /** Unique room identifier. */
     private final SimpleStringProperty id;
+    /** Room display name. */
     private final SimpleStringProperty name;
+    /** Count of devices in the room. */
     private final SimpleIntegerProperty deviceCount;
+    /** Observable list of devices in the room. */
     private final ObservableList<Device> devices;
     
     /**

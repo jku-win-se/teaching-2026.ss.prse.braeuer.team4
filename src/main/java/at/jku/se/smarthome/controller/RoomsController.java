@@ -62,7 +62,7 @@ public class RoomsController {
     private final RoomService roomService = ServiceRegistry.getRoomService();
     /** User service instance. */
     private final UserService userService = ServiceRegistry.getUserService();
-    /** Currently selected room. */
+    /** Currently selected room from the table. */
     private Room selectedRoom;
     
     @FXML

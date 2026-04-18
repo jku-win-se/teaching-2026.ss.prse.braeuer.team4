@@ -7,9 +7,13 @@ import java.time.LocalDate;
  */
 public class VacationModeConfig {
 
+    /** Whether vacation mode is currently enabled. */
     private boolean enabled;
+    /** Start date of vacation mode. */
     private LocalDate startDate;
+    /** End date of vacation mode. */
     private LocalDate endDate;
+    /** ID of the schedule to apply during vacation. */
     private String scheduleId;
 
     /**

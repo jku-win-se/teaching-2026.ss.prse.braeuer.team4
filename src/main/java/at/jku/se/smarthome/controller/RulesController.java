@@ -7,8 +7,8 @@ import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.model.Rule;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.mock.MockRuleService;
 import at.jku.se.smarthome.service.api.UserService;
+import at.jku.se.smarthome.service.mock.MockRuleService;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -372,13 +372,13 @@ public class RulesController {
      * @return true if device is valid source for trigger type
      */
     private boolean isValidSourceDevice(String triggerType, Device device) {
+        boolean valid = false;
         if ("Sensor Threshold".equals(triggerType)) {
-            return "sensor".equalsIgnoreCase(device.getType());
+            valid = "sensor".equalsIgnoreCase(device.getType());
+        } else if ("Device State".equals(triggerType)) {
+            valid = true;
         }
-        if ("Device State".equals(triggerType)) {
-            return true;
-        }
-        return false;
+        return valid;
     }
 
     /**
@@ -405,18 +405,21 @@ public class RulesController {
      * @return device with matching name, or null if not found
      */
     private Device getDeviceByName(String deviceName) {
-        if (deviceName == null) {
-            return null;
-        }
-
-        for (Room room : roomService.getRooms()) {
-            for (Device device : room.getDevices()) {
-                if (deviceName.equals(device.getName())) {
-                    return device;
+        Device result = null;
+        if (deviceName != null) {
+            for (Room room : roomService.getRooms()) {
+                for (Device device : room.getDevices()) {
+                    if (deviceName.equals(device.getName())) {
+                        result = device;
+                        break;
+                    }
+                }
+                if (result != null) {
+                    break;
                 }
             }
         }
-        return null;
+        return result;
     }
 
     /**
