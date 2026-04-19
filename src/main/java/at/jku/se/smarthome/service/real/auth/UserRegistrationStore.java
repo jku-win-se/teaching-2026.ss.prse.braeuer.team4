@@ -63,6 +63,8 @@ public interface UserRegistrationStore {
      * Base exception for store-related errors.
      */
     class StoreException extends Exception {
+        private static final long serialVersionUID = 1L;
+
         /**
          * Constructs with message and cause.
          *
@@ -87,6 +89,8 @@ public interface UserRegistrationStore {
      * Exception thrown for store configuration errors.
      */
     class StoreConfigurationException extends StoreException {
+        private static final long serialVersionUID = 1L;
+
         /**
          * Constructs with message and cause.
          *
@@ -111,6 +115,8 @@ public interface UserRegistrationStore {
      * Exception thrown when attempting to register duplicate email.
      */
     class DuplicateEmailException extends StoreException {
+        private static final long serialVersionUID = 1L;
+
         /**
          * Constructs with message and cause.
          *

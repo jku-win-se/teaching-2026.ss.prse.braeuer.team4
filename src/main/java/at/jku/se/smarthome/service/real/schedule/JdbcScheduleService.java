@@ -45,7 +45,7 @@ import javafx.collections.ObservableList;
 /**
  * JDBC-based schedule service for persistent schedule storage and recurring execution.
  */
-@SuppressWarnings({"PMD.DoNotUseThreads", "PMD.TooManyMethods", "PMD.UseObjectForClearerAPI", "PMD.CyclomaticComplexity", "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports"})
+@SuppressWarnings({"PMD.DoNotUseThreads", "PMD.TooManyMethods", "PMD.UseObjectForClearerAPI", "PMD.CyclomaticComplexity", "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports", "PMD.GodClass"})
 public final class JdbcScheduleService implements ScheduleService {
 
     /** Path to schedule initialization SQL script. */

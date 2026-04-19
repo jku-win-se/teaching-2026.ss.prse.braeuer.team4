@@ -15,7 +15,7 @@ import javafx.collections.ObservableList;
 /**
  * JDBC-backed user service implementation.
  */
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity", "PMD.GodClass"})
 public final class JdbcUserService extends UserService {
 
     /** Session timeout in milliseconds (30 minutes). */

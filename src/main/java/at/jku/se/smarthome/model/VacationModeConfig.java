@@ -5,6 +5,7 @@ import java.time.LocalDate;
 /**
  * Stores the active vacation mode configuration for the mock prototype.
  */
+@SuppressWarnings("PMD.DataClass")
 public class VacationModeConfig {
 
     /** Whether vacation mode is currently enabled. */

@@ -166,7 +166,8 @@ public final class MockLogService implements LogService {
         * @return CSV representation of the current logs
      */
     public String exportToCSV() {
-        StringBuilder csv = new StringBuilder();
+        int initialCapacity = logs.size() * 96 + 64;
+        StringBuilder csv = new StringBuilder(initialCapacity);
         csv.append("Timestamp,Device,Room,Action,Actor\n");
         
         for (LogEntry log : logs) {

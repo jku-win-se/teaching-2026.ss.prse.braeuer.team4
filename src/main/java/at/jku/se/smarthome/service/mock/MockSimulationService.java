@@ -19,7 +19,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock simulation service for replaying a full day without affecting live devices.
  */
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
 public final class MockSimulationService {
 
     /** Singleton instance of the mock simulation service. */

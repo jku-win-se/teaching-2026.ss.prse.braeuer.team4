@@ -41,7 +41,7 @@ public class TestMockUserServiceRegistration {
     @Test
     public void registerUserDuplicateEmailInStoreReturnsDuplicateEmail() {
         StubRegistrationStore store = new StubRegistrationStore();
-        store.emailExists = true;
+        store.emailExistsFlag = true;
         MockUserService service = new MockUserService(store);
 
         MockUserService.RegistrationStatus result = service.registerUser(
@@ -212,7 +212,7 @@ public class TestMockUserServiceRegistration {
      */
     private static final class StubRegistrationStore implements UserRegistrationStore {
         /** Email exists flag. */
-        private boolean emailExists;
+        private boolean emailExistsFlag;
         /** Configuration failure flag. */
         private boolean configurationFailure;
         /** Saved persisted user. */
@@ -226,7 +226,7 @@ public class TestMockUserServiceRegistration {
             if (configurationFailure) {
                 throw new StoreConfigurationException("Missing DB configuration");
             }
-            return emailExists;
+            return emailExistsFlag;
         }
 
         /**

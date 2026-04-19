@@ -138,6 +138,7 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
         return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
     }
 
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private DatabaseSettings loadSettings() throws StoreConfigurationException {
         try {
             Optional<DatabaseSettings> settings = DatabaseConfig.load();
@@ -173,6 +174,7 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
         }
     }
 
+    @SuppressWarnings("PMD.ExceptionAsFlowControl")
     private String loadInitScript() throws StoreException {
         String result = null;
         try (InputStream inputStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {

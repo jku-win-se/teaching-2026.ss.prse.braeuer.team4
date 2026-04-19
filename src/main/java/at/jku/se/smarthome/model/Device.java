@@ -160,6 +160,7 @@ public class Device {
      *
      * @return current power or active state
      */
+    @SuppressWarnings("PMD.BooleanGetMethodName")
     public boolean getState() {
         return state.get();
     }

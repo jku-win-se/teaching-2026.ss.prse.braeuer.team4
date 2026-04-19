@@ -29,7 +29,7 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the rules view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.GodClass"})
 public class RulesController {
 
     /** Trigger type that does not require a source device. */
@@ -179,6 +179,7 @@ public class RulesController {
      * @param existingRule existing rule to edit, or null for new rule
      * @return optional containing rule input if saved, empty if cancelled
      */
+    @SuppressWarnings("PMD.NcssCount")
     private Optional<RuleInput> showRuleDialog(Rule existingRule) {
         Dialog<RuleInput> dialog = new Dialog<>();
         dialog.setTitle(existingRule == null ? "Add Rule" : "Edit Rule");

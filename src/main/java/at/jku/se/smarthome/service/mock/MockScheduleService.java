@@ -26,7 +26,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Schedule Service providing schedule management functionality.
  */
-@SuppressWarnings({"PMD.DoNotUseThreads", "PMD.TooManyMethods", "PMD.UseObjectForClearerAPI", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({"PMD.DoNotUseThreads", "PMD.TooManyMethods", "PMD.UseObjectForClearerAPI", "PMD.CyclomaticComplexity", "PMD.GodClass"})
 public final class MockScheduleService implements ScheduleService {
     
     /** Singleton instance. */

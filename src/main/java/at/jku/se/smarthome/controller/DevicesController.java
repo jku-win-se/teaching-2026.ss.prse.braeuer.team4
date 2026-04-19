@@ -37,7 +37,7 @@ import javafx.scene.layout.VBox;
  * Handles manual control of devices with type-specific UI.
  * Logs all state changes to activity log (FR-08).
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.CouplingBetweenObjects", "PMD.GodClass"})
 public class DevicesController {
 
 
@@ -738,6 +738,7 @@ public class DevicesController {
         stateLabel.setText("State: " + (isOn ? "ON" : "OFF"));
     }
 
+    @SuppressWarnings("PMD.UseVarargs")
     private void commitDimmerBrightnessChange(Device device, Room room, Slider brightnessSlider, int[] committedBrightness) {
         int value = (int) Math.round(brightnessSlider.getValue());
         if (value == committedBrightness[0]) {

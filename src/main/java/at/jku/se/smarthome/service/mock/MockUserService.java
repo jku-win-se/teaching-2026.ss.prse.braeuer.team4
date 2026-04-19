@@ -17,7 +17,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock User Service providing user management functionality.
  */
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity", "PMD.GodClass"})
 public class MockUserService extends UserService {
 
     /** Session timeout in milliseconds (30 minutes). */

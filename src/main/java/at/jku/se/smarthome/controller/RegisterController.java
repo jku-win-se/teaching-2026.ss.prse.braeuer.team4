@@ -53,6 +53,7 @@ public class RegisterController {
         this.registerCallback = callback;
     }
     
+    @SuppressWarnings("PMD.ConfusingTernary")
     @FXML
     private void handleRegister() {
         String email = emailField.getText();

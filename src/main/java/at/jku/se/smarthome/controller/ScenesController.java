@@ -36,7 +36,7 @@ import javafx.util.StringConverter;
 /**
  * Controller for the scenes view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports", "PMD.GodClass"})
 public class ScenesController {
 
     /** Number of scene cards per row in the grid layout. */

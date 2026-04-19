@@ -33,7 +33,7 @@ import javafx.util.Duration;
 /**
  * Controller for the simulation view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.TooManyFields"})
 public class SimulationController {
 
     

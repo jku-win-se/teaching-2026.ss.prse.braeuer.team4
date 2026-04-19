@@ -15,6 +15,7 @@ import java.util.Properties;
 /**
  * Loads optional database settings from environment variables or a local properties file.
  */
+@SuppressWarnings("PMD.GodClass")
 public final class DatabaseConfig {
 
     /** Path to .env file for environment variables. */

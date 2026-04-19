@@ -16,7 +16,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 /**
  * Controller for the IoT settings view.
  */
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyFields"})
 public class IoTSettingsController {
 
     

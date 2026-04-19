@@ -29,8 +29,11 @@ import javafx.collections.ObservableList;
 /**
  * JDBC-backed RoomService implementation. Persists rooms and devices to the configured database.
  */
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity", "PMD.GodClass"})
 public final class JdbcRoomService implements RoomService {
+
+    /** Lock for singleton lifecycle operations. */
+    private static final Object INSTANCE_LOCK = new Object();
 
     /** Path to database schema initialization script in classpath. */
     private static final String INIT_SCRIPT_PATH = "/db/init-rooms.sql";
@@ -59,11 +62,13 @@ public final class JdbcRoomService implements RoomService {
      *
      * @return singleton JdbcRoomService instance
      */
-    public static synchronized JdbcRoomService getInstance() {
-        if (instance == null) {
-            instance = new JdbcRoomService();
+    public static JdbcRoomService getInstance() {
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = new JdbcRoomService();
+            }
+            return instance;
         }
-        return instance;
     }
 
     /**
@@ -73,8 +78,10 @@ public final class JdbcRoomService implements RoomService {
      * created on next {@link #getInstance()} and no state is shared.
      */
     @SuppressWarnings("PMD.NullAssignment")
-    public static synchronized void resetForTesting() {
-        instance = null;
+    public static void resetForTesting() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
     }
 
     @Override

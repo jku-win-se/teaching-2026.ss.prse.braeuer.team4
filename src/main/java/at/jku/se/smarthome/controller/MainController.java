@@ -1,7 +1,7 @@
 package at.jku.se.smarthome.controller;
 
 import java.io.IOException;
-import java.util.Objects;
+import java.net.URL;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,7 +28,7 @@ import javafx.util.Duration;
  * Handles navigation between different views (Devices, Rooms, Rules, Energy, Settings)
  * and manages the user session (login/logout).
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods", "PMD.TooManyFields", "PMD.UnusedPrivateMethod"})
 public class MainController {
 
 
@@ -357,15 +357,16 @@ public class MainController {
     private void loadView(String fxmlFileName) {
         try {
             String resourcePath = "/at/jku/se/smarthome/view/" + fxmlFileName;
-            FXMLLoader loader = new FXMLLoader(
-                    Objects.requireNonNull(getClass().getResource(resourcePath))
-            );
+            URL resource = getClass().getResource(resourcePath);
+            if (resource == null) {
+                showError("View resource not found: " + fxmlFileName, new IllegalArgumentException(resourcePath));
+                return;
+            }
+            FXMLLoader loader = new FXMLLoader(resource);
             Node view = loader.load();
             contentArea.getChildren().setAll(view);
         } catch (IOException e) {
             showError("Failed to load view: " + fxmlFileName, e);
-        } catch (NullPointerException e) {
-            showError("View resource not found: " + fxmlFileName, e);
         }
     }
     
