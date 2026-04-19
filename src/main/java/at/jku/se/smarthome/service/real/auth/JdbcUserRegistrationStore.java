@@ -18,6 +18,7 @@ import at.jku.se.smarthome.config.DatabaseSettings;
 /**
  * JDBC-backed registration store for the auth users table.
  */
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public class JdbcUserRegistrationStore implements UserRegistrationStore {
 
     /** SQL state for duplicate key constraint violation. */
@@ -28,6 +29,7 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     @Override
+    @SuppressWarnings("PMD.CheckResultSet")
     public boolean emailExists(String normalizedEmail) throws StoreException {
         boolean exists = false;
         try (Connection connection = openConnection()) {
@@ -148,6 +150,7 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
         }
     }
 
+    @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
     private void ensureSchema(Connection connection) throws StoreException {
         boolean needsSchema = !schemaReady.get();
         if (needsSchema) {

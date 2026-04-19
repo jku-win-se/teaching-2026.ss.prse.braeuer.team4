@@ -13,7 +13,9 @@ import at.jku.se.smarthome.model.Rule;
  *
  * No mocks needed: RuleEvaluator is stateless and accepts plain model objects.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class RuleEvaluatorTest {
+
 
     /** Rule evaluator under test. */
     private RuleEvaluator evaluator;
@@ -196,8 +198,8 @@ public class RuleEvaluatorTest {
      * @return the test device
      */
     private Device deviceWithTemperature(double temperature) {
-        Device d = new Device("d-id", "Sensor", "Thermostat", "Room", true);
-        d.setTemperature(temperature);
-        return d;
+        Device testDevice = new Device("d-id", "Sensor", "Thermostat", "Room", true);
+        testDevice.setTemperature(temperature);
+        return testDevice;
     }
 }

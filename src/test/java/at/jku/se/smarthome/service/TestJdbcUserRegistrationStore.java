@@ -18,7 +18,9 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 /**
  * Unit tests for JdbcUserRegistrationStore.
  */
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public class TestJdbcUserRegistrationStore {
+
 
     /** JDBC URL property. */
     private static final String URL_PROPERTY = "smarthome.db.url";
@@ -139,6 +141,7 @@ public class TestJdbcUserRegistrationStore {
      * Test: update last login updates timestamp.
      */
     @Test
+    @SuppressWarnings("PMD.CheckResultSet")
     public void updateLastLoginUpdatesTimestamp() throws Exception {
         UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
                 "member@example.com",
@@ -162,6 +165,7 @@ public class TestJdbcUserRegistrationStore {
      * Test: update last login persists non-null timestamp.
      */
     @Test
+    @SuppressWarnings({"PMD.CheckResultSet", "PMD.UnitTestContainsTooManyAsserts"})
     public void updateLastLoginPersistsNonNullTimestamp() throws Exception {
         UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
                 "member@example.com",
@@ -177,7 +181,7 @@ public class TestJdbcUserRegistrationStore {
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT last_login_at FROM users WHERE email = 'member@example.com'")) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertTrue(resultSet.getTimestamp(1) != null);
         }
     }

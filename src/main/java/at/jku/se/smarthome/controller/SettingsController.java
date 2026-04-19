@@ -10,7 +10,9 @@ import javafx.scene.control.PasswordField;
 /**
  * Controller for the settings view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod"})
 public class SettingsController {
+
     
     /** Label displaying current user email address. */
     @FXML
@@ -34,22 +36,24 @@ public class SettingsController {
     }
     
     @FXML
+    @SuppressWarnings("PMD.OnlyOneReturn")
     private void handleUpdateProfile() {
         String newPassword = newPasswordField.getText();
         String confirmPassword = confirmPasswordField.getText();
         
-        if (!newPassword.isEmpty()) {
-            if (!newPassword.equals(confirmPassword)) {
-                showError("Passwords do not match");
-                return;
-            }
-            
-            showSuccess("Profile updated successfully");
-            newPasswordField.clear();
-            confirmPasswordField.clear();
-        } else {
+        if (newPassword.isEmpty()) {
             showSuccess("No changes made");
+            return;
         }
+        
+        if (!newPassword.equals(confirmPassword)) {
+            showError("Passwords do not match");
+            return;
+        }
+        
+        showSuccess("Profile updated successfully");
+        newPasswordField.clear();
+        confirmPasswordField.clear();
     }
     
     @FXML

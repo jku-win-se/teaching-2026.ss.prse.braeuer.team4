@@ -53,6 +53,7 @@ public final class MockVacationModeService {
     /**
      * Resets the singleton instance for testing.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             instance = null;

@@ -22,7 +22,9 @@ import javafx.collections.ObservableList;
 /**
  * Unit tests for MockSimulationService.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockSimulationService {
+
 
     /** Simulation service under test. */
     private MockSimulationService service;

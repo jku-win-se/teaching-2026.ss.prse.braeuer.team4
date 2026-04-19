@@ -15,6 +15,7 @@ import javafx.collections.ObservableList;
 /**
  * JDBC-backed user service implementation.
  */
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public final class JdbcUserService extends UserService {
 
     /** Session timeout in milliseconds (30 minutes). */
@@ -88,84 +89,90 @@ public final class JdbcUserService extends UserService {
     }
 
     @Override
+    @SuppressWarnings({"PMD.OnlyOneReturn", "PMD.UseObjectForClearerAPI"})
     public RegistrationStatus registerUser(String email, String username, String password, String confirmPassword) {
-        RegistrationStatus status = RegistrationStatus.INVALID_INPUT;
         String normalizedEmail = normalizeEmail(email);
         String normalizedUsername = normalizeValue(username);
 
-        if (normalizedEmail != null && normalizedUsername != null && !isBlank(password) && !isBlank(confirmPassword)) {
-            if (!password.equals(confirmPassword)) {
-                status = RegistrationStatus.PASSWORD_MISMATCH;
-            } else if (users.stream().anyMatch(user -> user.getEmail().equalsIgnoreCase(normalizedEmail))) {
-                status = RegistrationStatus.DUPLICATE_EMAIL;
-            } else {
-                try {
-                    if (registrationStore.emailExists(normalizedEmail)) {
-                        status = RegistrationStatus.DUPLICATE_EMAIL;
-                    } else {
-                        String passwordHash = BCrypt.hashpw(password, BCrypt.gensalt());
-                        registrationStore.save(new UserRegistrationStore.PersistedUser(
-                                normalizedEmail,
-                                normalizedUsername,
-                                passwordHash,
-                                "Member",
-                                "Active"
-                        ));
-
-                        users.add(new User(normalizedEmail, normalizedUsername, passwordHash, "Member", "Active"));
-                        status = RegistrationStatus.SUCCESS;
-                    }
-                } catch (UserRegistrationStore.StoreConfigurationException exception) {
-                    status = RegistrationStatus.DATABASE_NOT_CONFIGURED;
-                } catch (UserRegistrationStore.DuplicateEmailException exception) {
-                    status = RegistrationStatus.DUPLICATE_EMAIL;
-                } catch (UserRegistrationStore.StoreException exception) {
-                    status = RegistrationStatus.DATABASE_ERROR;
-                }
-            }
+        if (normalizedEmail == null || normalizedUsername == null || isBlank(password) || isBlank(confirmPassword)) {
+            return RegistrationStatus.INVALID_INPUT;
         }
-        return status;
+        
+        if (!password.equals(confirmPassword)) {
+            return RegistrationStatus.PASSWORD_MISMATCH;
+        }
+        
+        if (users.stream().anyMatch(user -> user.getEmail().equalsIgnoreCase(normalizedEmail))) {
+            return RegistrationStatus.DUPLICATE_EMAIL;
+        }
+        
+        try {
+            if (registrationStore.emailExists(normalizedEmail)) {
+                return RegistrationStatus.DUPLICATE_EMAIL;
+            }
+            
+            String passwordHash = BCrypt.hashpw(password, BCrypt.gensalt());
+            registrationStore.save(new UserRegistrationStore.PersistedUser(
+                    normalizedEmail,
+                    normalizedUsername,
+                    passwordHash,
+                    "Member",
+                    "Active"
+            ));
+
+            users.add(new User(normalizedEmail, normalizedUsername, passwordHash, "Member", "Active"));
+            return RegistrationStatus.SUCCESS;
+        } catch (UserRegistrationStore.StoreConfigurationException exception) {
+            return RegistrationStatus.DATABASE_NOT_CONFIGURED;
+        } catch (UserRegistrationStore.DuplicateEmailException exception) {
+            return RegistrationStatus.DUPLICATE_EMAIL;
+        } catch (UserRegistrationStore.StoreException exception) {
+            return RegistrationStatus.DATABASE_ERROR;
+        }
     }
 
     @Override
+    @SuppressWarnings("PMD.OnlyOneReturn")
     public LoginStatus authenticate(String email, String password) {
         synchronized (this) {
-            LoginStatus status = LoginStatus.INVALID_INPUT;
             String normalizedEmail = normalizeEmail(email);
 
-            if (normalizedEmail != null && !isBlank(password)) {
-                long now = System.currentTimeMillis();
-                if (isBlocked(normalizedEmail, now)) {
-                    status = LoginStatus.THROTTLED;
-                } else {
-                    try {
-                        Optional<UserRegistrationStore.PersistedUser> persistedUser = registrationStore.findByEmail(normalizedEmail);
-                        if (persistedUser.isEmpty()) {
-                            recordFailedLogin(normalizedEmail, now);
-                            status = LoginStatus.AUTHENTICATION_FAILED;
-                        } else {
-                            UserRegistrationStore.PersistedUser user = persistedUser.get();
-                            if (!passwordsMatch(user.passwordHash(), password)) {
-                                recordFailedLogin(normalizedEmail, now);
-                                status = LoginStatus.AUTHENTICATION_FAILED;
-                            } else if (!isActive(user.status())) {
-                                recordFailedLogin(normalizedEmail, now);
-                                status = LoginStatus.ACCOUNT_INACTIVE;
-                            } else {
-                                clearFailedLogins(normalizedEmail);
-                                establishSession(user.email(), user.username(), user.role(), user.status(), now);
-                                updateLastLoginTimestamp(normalizedEmail);
-                                status = LoginStatus.SUCCESS;
-                            }
-                        }
-                    } catch (UserRegistrationStore.StoreConfigurationException exception) {
-                        status = LoginStatus.DATABASE_NOT_CONFIGURED;
-                    } catch (UserRegistrationStore.StoreException exception) {
-                        status = LoginStatus.DATABASE_ERROR;
-                    }
-                }
+            if (normalizedEmail == null || isBlank(password)) {
+                return LoginStatus.INVALID_INPUT;
             }
-            return status;
+            
+            long now = System.currentTimeMillis();
+            if (isBlocked(normalizedEmail, now)) {
+                return LoginStatus.THROTTLED;
+            }
+            
+            try {
+                Optional<UserRegistrationStore.PersistedUser> persistedUser = registrationStore.findByEmail(normalizedEmail);
+                if (persistedUser.isEmpty()) {
+                    recordFailedLogin(normalizedEmail, now);
+                    return LoginStatus.AUTHENTICATION_FAILED;
+                }
+                
+                UserRegistrationStore.PersistedUser user = persistedUser.get();
+                if (!passwordsMatch(user.passwordHash(), password)) {
+                    recordFailedLogin(normalizedEmail, now);
+                    return LoginStatus.AUTHENTICATION_FAILED;
+                }
+                
+                if (!isActive(user.status())) {
+                    recordFailedLogin(normalizedEmail, now);
+                    return LoginStatus.ACCOUNT_INACTIVE;
+                }
+                
+                clearFailedLogins(normalizedEmail);
+                establishSession(user.email(), user.username(), user.role(), user.status(), now);
+                updateLastLoginTimestamp(normalizedEmail);
+                return LoginStatus.SUCCESS;
+            } catch (UserRegistrationStore.StoreConfigurationException exception) {
+                return LoginStatus.DATABASE_NOT_CONFIGURED;
+            } catch (UserRegistrationStore.StoreException exception) {
+                return LoginStatus.DATABASE_ERROR;
+            }
         }
     }
 
@@ -314,7 +321,11 @@ public final class JdbcUserService extends UserService {
                     persisted.status()
             )));
         } catch (UserRegistrationStore.StoreException exception) {
-            // Persisted users cannot be loaded. Continue with in-memory defaults.
+            System.getLogger(JdbcUserService.class.getName()).log(
+                    System.Logger.Level.WARNING,
+                    "Failed to load persisted users. Continuing with in-memory defaults.",
+                    exception
+            );
         }
     }
 
@@ -335,7 +346,7 @@ public final class JdbcUserService extends UserService {
     }
 
     private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null || value.isBlank();
     }
 
     private boolean passwordsMatch(String storedPassword, String candidatePassword) {
@@ -414,7 +425,11 @@ public final class JdbcUserService extends UserService {
         try {
             registrationStore.updateLastLogin(normalizedEmail);
         } catch (UserRegistrationStore.StoreException exception) {
-            // Authentication already succeeded. Do not discard the session over metadata sync.
+            System.getLogger(JdbcUserService.class.getName()).log(
+                    System.Logger.Level.WARNING,
+                    "Authentication succeeded but failed to update last-login metadata.",
+                    exception
+            );
         }
     }
 }

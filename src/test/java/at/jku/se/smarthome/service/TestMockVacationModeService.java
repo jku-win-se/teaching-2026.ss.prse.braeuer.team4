@@ -21,7 +21,9 @@ import at.jku.se.smarthome.service.mock.MockVacationModeService;
 /**
  * Unit tests for MockVacationModeService.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockVacationModeService {
+
 
     /** Vacation mode service under test. */
     private MockVacationModeService service;

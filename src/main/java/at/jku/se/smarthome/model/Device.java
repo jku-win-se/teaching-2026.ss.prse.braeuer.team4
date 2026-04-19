@@ -14,7 +14,7 @@ import javafx.beans.property.SimpleStringProperty;
 public class Device {
     
     /** Unique device identifier. */
-    private final SimpleStringProperty id;
+    private final SimpleStringProperty deviceId;
     /** Device display name. */
     private final SimpleStringProperty name;
     /** Device type (Switch, Dimmer, Thermostat). */
@@ -31,14 +31,14 @@ public class Device {
     /**
      * Constructs a Device with the specified parameters.
      * 
-     * @param id       unique identifier for the device
+    * @param deviceId unique identifier for the device
      * @param name     display name of the device
      * @param type     device type (Switch, Dimmer, Thermostat)
      * @param room     room where the device is located
      * @param state    initial power state
      */
-    public Device(String id, String name, String type, String room, boolean state) {
-        this.id = new SimpleStringProperty(id);
+    public Device(String deviceId, String name, String type, String room, boolean state) {
+        this.deviceId = new SimpleStringProperty(deviceId);
         this.name = new SimpleStringProperty(name);
         this.type = new SimpleStringProperty(type);
         this.room = new SimpleStringProperty(room);
@@ -53,16 +53,16 @@ public class Device {
      * @return unique device identifier
      */
     public String getId() {
-        return id.get();
+        return deviceId.get();
     }
 
     /**
      * Updates the device identifier.
      *
-     * @param id new device identifier
+     * @param deviceId new device identifier
      */
-    public void setId(String id) {
-        this.id.set(id);
+    public void setId(String deviceId) {
+        this.deviceId.set(deviceId);
     }
 
     /**
@@ -71,7 +71,7 @@ public class Device {
      * @return id property
      */
     public SimpleStringProperty idProperty() {
-        return id;
+        return deviceId;
     }
 
     /**

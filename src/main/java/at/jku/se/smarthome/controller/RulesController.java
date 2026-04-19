@@ -29,7 +29,17 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the rules view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods"})
 public class RulesController {
+
+    /** Trigger type that does not require a source device. */
+    private static final String TRIGGER_TIME = "Time";
+    /** Trigger type based on sensor threshold condition. */
+    private static final String TRIGGER_SENSOR_THRESHOLD = "Sensor Threshold";
+    /** Trigger type based on device state changes. */
+    private static final String TRIGGER_DEVICE_STATE = "Device State";
+    /** Device type literal for sensor devices. */
+    private static final String DEVICE_TYPE_SENSOR = "sensor";
     
     /** Table view for displaying all rules. */
     @FXML
@@ -295,6 +305,7 @@ public class RulesController {
      * @param actionCombo combo box to populate with actions
      * @param preferredAction action to select if available
      */
+    @SuppressWarnings("PMD.CyclomaticComplexity")
     private void updateActionOptions(ComboBox<String> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
         actionCombo.getItems().clear();
 
@@ -341,7 +352,7 @@ public class RulesController {
         sourceDeviceCombo.getItems().clear();
 
         String triggerType = triggerCombo.getValue();
-        if ("Time".equals(triggerType)) {
+        if (TRIGGER_TIME.equals(triggerType)) {
             sourceDeviceCombo.setDisable(true);
             sourceDeviceCombo.setPromptText("No source device required");
             sourceDeviceCombo.setValue(null);
@@ -373,9 +384,9 @@ public class RulesController {
      */
     private boolean isValidSourceDevice(String triggerType, Device device) {
         boolean valid = false;
-        if ("Sensor Threshold".equals(triggerType)) {
-            valid = "sensor".equalsIgnoreCase(device.getType());
-        } else if ("Device State".equals(triggerType)) {
+        if (TRIGGER_SENSOR_THRESHOLD.equals(triggerType)) {
+            valid = DEVICE_TYPE_SENSOR.equalsIgnoreCase(device.getType());
+        } else if (TRIGGER_DEVICE_STATE.equals(triggerType)) {
             valid = true;
         }
         return valid;
@@ -389,9 +400,9 @@ public class RulesController {
      */
     private void updateConditionPrompt(ComboBox<String> triggerCombo, TextField conditionField) {
         String triggerType = triggerCombo.getValue();
-        if ("Time".equals(triggerType)) {
+        if (TRIGGER_TIME.equals(triggerType)) {
             conditionField.setPromptText("e.g. 22:00 or Weekdays 07:00");
-        } else if ("Sensor Threshold".equals(triggerType)) {
+        } else if (TRIGGER_SENSOR_THRESHOLD.equals(triggerType)) {
             conditionField.setPromptText("e.g. Value > 28 or Motion = Active");
         } else {
             conditionField.setPromptText("e.g. State = ON");
@@ -458,6 +469,7 @@ public class RulesController {
          * Constructs action cell with run, edit, and delete buttons.
          */
         private RuleActionCell() {
+            super();
             runButton.setOnAction(event -> handleRunRule(getTableView().getItems().get(getIndex())));
             editButton.setOnAction(event -> handleEditRule(getTableView().getItems().get(getIndex())));
             deleteButton.setOnAction(event -> handleDeleteRule(getTableView().getItems().get(getIndex())));

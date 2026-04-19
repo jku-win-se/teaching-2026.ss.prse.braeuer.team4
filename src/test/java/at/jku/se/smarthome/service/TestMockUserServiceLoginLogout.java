@@ -16,7 +16,9 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 /**
  * Focused FR-02 tests for secure login and logout behavior.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockUserServiceLoginLogout {
+
 
     /**
      * Test: authenticate valid credentials returns SUCCESS.

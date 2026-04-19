@@ -23,7 +23,9 @@ import java.time.format.DateTimeParseException;
  *       {@code "Value > 22.5"}. Evaluated against {@code sourceDevice.getTemperature()}.</li>
  * </ul>
  */
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public class RuleEvaluator {
+
 
     /** Time formatter for 12-hour format with AM/PM. */
     private static final DateTimeFormatter TIME_FORMAT_12H =
@@ -64,18 +66,19 @@ public class RuleEvaluator {
         return result;
     }
 
+    @SuppressWarnings("PMD.EmptyCatchBlock")
     private LocalTime parseTime(String text) {
-        LocalTime result = null;
+        LocalTime parsedTime = null;
         try {
-            result = LocalTime.parse(text.toUpperCase(), TIME_FORMAT_12H);
+            parsedTime = LocalTime.parse(text.toUpperCase(), TIME_FORMAT_12H);
         } catch (DateTimeParseException e1) {
             try {
-                result = LocalTime.parse(text, TIME_FORMAT_24H);
+                parsedTime = LocalTime.parse(text, TIME_FORMAT_24H);
             } catch (DateTimeParseException e2) {
-                result = null;
+                // Keep null to indicate an unparsable time expression.
             }
         }
-        return result;
+        return parsedTime;
     }
 
     private boolean evaluateDeviceState(String condition, Device sourceDevice) {
@@ -91,6 +94,7 @@ public class RuleEvaluator {
         return result;
     }
 
+    @SuppressWarnings("PMD.CyclomaticComplexity")
     private boolean evaluateSensorThreshold(String condition, Device sourceDevice) {
         boolean result = false;
         if (condition != null && sourceDevice != null) {

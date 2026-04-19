@@ -16,7 +16,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 /**
  * Controller for the IoT settings view.
  */
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public class IoTSettingsController {
+
     
     /** Toggle button to enable/disable IoT integration. */
     @FXML
@@ -161,36 +163,45 @@ public class IoTSettingsController {
     }
     
     @FXML
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    @SuppressWarnings({"PMD.UnusedPrivateMethod", "PMD.OnlyOneReturn"})
     private void handleSaveSettings() {
-        if (enableToggle.isSelected() && integrationService.testConnection(brokerField.getText(), portField.getText())) {
-            integrationService.saveConfiguration(
-                    true,
-                    brokerField.getText().trim(),
-                    parsePort(),
-                    usernameField.getText().trim(),
-                    passwordField.getText()
-            );
-
-            boolean connected = integrationService.connect();
-            refreshStatusLabels(true, connected);
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Success");
-            alert.setHeaderText("MQTT Settings Saved");
-            alert.setContentText(connected
-                    ? "Mock MQTT integration is now connected and ready to discover physical devices."
-                    : "Settings were saved, but the mock integration could not connect.");
-            alert.showAndWait();
-
-            resultLabel.setText(connected
-                    ? "MQTT integration connected. You can now discover physical devices."
-                    : "Settings saved, but the connection is still offline.");
-            resultLabel.setStyle(connected ? "-fx-text-fill: #27ae60;" : "-fx-text-fill: #e67e22;");
-        } else if (!enableToggle.isSelected()) {
+        if (!enableToggle.isSelected()) {
             showError("Enable the integration layer before saving MQTT settings");
-        } else {
+            return;
+        }
+        
+        if (!integrationService.testConnection(brokerField.getText(), portField.getText())) {
             showError("Please provide a valid broker and port before saving");
+            return;
+        }
+        
+        integrationService.saveConfiguration(
+                true,
+                brokerField.getText().trim(),
+                parsePort(),
+                usernameField.getText().trim(),
+                passwordField.getText()
+        );
+
+        boolean connected = integrationService.connect();
+        refreshStatusLabels(true, connected);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Success");
+        alert.setHeaderText("MQTT Settings Saved");
+        if (connected) {
+            alert.setContentText("Mock MQTT integration is now connected and ready to discover physical devices.");
+        } else {
+            alert.setContentText("Settings were saved, but the mock integration could not connect.");
+        }
+        alert.showAndWait();
+
+        if (connected) {
+            resultLabel.setText("MQTT integration connected. You can now discover physical devices.");
+            resultLabel.setStyle("-fx-text-fill: #27ae60;");
+        } else {
+            resultLabel.setText("Settings saved, but the connection is still offline.");
+            resultLabel.setStyle("-fx-text-fill: #e67e22;");
         }
     }
 
@@ -212,7 +223,12 @@ public class IoTSettingsController {
             statusLabel.setText("Disabled");
             statusLabel.setStyle("-fx-text-fill: #7f8c8d;");
             integrationSummaryLabel.setText("Optional integration layer is disabled.");
-        } else if (connected) {
+            lastSyncLabel.setText(integrationService.getLastSync());
+            discoverBtn.setDisable(true);
+            return;
+        }
+        
+        if (connected) {
             statusLabel.setText("Connected");
             statusLabel.setStyle("-fx-text-fill: #27ae60;");
             integrationSummaryLabel.setText("MQTT mock gateway is connected and ready for physical devices.");
@@ -221,19 +237,19 @@ public class IoTSettingsController {
             statusLabel.setStyle("-fx-text-fill: #e74c3c;");
             integrationSummaryLabel.setText("MQTT mock gateway is configured but not connected.");
         }
-
+        
         lastSyncLabel.setText(integrationService.getLastSync());
-        discoverBtn.setDisable(!enabled || !connected);
+        discoverBtn.setDisable(!connected);
     }
 
     private int parsePort() {
-        int port = -1;
+        int parsedPort = -1;
         try {
-            port = Integer.parseInt(portField.getText().trim());
+            parsedPort = Integer.parseInt(portField.getText().trim());
         } catch (NumberFormatException exception) {
-            // port remains -1 on parse failure
+            parsedPort = -1;
         }
-        return port;
+        return parsedPort;
     }
     
     private void showError(String message) {

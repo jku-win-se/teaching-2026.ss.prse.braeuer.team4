@@ -12,7 +12,7 @@ import javafx.collections.ObservableList;
 public class Scene {
     
     /** Unique scene identifier. */
-    private final SimpleStringProperty id;
+    private final SimpleStringProperty sceneId;
     /** Scene display name. */
     private final SimpleStringProperty name;
     /** Scene description or purpose. */
@@ -23,12 +23,12 @@ public class Scene {
     /**
      * Creates a reusable scene definition.
      *
-     * @param id unique scene identifier
+     * @param sceneId unique scene identifier
      * @param name display name of the scene
      * @param description scene purpose or summary
      */
-    public Scene(String id, String name, String description) {
-        this.id = new SimpleStringProperty(id);
+    public Scene(String sceneId, String name, String description) {
+        this.sceneId = new SimpleStringProperty(sceneId);
         this.name = new SimpleStringProperty(name);
         this.description = new SimpleStringProperty(description);
         this.deviceStates = FXCollections.observableArrayList();
@@ -39,13 +39,13 @@ public class Scene {
      *
      * @return scene identifier
      */
-    public String getId() { return id.get(); }
+    public String getId() { return sceneId.get(); }
     /**
      * Exposes the JavaFX id property.
      *
      * @return id property
      */
-    public SimpleStringProperty idProperty() { return id; }
+    public SimpleStringProperty idProperty() { return sceneId; }
 
     /**
      * Returns the scene name.

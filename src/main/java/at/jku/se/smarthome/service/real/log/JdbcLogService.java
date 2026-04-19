@@ -26,6 +26,7 @@ import javafx.collections.ObservableList;
 /**
  * JDBC-backed LogService implementation. Persists activity log entries to the configured database.
  */
+@SuppressWarnings("PMD.UseObjectForClearerAPI")
 public final class JdbcLogService implements LogService {
 
     /** Path to database schema initialization script in classpath. */
@@ -64,6 +65,7 @@ public final class JdbcLogService implements LogService {
     /**
      * Resets the singleton instance for test isolation.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (JdbcLogService.class) {
             instance = null;
@@ -139,17 +141,17 @@ public final class JdbcLogService implements LogService {
         List<LogEntry> loaded = new ArrayList<>();
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
-            try (PreparedStatement stmt = connection.prepareStatement(
+            try (PreparedStatement preparedStatement = connection.prepareStatement(
                     "SELECT timestamp, device, room, action, actor FROM activity_log ORDER BY id DESC LIMIT ?")) {
-                stmt.setInt(1, MAX_LOADED_ENTRIES);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
+                preparedStatement.setInt(1, MAX_LOADED_ENTRIES);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    while (resultSet.next()) {
                         loaded.add(new LogEntry(
-                                rs.getString("timestamp"),
-                                rs.getString("device"),
-                                rs.getString("room"),
-                                rs.getString("action"),
-                                rs.getString("actor")
+                                resultSet.getString("timestamp"),
+                                resultSet.getString("device"),
+                                resultSet.getString("room"),
+                                resultSet.getString("action"),
+                                resultSet.getString("actor")
                         ));
                     }
                 }
@@ -177,14 +179,17 @@ public final class JdbcLogService implements LogService {
      *
      * @param connection database connection to use
      */
+    @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
     private void ensureSchema(Connection connection) {
         if (!schemaReady.get()) {
             synchronized (this) {
                 if (!schemaReady.get()) {
                     try (Statement stmt = connection.createStatement()) {
                         for (String sql : loadInitScript().split(";")) {
-                            String s = sql.trim();
-                            if (!s.isEmpty()) stmt.execute(s);
+                            String statementSql = sql.trim();
+                            if (!statementSql.isEmpty()) {
+                                stmt.execute(statementSql);
+                            }
                         }
                         schemaReady.set(true);
                     } catch (SQLException e) {
@@ -201,9 +206,11 @@ public final class JdbcLogService implements LogService {
      * @return SQL script content as string
      */
     private String loadInitScript() {
-        try (InputStream in = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
-            if (in == null) throw new IllegalStateException("Log schema script not found at " + INIT_SCRIPT_PATH);
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        try (InputStream scriptStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
+            if (scriptStream == null) {
+                throw new IllegalStateException("Log schema script not found at " + INIT_SCRIPT_PATH);
+            }
+            return new String(scriptStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read log schema script.", e);
         }

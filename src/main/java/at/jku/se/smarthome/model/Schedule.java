@@ -9,7 +9,7 @@ import javafx.beans.property.SimpleStringProperty;
 public class Schedule {
     
     /** Unique schedule identifier. */
-    private final SimpleStringProperty id;
+    private final SimpleStringProperty scheduleId;
     /** Schedule display name. */
     private final SimpleStringProperty name;
     /** Target device identifier. */
@@ -28,7 +28,7 @@ public class Schedule {
     /**
      * Creates a schedule with explicit device identifier and name.
      *
-     * @param id unique schedule identifier
+     * @param scheduleId unique schedule identifier
      * @param name schedule name
      * @param deviceId target device identifier
      * @param device target device display name
@@ -37,9 +37,9 @@ public class Schedule {
      * @param recurrence recurrence mode
      * @param active whether the schedule is active
      */
-    public Schedule(String id, String name, String deviceId, String device, String action,
+    public Schedule(String scheduleId, String name, String deviceId, String device, String action,
                    String time, String recurrence, boolean active) {
-        this.id = new SimpleStringProperty(id);
+        this.scheduleId = new SimpleStringProperty(scheduleId);
         this.name = new SimpleStringProperty(name);
         this.deviceId = new SimpleStringProperty(deviceId);
         this.device = new SimpleStringProperty(device);
@@ -52,7 +52,7 @@ public class Schedule {
     /**
      * Creates a schedule using the same value for device identifier and display name.
      *
-     * @param id unique schedule identifier
+     * @param scheduleId unique schedule identifier
      * @param name schedule name
      * @param device target device identifier and name
      * @param action action to execute
@@ -60,9 +60,9 @@ public class Schedule {
      * @param recurrence recurrence mode
      * @param active whether the schedule is active
      */
-    public Schedule(String id, String name, String device, String action,
+    public Schedule(String scheduleId, String name, String device, String action,
                    String time, String recurrence, boolean active) {
-        this(id, name, device, device, action, time, recurrence, active);
+        this(scheduleId, name, device, device, action, time, recurrence, active);
     }
 
     /**
@@ -70,13 +70,13 @@ public class Schedule {
      *
      * @return schedule identifier
      */
-    public String getId() { return id.get(); }
+    public String getId() { return scheduleId.get(); }
     /**
      * Exposes the JavaFX id property.
      *
      * @return id property
      */
-    public SimpleStringProperty idProperty() { return id; }
+    public SimpleStringProperty idProperty() { return scheduleId; }
 
     /**
      * Returns the schedule name.

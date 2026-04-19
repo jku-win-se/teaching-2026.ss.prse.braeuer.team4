@@ -8,10 +8,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -26,6 +26,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Schedule Service providing schedule management functionality.
  */
+@SuppressWarnings({"PMD.DoNotUseThreads", "PMD.TooManyMethods", "PMD.UseObjectForClearerAPI", "PMD.CyclomaticComplexity"})
 public final class MockScheduleService implements ScheduleService {
     
     /** Singleton instance. */
@@ -37,7 +38,7 @@ public final class MockScheduleService implements ScheduleService {
     /** Log service for activity logging. */
     private final MockLogService logService = MockLogService.getInstance();
     /** Tracks last processed minute for each schedule. */
-    private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new HashMap<>();
+    private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new ConcurrentHashMap<>();
     /** Executor service for recurring schedule execution. */
     private ScheduledExecutorService scheduler;
 
@@ -68,6 +69,7 @@ public final class MockScheduleService implements ScheduleService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (MockScheduleService.class) {
             instance = null;
@@ -109,6 +111,7 @@ public final class MockScheduleService implements ScheduleService {
     /**
      * Stops periodic recurring schedule processing.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public void stopRecurringExecution() {
         synchronized (this) {
             if (scheduler == null) {
@@ -290,12 +293,11 @@ public final class MockScheduleService implements ScheduleService {
             if (device == null) {
                 device = roomService.getDeviceByName(schedule.getDevice());
             }
-            if (device != null) {
-                if (applyScheduleAction(device, schedule.getAction())) {
-                    logService.addLogEntry(device.getName(), device.getRoom(),
-                            schedule.getAction(), "Schedule: " + schedule.getName());
-                    executed = true;
-                }
+            boolean actionApplied = device != null && applyScheduleAction(device, schedule.getAction());
+            if (actionApplied) {
+                logService.addLogEntry(device.getName(), device.getRoom(),
+                        schedule.getAction(), "Schedule: " + schedule.getName());
+                executed = true;
             }
         }
         return executed;

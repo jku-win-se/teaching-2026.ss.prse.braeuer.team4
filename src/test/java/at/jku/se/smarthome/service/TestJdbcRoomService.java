@@ -24,7 +24,9 @@ import at.jku.se.smarthome.service.real.room.JdbcRoomService;
  * Exercises add, rename and remove device operations against an in-memory H2 database to
  * validate persistence and in-memory view synchronization.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestJdbcRoomService {
+
 
     /** JDBC URL property. */
     private static final String URL_PROPERTY = "smarthome.db.url";
@@ -120,13 +122,14 @@ public class TestJdbcRoomService {
      * Test: device count query returns result.
      */
     @Test
+    @SuppressWarnings("PMD.CheckResultSet")
     public void deviceCountQueryReturnsResult() throws Exception {
         Room room = service.addRoom("Test Room");
         service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
-             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
-            assertTrue(rs.next());
+             ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
+            assertTrue(resultSet.next());
         }
     }
 
@@ -134,14 +137,15 @@ public class TestJdbcRoomService {
      * Test: device count in database equals 1 after addition.
      */
     @Test
+    @SuppressWarnings({"PMD.CheckResultSet", "PMD.UnitTestContainsTooManyAsserts"})
     public void deviceCountInDatabaseEqualsOneAfterAddition() throws Exception {
         Room room = service.addRoom("Test Room");
         service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
-             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
-            rs.next();
-            assertEquals(1, rs.getInt(1));
+             ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
         }
     }
 
@@ -170,14 +174,15 @@ public class TestJdbcRoomService {
      * Test: device count query returns result after deletion.
      */
     @Test
+    @SuppressWarnings("PMD.CheckResultSet")
     public void deviceCountQueryReturnsResultAfterDeletion() throws Exception {
         Room room = service.addRoom("Test Room");
         Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
         service.removeDeviceFromRoom(room.getId(), device.getId());
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
-             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
-            assertTrue(rs.next());
+             ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
+            assertTrue(resultSet.next());
         }
     }
 
@@ -185,15 +190,16 @@ public class TestJdbcRoomService {
      * Test: device count in database equals zero after deletion.
      */
     @Test
+    @SuppressWarnings({"PMD.CheckResultSet", "PMD.UnitTestContainsTooManyAsserts"})
     public void deviceCountInDatabaseEqualsZeroAfterDeletion() throws Exception {
         Room room = service.addRoom("Test Room");
         Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
         service.removeDeviceFromRoom(room.getId(), device.getId());
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
-             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
-            rs.next();
-            assertEquals(0, rs.getInt(1));
+             ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
+            assertTrue(resultSet.next());
+            assertEquals(0, resultSet.getInt(1));
         }
     }
 }

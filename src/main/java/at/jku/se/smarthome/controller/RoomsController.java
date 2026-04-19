@@ -20,7 +20,9 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the rooms view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod"})
 public class RoomsController {
+
     
     /** Table view displaying all rooms. */
     @FXML
@@ -66,6 +68,7 @@ public class RoomsController {
     private Room selectedRoom;
     
     @FXML
+    @SuppressWarnings("PMD.NullAssignment")
     private void initialize() {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         deviceCountColumn.setCellValueFactory(new PropertyValueFactory<>("deviceCount"));
@@ -138,7 +141,9 @@ public class RoomsController {
     
     @FXML
     private void handleAddDevice() {
-        if (!userService.canManageSystem() || selectedRoom == null) return;
+        if (!userService.canManageSystem() || selectedRoom == null) {
+            return;
+        }
         
         // First dialog for device name
         TextInputDialog nameDialog = new TextInputDialog();
@@ -177,6 +182,7 @@ public class RoomsController {
         
         /** Constructs action cell with buttons. */
         public RoomActionButtonCell() {
+            super();
             editBtn.setStyle("-fx-padding: 5; -fx-font-size: 11;");
             editBtn.setOnAction(e -> handleEditRoom(getTableView().getItems().get(getIndex())));
             
@@ -214,6 +220,7 @@ public class RoomsController {
         
         /** Constructs action cell with buttons. */
         public DeviceActionButtonCell() {
+            super();
             editBtn.setStyle("-fx-padding: 5; -fx-font-size: 11;");
             editBtn.setOnAction(e -> {
                 int index = getIndex();

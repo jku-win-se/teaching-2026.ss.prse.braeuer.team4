@@ -43,6 +43,7 @@ public final class MockNotificationService {
     /**
      * Resets the singleton for unit testing.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             instance = null;

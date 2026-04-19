@@ -20,7 +20,9 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the user management view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod"})
 public class UsersController {
+
     
     /** Table view for displaying all users. */
     @FXML
@@ -161,6 +163,7 @@ public class UsersController {
         private final HBox container = new HBox(8, revokeButton, restoreButton);
 
         private UserActionCell() {
+            super();
             container.setAlignment(Pos.CENTER_LEFT);
             revokeButton.setStyle("-fx-text-fill: #e74c3c;");
             restoreButton.setStyle("-fx-text-fill: #27ae60;");

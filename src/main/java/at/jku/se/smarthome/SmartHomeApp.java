@@ -20,6 +20,7 @@ import javafx.stage.Stage;
  * Initializes the JavaFX application with a login screen and handles
  * navigation to the main application after successful authentication.
  */
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public class SmartHomeApp extends Application {
 
     /** Logger instance for application logging. */
@@ -35,13 +36,6 @@ public class SmartHomeApp extends Application {
     private Scene mainScene;
     /** Controller for main application view. */
     private MainController mainController;
-    
-    /**
-     * Constructs the Smart Home application.
-     */
-    public SmartHomeApp() {
-        super();
-    }
     
     /**
      * Starts the JavaFX application.

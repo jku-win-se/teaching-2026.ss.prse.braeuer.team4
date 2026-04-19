@@ -13,6 +13,7 @@ import javafx.collections.ObservableList;
  * Mock Log Service providing activity logging functionality.
  * Records all manual and automated state changes with detailed information.
  */
+@SuppressWarnings("PMD.UseObjectForClearerAPI")
 public final class MockLogService implements LogService {
     
     /** Lock for singleton synchronization. */
@@ -42,6 +43,7 @@ public final class MockLogService implements LogService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             instance = null;

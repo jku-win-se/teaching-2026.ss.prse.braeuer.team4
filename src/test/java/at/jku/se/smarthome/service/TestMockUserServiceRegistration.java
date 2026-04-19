@@ -14,7 +14,9 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 /**
  * Tests for JDBC-backed registration behavior in {@link MockUserService}.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockUserServiceRegistration {
+
 
     /**
      * Test: register user password mismatch returns password mismatch.
@@ -233,12 +235,11 @@ public class TestMockUserServiceRegistration {
         @Override
         public java.util.Optional<PersistedUser> findByEmail(String normalizedEmail) throws StoreException {
             java.util.Optional<PersistedUser> result = java.util.Optional.empty();
-            if (!configurationFailure) {
-                if (savedUser != null && savedUser.email().equals(normalizedEmail)) {
-                    result = java.util.Optional.of(savedUser);
-                }
-            } else {
+            if (configurationFailure) {
                 throw new StoreConfigurationException("Missing DB configuration");
+            }
+            if (savedUser != null && savedUser.email().equals(normalizedEmail)) {
+                result = java.util.Optional.of(savedUser);
             }
             return result;
         }

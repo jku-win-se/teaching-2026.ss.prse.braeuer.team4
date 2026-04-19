@@ -17,11 +17,11 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -45,6 +45,7 @@ import javafx.collections.ObservableList;
 /**
  * JDBC-based schedule service for persistent schedule storage and recurring execution.
  */
+@SuppressWarnings({"PMD.DoNotUseThreads", "PMD.TooManyMethods", "PMD.UseObjectForClearerAPI", "PMD.CyclomaticComplexity", "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports"})
 public final class JdbcScheduleService implements ScheduleService {
 
     /** Path to schedule initialization SQL script. */
@@ -71,7 +72,7 @@ public final class JdbcScheduleService implements ScheduleService {
     /** Notification service for alerts. */
     private final MockNotificationService notificationService = MockNotificationService.getInstance();
     /** Tracks last processed minute for each schedule (prevents duplicate execution). */
-    private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new HashMap<>();
+    private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new ConcurrentHashMap<>();
     /** Flag indicating database schema is ready. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
     /** Executor service for recurring schedule execution. */
@@ -93,6 +94,7 @@ public final class JdbcScheduleService implements ScheduleService {
     /**
      * Resets the singleton for unit testing.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             if (instance != null) {
@@ -282,6 +284,7 @@ public final class JdbcScheduleService implements ScheduleService {
     }
 
     @Override
+    @SuppressWarnings("PMD.NullAssignment")
     public void stopRecurringExecution() {
         synchronized (this) {
             if (scheduler != null) {
@@ -503,7 +506,11 @@ public final class JdbcScheduleService implements ScheduleService {
                 statement.executeUpdate();
             }
         } catch (SQLException exception) {
-            // Execution succeeded. Ignore metadata update failures.
+            System.getLogger(JdbcScheduleService.class.getName()).log(
+                    System.Logger.Level.WARNING,
+                    "Schedule action executed but failed to update last-triggered metadata.",
+                    exception
+            );
         }
     }
 

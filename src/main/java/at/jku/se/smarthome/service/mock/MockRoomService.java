@@ -9,8 +9,9 @@ import javafx.collections.ObservableList;
 /**
  * Mock Room Service providing room management functionality.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class MockRoomService implements RoomService {
-    
+
     /** Lock for singleton synchronization. */
     private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance of the mock room service. */
@@ -66,6 +67,7 @@ public final class MockRoomService implements RoomService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             instance = null;
@@ -89,7 +91,7 @@ public final class MockRoomService implements RoomService {
      */
     public Room addRoom(String name) {
         Room result = null;
-        if (name != null && !name.trim().isEmpty()) {
+        if (name != null && !name.isBlank()) {
             String trimmedName = name.trim();
             boolean duplicate = rooms.stream().anyMatch(r -> r.getName().equalsIgnoreCase(trimmedName));
             if (!duplicate) {
@@ -114,21 +116,20 @@ public final class MockRoomService implements RoomService {
      */
     public boolean updateRoomName(String roomId, String newName) {
         boolean updated = false;
-        if (newName != null && !newName.trim().isEmpty()) {
+        if (newName != null && !newName.isBlank()) {
             String trimmedName = newName.trim();
             Room room = rooms.stream()
                     .filter(r -> r.getId().equals(roomId))
                     .findFirst()
                     .orElse(null);
-            
-            if (room != null && !room.getName().equalsIgnoreCase(trimmedName)) {
-                boolean duplicate = rooms.stream().anyMatch(r -> !r.getId().equals(roomId) && r.getName().equalsIgnoreCase(trimmedName));
-                if (!duplicate) {
-                    String oldName = room.getName();
-                    room.setName(trimmedName);
-                    logService.addLogEntry("", trimmedName, "Room renamed from " + oldName, userService.getCurrentUserEmail());
-                    updated = true;
-                }
+
+            boolean duplicate = rooms.stream()
+                    .anyMatch(r -> !r.getId().equals(roomId) && r.getName().equalsIgnoreCase(trimmedName));
+            if (room != null && !room.getName().equalsIgnoreCase(trimmedName) && !duplicate) {
+                String oldName = room.getName();
+                room.setName(trimmedName);
+                logService.addLogEntry("", trimmedName, "Room renamed from " + oldName, userService.getCurrentUserEmail());
+                updated = true;
             }
         }
         return updated;
@@ -306,15 +307,13 @@ public final class MockRoomService implements RoomService {
         boolean renamed = false;
         if (newName != null && !newName.isBlank()) {
             Room room = getRoomById(roomId);
-            if (room != null) {
-                Device device = room.getDevices().stream()
-                        .filter(d -> d.getId().equals(deviceId))
-                        .findFirst()
-                        .orElse(null);
-                if (device != null) {
-                    device.setName(newName);
-                    renamed = true;
-                }
+            Device device = room == null ? null : room.getDevices().stream()
+                    .filter(d -> d.getId().equals(deviceId))
+                    .findFirst()
+                    .orElse(null);
+            if (device != null) {
+                device.setName(newName);
+                renamed = true;
             }
         }
         return renamed;

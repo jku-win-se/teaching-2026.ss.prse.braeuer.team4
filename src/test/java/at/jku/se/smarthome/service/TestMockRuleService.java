@@ -16,7 +16,9 @@ import at.jku.se.smarthome.service.mock.MockRuleService;
 /**
  * Unit tests for MockRuleService.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockRuleService {
+
 
     /** Rule service under test. */
     private MockRuleService service;

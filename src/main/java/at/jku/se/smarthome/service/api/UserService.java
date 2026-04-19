@@ -6,7 +6,7 @@ import javafx.collections.ObservableList;
 /**
  * Abstract base service for user authentication and management.
  */
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UseObjectForClearerAPI", "PMD.TooManyMethods"})
 public abstract class UserService {
 
     /** Registration status outcomes. */

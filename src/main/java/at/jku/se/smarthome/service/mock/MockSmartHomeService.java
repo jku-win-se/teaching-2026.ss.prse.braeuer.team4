@@ -47,6 +47,7 @@ public final class MockSmartHomeService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (MockSmartHomeService.class) {
             instance = null;
@@ -116,19 +117,18 @@ public final class MockSmartHomeService {
      * @param brightness  the brightness level (0-100)
      * @return true if successful, false otherwise
      */
+    @SuppressWarnings("PMD.LinguisticNaming")
     public boolean setBrightness(String deviceId, int brightness) {
         boolean set = false;
         Device device = getDeviceById(deviceId);
-        if (device != null && "Dimmer".equals(device.getType())) {
-            if (brightness >= 0 && brightness <= 100) {
-                device.setBrightness(brightness);
-                if (brightness == 0) {
-                    device.setState(false);
-                } else if (brightness > 0) {
-                    device.setState(true);
-                }
-                set = true;
+        if (device != null && "Dimmer".equals(device.getType()) && brightness >= 0 && brightness <= 100) {
+            device.setBrightness(brightness);
+            if (brightness == 0) {
+                device.setState(false);
+            } else if (brightness > 0) {
+                device.setState(true);
             }
+            set = true;
         }
         return set;
     }
@@ -140,14 +140,14 @@ public final class MockSmartHomeService {
      * @param temperature   the target temperature in Celsius
      * @return true if successful, false otherwise
      */
+    @SuppressWarnings("PMD.LinguisticNaming")
     public boolean setTemperature(String deviceId, double temperature) {
         boolean set = false;
         Device device = getDeviceById(deviceId);
-        if (device != null && "Thermostat".equals(device.getType())) {
-            if (temperature >= 10.0 && temperature <= 35.0) {
-                device.setTemperature(temperature);
-                set = true;
-            }
+        if (device != null && "Thermostat".equals(device.getType())
+                && temperature >= 10.0 && temperature <= 35.0) {
+            device.setTemperature(temperature);
+            set = true;
         }
         return set;
     }

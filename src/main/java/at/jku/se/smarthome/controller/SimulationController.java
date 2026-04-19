@@ -33,7 +33,9 @@ import javafx.util.Duration;
 /**
  * Controller for the simulation view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods"})
 public class SimulationController {
+
     
     /** Text field for entering simulation start time. */
     @FXML
@@ -123,7 +125,7 @@ public class SimulationController {
     /** Index of the current event in the simulation. */
     private int currentEventIndex;
     /** Flag indicating if simulation is currently running. */
-    private boolean isRunning = false;
+    private boolean isRunning;
     
     @FXML
     private void initialize() {
@@ -145,6 +147,7 @@ public class SimulationController {
         summaryLabel.setText("Configure the start time, initial sensors, and active rules. The replay uses a cloned device snapshot and never changes live devices.");
     }
 
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     private void populateRuleSelection() {
         rulesCheckBox.getChildren().clear();
         for (Rule rule : ruleService.getRules()) {
@@ -169,11 +172,12 @@ public class SimulationController {
                     shouldPrepare = false;
                 }
             }
-            
-            if (shouldPrepare || currentPlan != null) {
-                if (playbackTimeline != null) {
-                    playbackTimeline.play();
-                }
+
+            boolean canStart = shouldPrepare || currentPlan != null;
+            if (canStart && playbackTimeline != null) {
+                playbackTimeline.play();
+            }
+            if (canStart) {
                 isRunning = true;
                 startBtn.setDisable(true);
                 pauseBtn.setDisable(false);
@@ -197,6 +201,7 @@ public class SimulationController {
     }
     
     @FXML
+    @SuppressWarnings("PMD.NullAssignment")
     private void handleReset() {
         if (playbackTimeline != null) {
             playbackTimeline.stop();
@@ -293,7 +298,7 @@ public class SimulationController {
         try {
             return Double.parseDouble(value.trim());
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException("Please enter a valid numeric " + label + " value");
+            throw new IllegalArgumentException("Please enter a valid numeric " + label + " value", exception);
         }
     }
 
@@ -316,7 +321,7 @@ public class SimulationController {
         long eventSecond = eventTime.toSecondOfDay();
         long elapsed = eventSecond >= startSecond
                 ? eventSecond - startSecond
-                : (24 * 60 * 60L - startSecond) + eventSecond;
-        return Math.min(100.0, (elapsed / (24d * 60d * 60d)) * 100d);
+            : 24 * 60 * 60L - startSecond + eventSecond;
+        return Math.min(100.0, elapsed / (24d * 60d * 60d) * 100d);
     }
 }

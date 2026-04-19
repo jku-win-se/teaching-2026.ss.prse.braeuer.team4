@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 /**
  * Defines operations for recording and querying activity log entries.
  */
+@SuppressWarnings("PMD.UseObjectForClearerAPI")
 public interface LogService {
 
     /**
