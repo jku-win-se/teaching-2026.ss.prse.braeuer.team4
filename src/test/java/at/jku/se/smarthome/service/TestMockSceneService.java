@@ -19,7 +19,9 @@ import at.jku.se.smarthome.service.mock.MockSceneService;
 /**
  * Unit tests for MockSceneService.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockSceneService {
+
 
     /** Scene service under test. */
     private MockSceneService service;

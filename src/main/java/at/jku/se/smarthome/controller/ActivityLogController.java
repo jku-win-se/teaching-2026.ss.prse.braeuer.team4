@@ -14,8 +14,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
  * Controller for the activity log view (FR-08).
  * Displays all manual and automated state changes with filtering options.
  */
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod"})
 public class ActivityLogController {
+
     
     /** Table view for displaying activity log entries. */
     @FXML
@@ -89,7 +90,7 @@ public class ActivityLogController {
     
     @FXML
     private void handleExportCSV() {
-        String csv = logService.exportToCSV();
+        logService.exportToCSV();
         // In a real application, this would save to a file or copy to clipboard
         // Export CSV data is now available via logService.exportToCSV()
     }

@@ -12,10 +12,6 @@ import javafx.collections.ObservableList;
  */
 public final class MockIoTIntegrationService {
 
-    /** Record for IoT configuration. */
-    public record IoTConfiguration(/** Enable/disable flag. */ boolean enabled, /** MQTT broker address. */ String broker, /** MQTT broker port. */ int port, /** Username for authentication. */ String username, /** Password for authentication. */ String password) {
-    }
-
     /** Lock for singleton synchronization. */
     private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance. */
@@ -40,6 +36,18 @@ public final class MockIoTIntegrationService {
     private String password;
     /** Timestamp of last synchronization. */
     private String lastSync;
+
+    /**
+     * Record for IoT configuration.
+     *
+     * @param enabled enable/disable flag for IoT integration
+     * @param broker MQTT broker address
+     * @param port MQTT broker port
+     * @param username username for authentication with the MQTT broker
+     * @param password password for authentication with the MQTT broker
+     */
+    public record IoTConfiguration(boolean enabled, String broker, int port, String username, String password) {
+    }
 
     private MockIoTIntegrationService() {
         broker = "mqtt.example.com";
@@ -66,6 +74,7 @@ public final class MockIoTIntegrationService {
     /**
      * Resets singleton for testing.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             instance = null;

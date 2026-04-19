@@ -37,6 +37,8 @@ public final class DatabaseConfig {
     private static final String PROPERTY_USER = "smarthome.db.user";
     /** Properties key for database password. */
     private static final String PROPERTY_PASSWORD = "smarthome.db.password";
+    /** Minimum length for a value wrapped in matching quote characters. */
+    private static final int MIN_QUOTED_VALUE_LENGTH = 2;
 
     /** Private constructor prevents instantiation. */
     private DatabaseConfig() {
@@ -46,6 +48,7 @@ public final class DatabaseConfig {
      * Loads database settings from various sources.
      *
      * @return optional containing database settings if found
+     * @throws IllegalStateException if unable to read the database properties file
      */
     public static Optional<DatabaseSettings> load() {
         Optional<DatabaseSettings> result = Optional.empty();
@@ -125,6 +128,7 @@ public final class DatabaseConfig {
         return readSettings(url, user, password, null, null);
     }
 
+    @SuppressWarnings("PMD.CyclomaticComplexity")
     private static DatabaseSettings readSettings(String url, String user, String password, String smartHomeDatabaseUrl, String databaseUrl) {
         DatabaseSettings result = null;
         String normalizedUrl = normalize(url);
@@ -148,6 +152,7 @@ public final class DatabaseConfig {
         return result;
     }
 
+    @SuppressWarnings("PMD.CyclomaticComplexity")
     private static DatabaseSettings parseConnectionString(String connectionString) {
         DatabaseSettings result = null;
         try {
@@ -186,6 +191,7 @@ public final class DatabaseConfig {
     }
 
     private static Map<String, String> parseDotEnv(List<String> lines) {
+        @SuppressWarnings("PMD.UseConcurrentHashMap")
         Map<String, String> values = new LinkedHashMap<>();
         for (String line : lines) {
             String trimmedLine = line.trim();
@@ -207,7 +213,7 @@ public final class DatabaseConfig {
 
     private static String stripQuotes(String value) {
         String result = value;
-        if (value.length() >= 2) {
+        if (value.length() >= MIN_QUOTED_VALUE_LENGTH) {
             boolean hasDoubleQuotes = value.startsWith("\"") && value.endsWith("\"");
             boolean hasSingleQuotes = value.startsWith("'") && value.endsWith("'");
             if (hasDoubleQuotes || hasSingleQuotes) {
@@ -218,15 +224,17 @@ public final class DatabaseConfig {
     }
 
     private static String normalize(String value) {
-        String result = null;
+        String normalized = null;
         if (value != null) {
             String trimmed = value.trim();
-            result = trimmed.isEmpty() ? null : trimmed;
+            if (!trimmed.isEmpty()) {
+                normalized = trimmed;
+            }
         }
-        return result;
+        return normalized;
     }
 
     private static boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null || value.isBlank();
     }
 }

@@ -8,10 +8,11 @@ import javafx.collections.ObservableList;
 /**
  * Represents a Room in the SmartHome system.
  */
+@SuppressWarnings("PMD.ShortClassName")
 public class Room {
     
     /** Unique room identifier. */
-    private final SimpleStringProperty id;
+    private final SimpleStringProperty roomId;
     /** Room display name. */
     private final SimpleStringProperty name;
     /** Count of devices in the room. */
@@ -22,12 +23,12 @@ public class Room {
     /**
      * Creates a room entry.
      *
-     * @param id unique room identifier
+     * @param roomId unique room identifier
      * @param name display name of the room
      * @param deviceCount initial device count
      */
-    public Room(String id, String name, int deviceCount) {
-        this.id = new SimpleStringProperty(id);
+    public Room(String roomId, String name, int deviceCount) {
+        this.roomId = new SimpleStringProperty(roomId);
         this.name = new SimpleStringProperty(name);
         this.deviceCount = new SimpleIntegerProperty(deviceCount);
         this.devices = FXCollections.observableArrayList();
@@ -38,19 +39,19 @@ public class Room {
      *
      * @return room identifier
      */
-    public String getId() { return id.get(); }
+    public String getId() { return roomId.get(); }
     /**
      * Updates the room identifier.
      *
-     * @param id new room identifier
+     * @param roomId new room identifier
      */
-    public void setId(String id) { this.id.set(id); }
+    public void setId(String roomId) { this.roomId.set(roomId); }
     /**
      * Exposes the JavaFX id property.
      *
      * @return id property
      */
-    public SimpleStringProperty idProperty() { return id; }
+    public SimpleStringProperty idProperty() { return roomId; }
 
     /**
      * Returns the room name.

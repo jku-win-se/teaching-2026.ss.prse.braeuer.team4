@@ -24,7 +24,9 @@ import at.jku.se.smarthome.service.mock.MockScheduleService;
  *   "Dimmer Light"      – Dimmer, Living Room, starts ON
  *   "Temperature Control" – Thermostat, Bedroom, starts ON
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockScheduleService {
+
 
     /** Schedule service under test. */
     private MockScheduleService scheduleService;

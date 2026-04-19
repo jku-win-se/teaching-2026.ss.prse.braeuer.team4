@@ -29,6 +29,7 @@ import javafx.collections.ObservableList;
 /**
  * JDBC-backed RoomService implementation. Persists rooms and devices to the configured database.
  */
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public final class JdbcRoomService implements RoomService {
 
     /** Path to database schema initialization script in classpath. */
@@ -71,6 +72,7 @@ public final class JdbcRoomService implements RoomService {
      * Tests should call this between test cases to ensure a fresh instance is
      * created on next {@link #getInstance()} and no state is shared.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static synchronized void resetForTesting() {
         instance = null;
     }
@@ -113,17 +115,17 @@ public final class JdbcRoomService implements RoomService {
      */
     public Room addRoom(String name) {
         Room result = null;
-        if (name != null && !name.trim().isEmpty()) {
+        if (name != null && !name.isBlank()) {
             String trimmed = name.trim();
             try (Connection connection = openConnection()) {
                 ensureSchema(connection);
-                String id = UUID.randomUUID().toString();
+                String roomId = UUID.randomUUID().toString();
                 try (PreparedStatement stmt = connection.prepareStatement("INSERT INTO rooms (id, name) VALUES (?, ?)")) {
-                    stmt.setString(1, id);
+                    stmt.setString(1, roomId);
                     stmt.setString(2, trimmed);
                     stmt.executeUpdate();
                 }
-                Room room = new Room(id, trimmed, 0);
+                Room room = new Room(roomId, trimmed, 0);
                 rooms.add(room);
                 logService.addLogEntry("", trimmed, "Room created", userService.getCurrentUserEmail());
                 result = room;
@@ -145,7 +147,7 @@ public final class JdbcRoomService implements RoomService {
      */
     public boolean updateRoomName(String roomId, String newName) {
         boolean updated = false;
-        if (newName != null && !newName.trim().isEmpty()) {
+        if (newName != null && !newName.isBlank()) {
             String trimmed = newName.trim();
             try (Connection connection = openConnection()) {
                 ensureSchema(connection);
@@ -270,7 +272,7 @@ public final class JdbcRoomService implements RoomService {
      */
     public Device addDeviceToRoom(String roomId, String deviceName, String deviceType) {
         Device result = null;
-        if (deviceName != null && !deviceName.trim().isEmpty() && deviceType != null && !deviceType.trim().isEmpty()) {
+        if (deviceName != null && !deviceName.isBlank() && deviceType != null && !deviceType.isBlank()) {
             Room room = getRoomById(roomId);
             if (room != null) {
                 String normalizedType = normalizeDeviceType(deviceType);
@@ -466,15 +468,16 @@ public final class JdbcRoomService implements RoomService {
     /**
      * Helper: refreshes room list from database.
      */
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     private void refreshRooms() {
         List<Room> loaded = new ArrayList<>();
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
-            try (PreparedStatement stmt = connection.prepareStatement("SELECT id, name FROM rooms ORDER BY name")) {
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        String roomId = rs.getString("id");
-                        String name = rs.getString("name");
+            try (PreparedStatement statement = connection.prepareStatement("SELECT id, name FROM rooms ORDER BY name")) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        String roomId = resultSet.getString("id");
+                        String name = resultSet.getString("name");
                         Room room = new Room(roomId, name, 0);
                         // load devices for room
                         try (PreparedStatement devStmt = connection.prepareStatement("SELECT id, name, type, state, brightness, temperature FROM devices WHERE room_id = ? ORDER BY name")) {
@@ -552,7 +555,9 @@ public final class JdbcRoomService implements RoomService {
                     try (Statement stmt = connection.createStatement()) {
                         for (String sql : loadInitScript().split(";")) {
                             String sqlStatement = sql.trim();
-                            if (!sqlStatement.isEmpty()) stmt.execute(sqlStatement);
+                            if (!sqlStatement.isEmpty()) {
+                                stmt.execute(sqlStatement);
+                            }
                         }
                         schemaReady.set(true);
                     } catch (SQLException e) {
@@ -569,9 +574,11 @@ public final class JdbcRoomService implements RoomService {
      * @return SQL script content as string
      */
     private String loadInitScript() {
-        try (InputStream in = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
-            if (in == null) throw new IllegalStateException("Room schema script not found at " + INIT_SCRIPT_PATH);
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        try (InputStream scriptStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
+            if (scriptStream == null) {
+                throw new IllegalStateException("Room schema script not found at " + INIT_SCRIPT_PATH);
+            }
+            return new String(scriptStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read room schema script.", e);
         }

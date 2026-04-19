@@ -12,6 +12,9 @@ import javafx.collections.ObservableList;
  * Mock Scene Service providing smart scene management functionality.
  */
 public final class MockSceneService {
+
+    /** Expected parts count when parsing a "device:state" scene definition. */
+    private static final int DEVICE_STATE_PART_COUNT = 2;
     
     /** Singleton instance of the mock scene service. */
     private static MockSceneService instance;
@@ -49,6 +52,7 @@ public final class MockSceneService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (MockSceneService.class) {
             instance = null;
@@ -222,8 +226,8 @@ public final class MockSceneService {
      */
     private boolean applyDeviceState(String sceneName, String stateDefinition) {
         boolean applied = false;
-        String[] parts = stateDefinition.split(":", 2);
-        if (parts.length == 2) {
+        String[] parts = stateDefinition.split(":", DEVICE_STATE_PART_COUNT);
+        if (parts.length == DEVICE_STATE_PART_COUNT) {
             String deviceName = parts[0].trim();
             String targetState = parts[1].trim();
 
@@ -250,6 +254,7 @@ public final class MockSceneService {
      * @param targetState target state string
      * @return true if state was applied successfully
      */
+    @SuppressWarnings("PMD.CyclomaticComplexity")
     private boolean applyStateToDevice(Device device, String targetState) {
         boolean applied = false;
         String normalized = targetState.trim().toLowerCase(Locale.ROOT);

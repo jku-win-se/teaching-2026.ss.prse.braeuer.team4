@@ -32,7 +32,9 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the schedules view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.CouplingBetweenObjects"})
 public class SchedulesController {
+
     
     /** Table view for displaying all schedules. */
     @FXML
@@ -371,6 +373,7 @@ public class SchedulesController {
         private final HBox container = new HBox(8);
 
         private ScheduleActionCell() {
+            super();
             editButton.setOnAction(event -> handleEditSchedule(getTableView().getItems().get(getIndex())));
             deleteButton.setOnAction(event -> handleDeleteSchedule(getTableView().getItems().get(getIndex())));
             deleteButton.setStyle("-fx-text-fill: #e74c3c;");

@@ -6,10 +6,11 @@ import javafx.beans.property.SimpleStringProperty;
 /**
  * Represents a Rule in the SmartHome system.
  */
+@SuppressWarnings("PMD.ShortClassName")
 public class Rule {
     
     /** Unique rule identifier. */
-    private final SimpleStringProperty id;
+    private final SimpleStringProperty ruleId;
     /** Display name of the rule. */
     private final SimpleStringProperty name;
     /** Trigger category. */
@@ -30,7 +31,7 @@ public class Rule {
     /**
      * Creates an automation rule.
      *
-     * @param id unique rule identifier
+     * @param ruleId unique rule identifier
      * @param name display name of the rule
      * @param triggerType trigger category
      * @param sourceDevice trigger source device or source label
@@ -40,9 +41,9 @@ public class Rule {
      * @param enabled whether the rule is enabled
      * @param status current status label
      */
-    public Rule(String id, String name, String triggerType, String sourceDevice, String condition,
+    public Rule(String ruleId, String name, String triggerType, String sourceDevice, String condition,
                 String action, String targetDevice, boolean enabled, String status) {
-        this.id = new SimpleStringProperty(id);
+        this.ruleId = new SimpleStringProperty(ruleId);
         this.name = new SimpleStringProperty(name);
         this.triggerType = new SimpleStringProperty(triggerType);
         this.sourceDevice = new SimpleStringProperty(sourceDevice);
@@ -58,13 +59,13 @@ public class Rule {
      *
      * @return rule identifier
      */
-    public String getId() { return id.get(); }
+    public String getId() { return ruleId.get(); }
     /**
      * Exposes the JavaFX id property.
      *
      * @return id property
      */
-    public SimpleStringProperty idProperty() { return id; }
+    public SimpleStringProperty idProperty() { return ruleId; }
 
     /**
      * Returns the rule name.

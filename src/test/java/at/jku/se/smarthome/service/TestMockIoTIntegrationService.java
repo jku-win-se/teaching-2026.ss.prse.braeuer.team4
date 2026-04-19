@@ -12,7 +12,9 @@ import at.jku.se.smarthome.service.mock.MockIoTIntegrationService;
 /**
  * Tests for {@link MockIoTIntegrationService}.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockIoTIntegrationService {
+
 
     /** IoT integration service under test. */
     private MockIoTIntegrationService service;

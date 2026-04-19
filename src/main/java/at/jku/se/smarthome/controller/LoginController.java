@@ -16,7 +16,9 @@ import javafx.scene.control.TextField;
  * 
  * Handles user authentication using the mock service.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod"})
 public class LoginController {
+
     
     /** Text field for user email input. */
     @FXML
@@ -63,6 +65,7 @@ public class LoginController {
      * Validates credentials and attempts to authenticate.
      */
     @FXML
+    @SuppressWarnings("PMD.DoNotUseThreads")
     private void handleLogin() {
         String email = emailField.getText();
         String password = passwordField.getText();

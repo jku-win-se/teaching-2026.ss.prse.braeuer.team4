@@ -18,7 +18,9 @@ import javafx.scene.control.ToggleButton;
 /**
  * Controller for the energy dashboard view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod"})
 public class EnergyController {
+
     
     /** Label displaying total energy usage. */
     @FXML

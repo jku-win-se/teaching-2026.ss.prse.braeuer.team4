@@ -21,7 +21,9 @@ import javafx.collections.ObservableList;
  *   "Rule: <name>"         – triggered by an automation rule
  *   "Schedule: <name>"     – triggered by a schedule
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockLogService {
+
 
     /** Log service under test. */
     private MockLogService service;
@@ -159,7 +161,7 @@ public class TestMockLogService {
      * Test: after a fresh init the service always has at least the seeded entries.
      */
     @Test
-    public void getLogsReturnsAtLeastSeedEntries() {
+    public void shouldReturnAtLeastSeedEntries() {
         assertTrue(service.getLogs().size() >= 5);
     }
 
@@ -171,7 +173,7 @@ public class TestMockLogService {
      * Test: get logs by room returns at least one entry for matching room.
      */
     @Test
-    public void getLogsByRoomReturnsAtLeastOneEntry() {
+    public void shouldReturnAtLeastOneEntryForRoom() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         service.addLogEntry("Bed Light", "Bedroom", "Turned OFF", "User");
         ObservableList<LogEntry> result = service.getLogsByRoom("Living Room");
@@ -182,7 +184,7 @@ public class TestMockLogService {
      * Test: get logs by room returns only matching entries.
      */
     @Test
-    public void getLogsByRoomReturnsOnlyMatchingEntries() {
+    public void shouldReturnOnlyMatchingEntriesForRoom() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         service.addLogEntry("Bed Light", "Bedroom", "Turned OFF", "User");
         ObservableList<LogEntry> result = service.getLogsByRoom("Living Room");
@@ -195,7 +197,7 @@ public class TestMockLogService {
      * Test: get logs by room no match returns empty.
      */
     @Test
-    public void getLogsByRoomNoMatchReturnsEmpty() {
+    public void shouldReturnEmptyForNonMatchingRoom() {
         ObservableList<LogEntry> result = service.getLogsByRoom("Nonexistent Room XYZ");
         assertEquals(0, result.size());
     }
@@ -208,7 +210,7 @@ public class TestMockLogService {
      * Test: get logs by device returns exactly matching entry count.
      */
     @Test
-    public void getLogsByDeviceReturnsCorrectCount() {
+    public void shouldReturnCorrectCountForDevice() {
         service.addLogEntry("Unique Device ABC", "Room", "Action", "User");
         ObservableList<LogEntry> result = service.getLogsByDevice("Unique Device ABC");
         assertEquals(1, result.size());
@@ -218,7 +220,7 @@ public class TestMockLogService {
      * Test: get logs by device returns only matching entries.
      */
     @Test
-    public void getLogsByDeviceReturnsOnlyMatchingEntries() {
+    public void shouldReturnOnlyMatchingEntriesForDevice() {
         service.addLogEntry("Unique Device ABC", "Room", "Action", "User");
         ObservableList<LogEntry> result = service.getLogsByDevice("Unique Device ABC");
         assertEquals("Unique Device ABC", result.get(0).getDevice());
@@ -228,7 +230,7 @@ public class TestMockLogService {
      * Test: get logs by device no match returns empty.
      */
     @Test
-    public void getLogsByDeviceNoMatchReturnsEmpty() {
+    public void shouldReturnEmptyForNonMatchingDevice() {
         ObservableList<LogEntry> result = service.getLogsByDevice("Device That Does Not Exist");
         assertEquals(0, result.size());
     }
@@ -241,7 +243,7 @@ public class TestMockLogService {
      * Test: manual user actions must have at least one entry when filtered by user.
      */
     @Test
-    public void getLogsByActorUserReturnsAtLeastOneEntry() {
+    public void shouldReturnAtLeastOneEntryForUserActor() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         ObservableList<LogEntry> result = service.getLogsByActor("User");
         assertTrue(result.size() >= 1);
@@ -251,7 +253,7 @@ public class TestMockLogService {
      * Test: manual user actions must be filterable by actor user.
      */
     @Test
-    public void getLogsByActorUserReturnsOnlyUserEntries() {
+    public void shouldReturnOnlyUserEntriesForUserActor() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         ObservableList<LogEntry> result = service.getLogsByActor("User");
         for (LogEntry e : result) {
@@ -263,7 +265,7 @@ public class TestMockLogService {
      * Test: rule-triggered entries must have at least one entry when filtered.
      */
     @Test
-    public void getLogsByActorRuleReturnsAtLeastOneEntry() {
+    public void shouldReturnAtLeastOneEntryForRuleActor() {
         service.addLogEntry("Dimmer Light", "Bedroom", "Set to 50%", "Rule: Morning Routine");
         ObservableList<LogEntry> result = service.getLogsByActor("Rule: Morning Routine");
         assertTrue(result.size() >= 1);
@@ -273,7 +275,7 @@ public class TestMockLogService {
      * Test: rule-triggered entries must be filterable by actor rule.
      */
     @Test
-    public void getLogsByActorRuleReturnsOnlyRuleEntries() {
+    public void shouldReturnOnlyRuleEntriesForRuleActor() {
         service.addLogEntry("Dimmer Light", "Bedroom", "Set to 50%", "Rule: Morning Routine");
         ObservableList<LogEntry> result = service.getLogsByActor("Rule: Morning Routine");
         for (LogEntry e : result) {
@@ -285,7 +287,7 @@ public class TestMockLogService {
      * Test: schedule-triggered entries must have at least one entry when filtered.
      */
     @Test
-    public void getLogsByActorScheduleReturnsAtLeastOneEntry() {
+    public void shouldReturnAtLeastOneEntryForScheduleActor() {
         service.addLogEntry("Kitchen Light", "Kitchen", "Turned OFF", "Schedule: Evening Shutdown");
         ObservableList<LogEntry> result = service.getLogsByActor("Schedule: Evening Shutdown");
         assertTrue(result.size() >= 1);
@@ -295,7 +297,7 @@ public class TestMockLogService {
      * Test: schedule-triggered entries must be filterable by actor schedule.
      */
     @Test
-    public void getLogsByActorScheduleReturnsOnlyScheduleEntries() {
+    public void shouldReturnOnlyScheduleEntriesForScheduleActor() {
         service.addLogEntry("Kitchen Light", "Kitchen", "Turned OFF", "Schedule: Evening Shutdown");
         ObservableList<LogEntry> result = service.getLogsByActor("Schedule: Evening Shutdown");
         for (LogEntry e : result) {

@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleStringProperty;
 /**
  * Represents a User in the SmartHome system.
  */
+@SuppressWarnings("PMD.ShortClassName")
 public class User {
     
     /** Email address of the user. */

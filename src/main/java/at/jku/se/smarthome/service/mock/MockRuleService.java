@@ -8,6 +8,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Rule Service providing rule management functionality.
  */
+@SuppressWarnings("PMD.UseObjectForClearerAPI")
 public final class MockRuleService {
     
     /** Singleton instance of the mock rule service. */
@@ -43,6 +44,7 @@ public final class MockRuleService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (MockRuleService.class) {
             instance = null;
@@ -200,6 +202,7 @@ public final class MockRuleService {
      * @param action action string to execute
      * @return true if action was applied successfully
      */
+    @SuppressWarnings("PMD.CyclomaticComplexity")
     private boolean applyAction(Device targetDevice, String action) {
         boolean result = switch (action) {
             case "Turn On", "Open" -> {

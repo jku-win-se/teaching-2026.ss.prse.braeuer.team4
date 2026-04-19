@@ -28,8 +28,9 @@ import javafx.util.Duration;
  * Handles navigation between different views (Devices, Rooms, Rules, Energy, Settings)
  * and manages the user session (login/logout).
  */
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class MainController {
+
 
     /** Logger instance for application logging. */
     private static final Logger LOGGER = LogManager.getLogger(MainController.class);
@@ -429,11 +430,8 @@ public class MainController {
         String message = entry.getMessage() == null ? "" : entry.getMessage().toLowerCase();
         boolean isScene = message.contains("scene '") || message.contains("scene \"");
         
-        return isScene ? 
-            switch (entry.getType()) {
-                case "error" -> "Scene Failed";
-                default -> "Scene Executed";
-            } :
+        return isScene ?
+            "error".equals(entry.getType()) ? "Scene Failed" : "Scene Executed" :
             switch (entry.getType()) {
                 case "success" -> "Rule Executed";
                 case "error" -> "Rule Failed";

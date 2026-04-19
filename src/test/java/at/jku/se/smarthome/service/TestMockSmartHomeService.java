@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.service.mock.MockSmartHomeService;
 
 /**
@@ -22,7 +21,9 @@ import at.jku.se.smarthome.service.mock.MockSmartHomeService;
  *   dev-006 = Cover/Blind (Garden, starts CLOSED)
  *   dev-007 = Sensor (Hallway, initial reading 0.0)
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockSmartHomeService {
+
 
     /** Smart home service under test. */
     private MockSmartHomeService service;

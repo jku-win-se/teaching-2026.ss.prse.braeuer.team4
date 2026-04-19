@@ -10,6 +10,11 @@ import javafx.scene.chart.XYChart;
  */
 public final class MockEnergyService {
 
+    /** Lock for singleton synchronization. */
+    private static final Object INSTANCE_LOCK = new Object();
+    /** Singleton instance of the mock energy service. */
+    private static MockEnergyService instance;
+
     /** Enumeration of energy aggregation periods. */
     public enum AggregationPeriod {
         DAY("Day"),
@@ -39,11 +44,6 @@ public final class MockEnergyService {
             XYChart.Series<String, Number> timelineSeries) {
     }
 
-    /** Lock for singleton synchronization. */
-    private static final Object INSTANCE_LOCK = new Object();
-    /** Singleton instance of the mock energy service. */
-    private static MockEnergyService instance;
-
     private MockEnergyService() {
     }
 
@@ -64,6 +64,7 @@ public final class MockEnergyService {
     /**
      * Resets the singleton instance for test isolation.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             instance = null;
@@ -109,6 +110,7 @@ public final class MockEnergyService {
      * @return map of device name to consumption in kWh
      */
     private Map<String, Double> getConsumptionByDevice(AggregationPeriod period) {
+        @SuppressWarnings("PMD.UseConcurrentHashMap")
         Map<String, Double> data = new LinkedHashMap<>();
         if (period == AggregationPeriod.DAY) {
             data.put("Living Room Light", 4.8);
@@ -136,6 +138,7 @@ public final class MockEnergyService {
      * @return map of room name to consumption in kWh
      */
     private Map<String, Double> getConsumptionByRoom(AggregationPeriod period, Map<String, Double> deviceData) {
+        @SuppressWarnings("PMD.UseConcurrentHashMap")
         Map<String, Double> roomData = new LinkedHashMap<>();
         roomData.put("Living Room", deviceData.get("Living Room Light") + deviceData.get("Living Room Thermostat"));
         roomData.put("Bedroom", deviceData.get("Bedroom Dimmer"));

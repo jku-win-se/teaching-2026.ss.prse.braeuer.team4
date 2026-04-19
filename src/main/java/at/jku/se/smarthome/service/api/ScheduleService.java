@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 /**
  * Defines the scheduling operations exposed to the smart-home UI and services.
  */
+@SuppressWarnings("PMD.UseObjectForClearerAPI")
 public interface ScheduleService {
 
     /**

@@ -18,7 +18,9 @@ import at.jku.se.smarthome.service.mock.MockRoomService;
  *   room-002 / Bedroom      → dev-003 (Bed Light),  dev-004 (Temperature Control)
  *   room-003 / Kitchen      → dev-005 (Ceiling Light)
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockRoomServiceDeviceManagement {
+
 
     /** Mock room service for testing. */
     private MockRoomService service;
@@ -91,10 +93,10 @@ public class TestMockRoomServiceDeviceManagement {
     @Test
     public void testRenameDeviceFailedRenameNameUnchanged() {
         service.renameDevice("room-001", "dev-001", "");
-        Device d = service.getRoomById("room-001").getDevices().stream()
+        Device device = service.getRoomById("room-001").getDevices().stream()
                 .filter(dev -> dev.getId().equals("dev-001"))
                 .findFirst().get();
-        assertEquals("Main Light", d.getName());
+        assertEquals("Main Light", device.getName());
     }
 
     // -----------------------------------------------------------------------

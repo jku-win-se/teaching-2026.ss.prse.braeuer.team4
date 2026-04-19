@@ -12,7 +12,9 @@ import javafx.scene.control.TextField;
 /**
  * Controller for the register view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod"})
 public class RegisterController {
+
     
     /** Text field for user email input. */
     @FXML
@@ -57,13 +59,18 @@ public class RegisterController {
         String username = usernameField.getText();
         String password = passwordField.getText();
         String confirmPassword = confirmPasswordField.getText();
-        
+        String validationError = null;
+
         if (email.isEmpty() || username.isEmpty() || password.isEmpty()) {
-            showError("All fields are required");
+            validationError = "All fields are required";
         } else if (!email.contains("@")) {
-            showError("Please enter a valid email");
+            validationError = "Please enter a valid email";
         } else if (!password.equals(confirmPassword)) {
-            showError("Passwords do not match");
+            validationError = "Passwords do not match";
+        }
+
+        if (validationError != null) {
+            showError(validationError);
         } else {
             RegistrationStatus registrationStatus = userService.registerUser(email, username, password, confirmPassword);
             if (registrationStatus == RegistrationStatus.SUCCESS) {

@@ -12,7 +12,9 @@ import at.jku.se.smarthome.service.mock.MockEnergyService.EnergySnapshot;
 /**
  * Tests for {@link MockEnergyService}.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockEnergyService {
+
 
     /** Energy service under test. */
     private MockEnergyService service;

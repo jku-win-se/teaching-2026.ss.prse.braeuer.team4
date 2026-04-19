@@ -19,7 +19,18 @@ import javafx.collections.ObservableList;
 /**
  * Mock simulation service for replaying a full day without affecting live devices.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class MockSimulationService {
+
+    /** Singleton instance of the mock simulation service. */
+    private static MockSimulationService instance;
+
+    /** Room service for room and device data. */
+    private final MockRoomService roomService = MockRoomService.getInstance();
+    /** Date/time formatter for parsing simulation times. */
+    private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+    /** Pattern for numeric conditions in rules. */
+    private static final Pattern NUMERIC_CONDITION_PATTERN = Pattern.compile("(>=|<=|>|<|=)\\s*(-?\\d+(?:\\.\\d+)?)");
 
     public record SimulationConfiguration(
             LocalTime startTime,
@@ -42,16 +53,6 @@ public final class MockSimulationService {
             List<SimulationEvent> events) {
     }
 
-    /** Pattern for numeric conditions in rules. */
-    private static final Pattern NUMERIC_CONDITION_PATTERN = Pattern.compile("(>=|<=|>|<|=)\\s*(-?\\d+(?:\\.\\d+)?)");
-    /** Singleton instance of the mock simulation service. */
-    private static MockSimulationService instance;
-
-    /** Room service for room and device data. */
-    private final MockRoomService roomService = MockRoomService.getInstance();
-    /** Date/time formatter for parsing simulation times. */
-    private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-
     private MockSimulationService() {
     }
 
@@ -67,6 +68,7 @@ public final class MockSimulationService {
     /**
      * Resets the singleton for unit testing.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (MockSimulationService.class) {
             instance = null;
@@ -155,6 +157,7 @@ public final class MockSimulationService {
         return result;
     }
 
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     private ObservableList<SimulationDeviceState> createSimulationSnapshot(LocalTime startTime) {
         ObservableList<SimulationDeviceState> snapshot = FXCollections.observableArrayList();
         String initialTimestamp = startTime.format(timeFormatter);

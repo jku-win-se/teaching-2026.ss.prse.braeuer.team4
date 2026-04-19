@@ -37,10 +37,16 @@ import javafx.scene.layout.VBox;
  * Handles manual control of devices with type-specific UI.
  * Logs all state changes to activity log (FR-08).
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.CouplingBetweenObjects"})
 public class DevicesController {
+
 
     /** Default filter option for all rooms. */
     private static final String ALL_ROOMS_OPTION = "All Rooms";
+    /** Minimum thermostat temperature supported by the UI controls. */
+    private static final int THERMOSTAT_MIN_TEMPERATURE = 5;
+    /** Maximum thermostat temperature supported by the UI controls. */
+    private static final int THERMOSTAT_MAX_TEMPERATURE = 35;
     
     /** Container for device UI components. */
     @FXML
@@ -61,6 +67,7 @@ public class DevicesController {
     /** User service for authorization checks. */
     private final UserService userService = ServiceRegistry.getUserService();
     /** Maps rooms to their name change listeners. */
+    @SuppressWarnings("PMD.UseConcurrentHashMap")
     private final Map<Room, ChangeListener<String>> roomNameListeners = new IdentityHashMap<>();
     /** Listener for room list changes. */
     private final ListChangeListener<Room> roomListListener = change -> {
@@ -76,7 +83,7 @@ public class DevicesController {
         loadDevices();
     };
     /** ID of currently selected room for filtering devices. */
-    private String selectedRoomFilterId = null;
+    private String selectedRoomFilterId;
     
     /**
      * Initializes the controller after FXML loading.
@@ -100,7 +107,7 @@ public class DevicesController {
     /**
      * Loads and displays devices based on filter.
      */
-    void loadDevices() {
+    private void loadDevices() {
         devicesContainer.getChildren().clear();
         
         for (Room room : roomService.getRooms()) {
@@ -119,7 +126,7 @@ public class DevicesController {
     /**
      * Creates a device control card based on device type.
      */
-    VBox createDeviceCard(Device device, Room room) {
+    private VBox createDeviceCard(Device device, Room room) {
         VBox card = new VBox(10);
         card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #ffffff;");
         
@@ -168,7 +175,7 @@ public class DevicesController {
     /**
      * Creates controls for Switch devices.
      */
-    void createSwitchControls(VBox card, Device device, Room room) {
+    private void createSwitchControls(VBox card, Device device, Room room) {
         HBox controls = new HBox(10);
         controls.setAlignment(Pos.CENTER_LEFT);
         
@@ -200,7 +207,7 @@ public class DevicesController {
      * @param toggleButton the toggle button to style
      * @param enabled whether the style represents the enabled/on state
      */
-    void applyLargeSwitchButtonStyle(ToggleButton toggleButton, boolean enabled) {
+    private void applyLargeSwitchButtonStyle(ToggleButton toggleButton, boolean enabled) {
         toggleButton.setStyle(enabled
                 ? "-fx-padding: 8 20; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #27ae60; -fx-text-fill: #ffffff; -fx-border-color: #1e8449; -fx-border-radius: 4; -fx-background-radius: 4;"
                 : "-fx-padding: 8 20; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #ecf0f1; -fx-text-fill: #2c3e50; -fx-border-color: #bdc3c7; -fx-border-radius: 4; -fx-background-radius: 4;");
@@ -209,7 +216,7 @@ public class DevicesController {
     /**
      * Creates controls for Dimmer devices.
      */
-    void createDimmerControls(VBox card, Device device, Room room) {
+    private void createDimmerControls(VBox card, Device device, Room room) {
         VBox controls = new VBox(8);
         final boolean[] syncingBrightnessFromModel = {false};
         final boolean[] syncingStateFromModel = {false};
@@ -306,7 +313,7 @@ public class DevicesController {
     /**
      * Creates controls for Thermostat devices.
      */
-    void createThermostatControls(VBox card, Device device, Room room) {
+    private void createThermostatControls(VBox card, Device device, Room room) {
         HBox controls = new HBox(10);
         controls.setAlignment(Pos.CENTER_LEFT);
         
@@ -325,7 +332,7 @@ public class DevicesController {
         plusBtn.setPrefWidth(40);
         
         minusBtn.setOnAction(e -> {
-            if (device.getTemperature() > 5) {
+            if (device.getTemperature() > THERMOSTAT_MIN_TEMPERATURE) {
                 roomService.updateDeviceTemperature(device.getId(), device.getTemperature() - 1);
                 tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
                 logService.addLogEntry(device.getName(), room.getName(),
@@ -334,7 +341,7 @@ public class DevicesController {
         });
 
         plusBtn.setOnAction(e -> {
-            if (device.getTemperature() < 35) {
+            if (device.getTemperature() < THERMOSTAT_MAX_TEMPERATURE) {
                 roomService.updateDeviceTemperature(device.getId(), device.getTemperature() + 1);
                 tempValueLabel.setText(String.format("%.1f°C", device.getTemperature()));
                 logService.addLogEntry(device.getName(), room.getName(),
@@ -352,7 +359,7 @@ public class DevicesController {
     /**
      * Creates controls for Sensor devices.
      */
-    void createSensorControls(VBox card, Device device, Room room) {
+    private void createSensorControls(VBox card, Device device, Room room) {
         VBox controls = new VBox(8);
         
         HBox readingBox = new HBox(10);
@@ -411,7 +418,7 @@ public class DevicesController {
     /**
      * Creates controls for Cover/Blind devices.
      */
-    void createCoverControls(VBox card, Device device, Room room) {
+    private void createCoverControls(VBox card, Device device, Room room) {
         HBox controls = new HBox(10);
         controls.setAlignment(Pos.CENTER_LEFT);
         
@@ -453,8 +460,10 @@ public class DevicesController {
     /**
      * Opens a rename dialog and applies the new name if valid.
      */
-    void handleRename(Device device, Room room, Label nameLabel) {
-        if (!userService.canManageSystem()) return;
+    private void handleRename(Device device, Room room, Label nameLabel) {
+        if (!userService.canManageSystem()) {
+            return;
+        }
 
         TextInputDialog dialog = new TextInputDialog(device.getName());
         dialog.setTitle("Rename Device");
@@ -472,8 +481,10 @@ public class DevicesController {
     /**
      * Removes the device from its room and refreshes the device list.
      */
-    void handleDelete(Device device, Room room) {
-        if (!userService.canManageSystem()) return;
+    private void handleDelete(Device device, Room room) {
+        if (!userService.canManageSystem()) {
+            return;
+        }
 
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
         confirmation.setTitle("Delete Device");
@@ -481,11 +492,9 @@ public class DevicesController {
         confirmation.setContentText("This will remove the device from the room and delete its persisted record.");
 
         confirmation.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                if (roomService.removeDeviceFromRoom(room.getId(), device.getId())) {
-                    logService.addLogEntry(device.getName(), room.getName(), "Deleted", userService.getCurrentUserEmail());
-                    loadDevices();
-                }
+            if (response == ButtonType.OK && roomService.removeDeviceFromRoom(room.getId(), device.getId())) {
+                logService.addLogEntry(device.getName(), room.getName(), "Deleted", userService.getCurrentUserEmail());
+                loadDevices();
             }
         });
     }
@@ -504,8 +513,10 @@ public class DevicesController {
      * @see at.jku.se.smarthome.service.api.RoomService#addDeviceToRoom(String, String, String)
      */
     @FXML
-    void handleAddDevice() {
-        if (!userService.canManageSystem()) return;
+    private void handleAddDevice() {
+        if (!userService.canManageSystem()) {
+            return;
+        }
 
         Dialog<DeviceInput> dialog = new Dialog<>();
         dialog.setTitle("Add Device");
@@ -521,7 +532,9 @@ public class DevicesController {
 
         ComboBox<Room> roomCombo = new ComboBox<>();
         roomCombo.setPrefWidth(240);
-        for (Room r : roomService.getRooms()) roomCombo.getItems().add(r);
+        for (Room r : roomService.getRooms()) {
+            roomCombo.getItems().add(r);
+        }
         roomCombo.setConverter(new javafx.util.StringConverter<>() {
             @Override
             public String toString(Room room) { return room != null ? room.getName() : ""; }
@@ -560,11 +573,11 @@ public class DevicesController {
         });
 
         dialog.showAndWait().ifPresent(input -> {
-            Room r = input.room();
+            Room selectedRoom = input.room();
             try {
-                Device d = roomService.addDeviceToRoom(r.getId(), input.name(), input.type());
-                if (d != null) {
-                    logService.addLogEntry(d.getName(), r.getName(), "Device created", userService.getCurrentUserEmail());
+                Device createdDevice = roomService.addDeviceToRoom(selectedRoom.getId(), input.name(), input.type());
+                if (createdDevice != null) {
+                    logService.addLogEntry(createdDevice.getName(), selectedRoom.getName(), "Device created", userService.getCurrentUserEmail());
                     loadDevices();
                 } else {
                     Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -599,7 +612,7 @@ public class DevicesController {
      * @param actionCombo the ComboBox to be populated with human-readable action labels
      * @param preferredAction optional preferred action to select if present
      */
-    void updateActionOptions(ComboBox<Device> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
+    private void updateActionOptions(ComboBox<Device> deviceCombo, ComboBox<String> actionCombo, String preferredAction) {
         actionCombo.getItems().clear();
 
         Device selectedDevice = deviceCombo.getValue();
@@ -626,7 +639,7 @@ public class DevicesController {
      * Handles room filter change.
      */
     @FXML
-    void handleRoomFilterChange() {
+    private void handleRoomFilterChange() {
         String selected = roomFilterCombo.getValue();
         if (selected == null || ALL_ROOMS_OPTION.equals(selected)) {
             clearRoomFilterSelection();
@@ -647,7 +660,7 @@ public class DevicesController {
      * Clears the room filter.
      */
     @FXML
-    void handleClearRoomFilter() {
+    private void handleClearRoomFilter() {
         clearRoomFilterSelection();
         loadDevices();
     }
@@ -709,6 +722,7 @@ public class DevicesController {
         }
     }
 
+    @SuppressWarnings("PMD.NullAssignment")
     private void clearRoomFilterSelection() {
         selectedRoomFilterId = null;
         roomFilterCombo.setValue(ALL_ROOMS_OPTION);

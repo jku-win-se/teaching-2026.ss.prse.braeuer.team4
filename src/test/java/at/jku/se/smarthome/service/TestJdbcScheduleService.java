@@ -23,7 +23,9 @@ import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 /**
  * Unit tests for JdbcScheduleService.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestJdbcScheduleService {
+
 
     /** JDBC URL property. */
     private static final String URL_PROPERTY = "smarthome.db.url";
@@ -36,12 +38,6 @@ public class TestJdbcScheduleService {
     private String jdbcUrl;
     /** Schedule service under test. */
     private JdbcScheduleService service;
-    /** Mock room service. */
-    private MockRoomService roomService;
-    /** Mock log service. */
-    private MockLogService logService;
-    /** Mock notification service. */
-    private MockNotificationService notificationService;
 
     /**
      * Sets up test fixtures before each test.
@@ -59,9 +55,9 @@ public class TestJdbcScheduleService {
         MockVacationModeService.resetForTesting();
         JdbcScheduleService.resetForTesting();
 
-        roomService = MockRoomService.getInstance();
-        logService = MockLogService.getInstance();
-        notificationService = MockNotificationService.getInstance();
+        MockRoomService.getInstance();
+        MockLogService.getInstance();
+        MockNotificationService.getInstance();
         service = JdbcScheduleService.getInstance();
         
         // Mock devices are already initialized in MockRoomService.initializeMockRooms()
@@ -142,6 +138,7 @@ public class TestJdbcScheduleService {
      * Test: add schedule persists to database.
      */
     @Test
+    @SuppressWarnings("PMD.CheckResultSet")
     public void addSchedulePersistedToDatabase() throws Exception {
         service.addSchedule("Warmup", "dev-004", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
 
@@ -196,6 +193,7 @@ public class TestJdbcScheduleService {
      * Test: multiple schedules persisted to database.
      */
     @Test
+    @SuppressWarnings({"PMD.CheckResultSet", "PMD.UnitTestContainsTooManyAsserts"})
     public void multipleSchedulePersistedToDatabase() throws Exception {
         service.addSchedule("Wake Up", "dev-003", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
         service.addSchedule("Weekly Warmup", "dev-004", "Temperature Control", "Set to 24°C", "Fri 09:00 AM", "Weekly", true);
@@ -203,7 +201,7 @@ public class TestJdbcScheduleService {
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM scheduled_actions")) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertEquals(2, resultSet.getInt(1));
         }
     }

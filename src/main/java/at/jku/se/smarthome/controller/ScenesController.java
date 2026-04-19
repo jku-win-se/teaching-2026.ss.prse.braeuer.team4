@@ -36,7 +36,11 @@ import javafx.util.StringConverter;
 /**
  * Controller for the scenes view.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports"})
 public class ScenesController {
+
+    /** Number of scene cards per row in the grid layout. */
+    private static final int SCENES_PER_ROW = 3;
 
     /** Button to create a new scene (FXML injected). */
     @FXML
@@ -69,14 +73,15 @@ public class ScenesController {
      */
     private void loadScenes() {
         scenesGrid.getChildren().clear();
-        int row = 0, col = 0;
+        int row = 0;
+        int col = 0;
         
         for (Scene scene : sceneService.getScenes()) {
             VBox card = createSceneCard(scene);
             scenesGrid.add(card, col, row);
             
             col++;
-            if (col >= 3) {
+            if (col >= SCENES_PER_ROW) {
                 col = 0;
                 row++;
             }
@@ -370,6 +375,7 @@ public class ScenesController {
      *
      * @param deviceStatesBox VBox containing state rows
      */
+    @SuppressWarnings("PMD.ConfusingTernary")
     private void refreshDeviceOptions(VBox deviceStatesBox) {
         if (refreshingDeviceOptions) {
             return;
@@ -399,13 +405,14 @@ public class ScenesController {
 
                 row.deviceCombo().getItems().setAll(availableDevices);
 
-                Device restoredSelection = selectedDeviceName == null ? null : availableDevices.stream()
-                        .filter(device -> selectedDeviceName.equals(device.getName()))
-                        .findFirst()
-                        .orElse(null);
+                Optional<Device> restoredSelection = selectedDeviceName == null
+                    ? Optional.empty()
+                        : availableDevices.stream()
+                                .filter(device -> selectedDeviceName.equals(device.getName()))
+                                .findFirst();
 
-                if (restoredSelection != null) {
-                    row.deviceCombo().setValue(restoredSelection);
+                if (restoredSelection.isPresent()) {
+                    row.deviceCombo().setValue(restoredSelection.get());
                 } else if (!availableDevices.isEmpty()) {
                     row.deviceCombo().setValue(availableDevices.get(0));
                 } else {
@@ -478,7 +485,7 @@ public class ScenesController {
      * @return true if scene input is valid
      */
     private boolean isValidSceneInput(String sceneName, VBox deviceStatesBox) {
-        return !sceneName.trim().isEmpty()
+        return sceneName != null && !sceneName.isBlank()
                 && !collectDeviceStates(deviceStatesBox).isEmpty();
     }
 
