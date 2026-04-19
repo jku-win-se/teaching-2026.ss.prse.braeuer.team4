@@ -67,36 +67,132 @@ public class TestJdbcRoomService {
     }
 
     /**
-     * Test: add, rename, and remove device persists changes.
+     * Test: add room returns non-null.
      */
     @Test
-    public void addRenameRemoveDevicePersistsChanges() throws Exception {
+    public void addRoomReturnsNonNull() throws Exception {
         Room room = service.addRoom("Test Room");
         assertNotNull(room);
+    }
 
+    /**
+     * Test: device added to database increases device count.
+     */
+    @Test
+    public void deviceAddedIncreasesDeviceCount() throws Exception {
+        Room room = service.addRoom("Test Room");
+        service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
+        assertEquals(1, service.getAllDevices().size());
+    }
+
+    /**
+     * Test: add device returns non-null.
+     */
+    @Test
+    public void addDeviceReturnsNonNull() throws Exception {
+        Room room = service.addRoom("Test Room");
         Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
         assertNotNull(device);
-        assertEquals(1, service.getAllDevices().size());
+    }
 
+    /**
+     * Test: rename device returns true.
+     */
+    @Test
+    public void renameDeviceReturnsTrue() throws Exception {
+        Room room = service.addRoom("Test Room");
+        Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
         assertTrue(service.renameDevice(room.getId(), device.getId(), "Renamed Device"));
-        assertEquals("Renamed Device", service.getDeviceById(device.getId()).getName());
+    }
 
-        // verify persisted rows
+    /**
+     * Test: rename device changes name in database.
+     */
+    @Test
+    public void renameDeviceChangesNameInDatabase() throws Exception {
+        Room room = service.addRoom("Test Room");
+        Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
+        service.renameDevice(room.getId(), device.getId(), "Renamed Device");
+        assertEquals("Renamed Device", service.getDeviceById(device.getId()).getName());
+    }
+
+    /**
+     * Test: device count query returns result.
+     */
+    @Test
+    public void deviceCountQueryReturnsResult() throws Exception {
+        Room room = service.addRoom("Test Room");
+        service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
              ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
             assertTrue(rs.next());
+        }
+    }
+
+    /**
+     * Test: device count in database equals 1 after addition.
+     */
+    @Test
+    public void deviceCountInDatabaseEqualsOneAfterAddition() throws Exception {
+        Room room = service.addRoom("Test Room");
+        service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
+            rs.next();
             assertEquals(1, rs.getInt(1));
         }
+    }
 
+    /**
+     * Test: remove device returns true.
+     */
+    @Test
+    public void removeDeviceReturnsTrue() throws Exception {
+        Room room = service.addRoom("Test Room");
+        Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
         assertTrue(service.removeDeviceFromRoom(room.getId(), device.getId()));
-        assertEquals(0, service.getAllDevices().size());
+    }
 
-        // verify DB after removal
+    /**
+     * Test: device count becomes zero after removal.
+     */
+    @Test
+    public void deviceCountBecomesZeroAfterRemoval() throws Exception {
+        Room room = service.addRoom("Test Room");
+        Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
+        service.removeDeviceFromRoom(room.getId(), device.getId());
+        assertEquals(0, service.getAllDevices().size());
+    }
+
+    /**
+     * Test: device count query returns result after deletion.
+     */
+    @Test
+    public void deviceCountQueryReturnsResultAfterDeletion() throws Exception {
+        Room room = service.addRoom("Test Room");
+        Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
+        service.removeDeviceFromRoom(room.getId(), device.getId());
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement();
              ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
             assertTrue(rs.next());
+        }
+    }
+
+    /**
+     * Test: device count in database equals zero after deletion.
+     */
+    @Test
+    public void deviceCountInDatabaseEqualsZeroAfterDeletion() throws Exception {
+        Room room = service.addRoom("Test Room");
+        Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
+        service.removeDeviceFromRoom(room.getId(), device.getId());
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM devices")) {
+            rs.next();
             assertEquals(0, rs.getInt(1));
         }
     }

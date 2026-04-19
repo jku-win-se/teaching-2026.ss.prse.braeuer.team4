@@ -72,32 +72,136 @@ public class TestMockUserServiceRegistration {
     }
 
     /**
-     * Test: register user success hashes password and adds user.
+     * Test: register user success returns success status.
      */
     @Test
-    public void registerUserSuccessHashesPasswordAndAddsUser() {
+    public void registerUserSuccessReturnsSuccessStatus() {
         StubRegistrationStore store = new StubRegistrationStore();
         MockUserService service = new MockUserService(store);
-
         MockUserService.RegistrationStatus result = service.registerUser(
                 " New.User@Example.com ",
                 " newuser ",
                 "secret123",
                 "secret123"
         );
-
         assertEquals(MockUserService.RegistrationStatus.SUCCESS, result);
-        assertNotNull(store.savedUser);
-        assertEquals("new.user@example.com", store.savedUser.email());
-        assertEquals("newuser", store.savedUser.username());
-        assertNotEquals("secret123", store.savedUser.passwordHash());
-        assertTrue(BCrypt.checkpw("secret123", store.savedUser.passwordHash()));
+    }
 
+    /**
+     * Test: register user success saves user to store.
+     */
+    @Test
+    public void registerUserSuccessSavesUserToStore() {
+        StubRegistrationStore store = new StubRegistrationStore();
+        MockUserService service = new MockUserService(store);
+        service.registerUser(
+                " New.User@Example.com ",
+                " newuser ",
+                "secret123",
+                "secret123"
+        );
+        assertNotNull(store.savedUser);
+    }
+
+    /**
+     * Test: register user success stores normalized email.
+     */
+    @Test
+    public void registerUserSuccessStoresNormalizedEmail() {
+        StubRegistrationStore store = new StubRegistrationStore();
+        MockUserService service = new MockUserService(store);
+        service.registerUser(
+                " New.User@Example.com ",
+                " newuser ",
+                "secret123",
+                "secret123"
+        );
+        assertEquals("new.user@example.com", store.savedUser.email());
+    }
+
+    /**
+     * Test: register user success stores trimmed username.
+     */
+    @Test
+    public void registerUserSuccessStoresTrimmedUsername() {
+        StubRegistrationStore store = new StubRegistrationStore();
+        MockUserService service = new MockUserService(store);
+        service.registerUser(
+                " New.User@Example.com ",
+                " newuser ",
+                "secret123",
+                "secret123"
+        );
+        assertEquals("newuser", store.savedUser.username());
+    }
+
+    /**
+     * Test: register user success hashes password.
+     */
+    @Test
+    public void registerUserSuccessHashesPassword() {
+        StubRegistrationStore store = new StubRegistrationStore();
+        MockUserService service = new MockUserService(store);
+        service.registerUser(
+                " New.User@Example.com ",
+                " newuser ",
+                "secret123",
+                "secret123"
+        );
+        assertNotEquals("secret123", store.savedUser.passwordHash());
+    }
+
+    /**
+     * Test: register user success password hash verifies successfully.
+     */
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
+    @Test
+    public void registerUserSuccessPasswordHashVerifies() {
+        StubRegistrationStore store = new StubRegistrationStore();
+        MockUserService service = new MockUserService(store);
+        service.registerUser(
+                " New.User@Example.com ",
+                " newuser ",
+                "secret123",
+                "secret123"
+        );
+        // Verify password hash can authenticate the plain text password
+        assertTrue(BCrypt.checkpw("secret123", store.savedUser.passwordHash()));
+    }
+
+    /**
+     * Test: register user success caches user.
+     */
+    @Test
+    public void registerUserSuccessCachesUser() {
+        StubRegistrationStore store = new StubRegistrationStore();
+        MockUserService service = new MockUserService(store);
+        service.registerUser(
+                " New.User@Example.com ",
+                " newuser ",
+                "secret123",
+                "secret123"
+        );
         User cachedUser = service.getUsers().stream()
                 .filter(user -> "new.user@example.com".equals(user.getEmail()))
                 .findFirst()
                 .orElse(null);
         assertNotNull(cachedUser);
+    }
+
+    /**
+     * Test: register user success enables login.
+     */
+    @Test
+    public void registerUserSuccessEnablesLogin() {
+        StubRegistrationStore store = new StubRegistrationStore();
+        MockUserService service = new MockUserService(store);
+        service.registerUser(
+                " New.User@Example.com ",
+                " newuser ",
+                "secret123",
+                "secret123"
+        );
         assertTrue(service.login("new.user@example.com", "secret123"));
     }
 

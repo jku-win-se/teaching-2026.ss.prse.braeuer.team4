@@ -143,6 +143,7 @@ public final class ServiceRegistry {
     /**
      * Clears the cached schedule service so it is re-created on next access.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (OVERRIDE_LOCK) {
             testScheduleServiceOverride = null;
@@ -155,6 +156,7 @@ public final class ServiceRegistry {
      * This is intended for test lifecycle management where the singleton
      * service instance must be reset between test cases.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetRoomServiceForTesting() {
         synchronized (OVERRIDE_LOCK) {
             testRoomServiceOverride = null;

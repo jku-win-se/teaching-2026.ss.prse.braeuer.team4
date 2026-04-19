@@ -47,42 +47,144 @@ public class TestMockSceneService {
     }
 
     /**
-     * Test: activate scene applies to device states, logs and notifies.
+     * Test: activate scene returns true.
      */
     @Test
-    public void activateSceneAppliesToDeviceStatesLogsAndNotifies() {
-        int beforeLogs = logService.getLogs().size();
-        int beforeNotifications = notificationService.getNotifications().size();
-
+    public void activateSceneReturnsTrue() {
         assertTrue(service.activateScene("scene-001"));
+    }
 
+    /**
+     * Test: activate scene sets device brightness.
+     */
+    @Test
+    public void activateSceneSetsDimmerBrightness() {
+        service.activateScene("scene-001");
         Device dimmer = roomService.getDeviceByName("Dimmer Light");
-        Device mainLight = roomService.getDeviceByName("Main Light");
-        Device ceilingLight = roomService.getDeviceByName("Ceiling Light");
-
         assertEquals(20, dimmer.getBrightness());
+    }
+
+    /**
+     * Test: activate scene sets device states.
+     */
+    @Test
+    public void activateSceneSetsDimmerState() {
+        service.activateScene("scene-001");
+        Device dimmer = roomService.getDeviceByName("Dimmer Light");
         assertTrue(dimmer.getState());
+    }
+
+    /**
+     * Test: activate scene turns off main light.
+     */
+    @Test
+    public void activateSceneTurnsOffMainLight() {
+        service.activateScene("scene-001");
+        Device mainLight = roomService.getDeviceByName("Main Light");
         assertFalse(mainLight.getState());
+    }
+
+    /**
+     * Test: activate scene turns off ceiling light.
+     */
+    @Test
+    public void activateSceneTurnsOffCeilingLight() {
+        service.activateScene("scene-001");
+        Device ceilingLight = roomService.getDeviceByName("Ceiling Light");
         assertFalse(ceilingLight.getState());
+    }
+
+    /**
+     * Test: activate scene logs action.
+     */
+    @Test
+    public void activateSceneLogsAction() {
+        int beforeLogs = logService.getLogs().size();
+        service.activateScene("scene-001");
         assertTrue(logService.getLogs().size() > beforeLogs);
+    }
+
+    /**
+     * Test: activate scene sends notification.
+     */
+    @Test
+    public void activateSceneSendsNotification() {
+        int beforeNotifications = notificationService.getNotifications().size();
+        service.activateScene("scene-001");
         assertTrue(notificationService.getNotifications().size() > beforeNotifications);
     }
 
     /**
-     * Test: add, update, and delete scene manage configured states.
+     * Test: add scene returns non-null.
      */
     @Test
-    public void addUpdateDeleteSceneManageConfiguredStates() {
+    public void addSceneReturnsNonNull() {
         Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));
         assertNotNull(scene);
+    }
+
+    /**
+     * Test: add scene sets device states count.
+     */
+    @Test
+    public void addSceneSetsDeviceStatesCount() {
+        Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));
         assertEquals(2, scene.getDeviceStates().size());
+    }
 
+    /**
+     * Test: update scene returns true.
+     */
+    @Test
+    public void updateSceneReturnsTrue() {
+        Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));
         assertTrue(service.updateScene(scene.getId(), "Study Updated", "Warm mode", List.of("Dimmer Light: 50%")));
-        assertEquals("Study Updated", scene.getName());
-        assertEquals("Warm mode", scene.getDescription());
-        assertEquals(1, scene.getDeviceStates().size());
+    }
 
+    /**
+     * Test: update scene changes name.
+     */
+    @Test
+    public void updateSceneChangesName() {
+        Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));
+        service.updateScene(scene.getId(), "Study Updated", "Warm mode", List.of("Dimmer Light: 50%"));
+        assertEquals("Study Updated", scene.getName());
+    }
+
+    /**
+     * Test: update scene changes description.
+     */
+    @Test
+    public void updateSceneChangesDescription() {
+        Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));
+        service.updateScene(scene.getId(), "Study Updated", "Warm mode", List.of("Dimmer Light: 50%"));
+        assertEquals("Warm mode", scene.getDescription());
+    }
+
+    /**
+     * Test: update scene changes device states count.
+     */
+    @Test
+    public void updateSceneChangesDeviceStatesCount() {
+        Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));
+        service.updateScene(scene.getId(), "Study Updated", "Warm mode", List.of("Dimmer Light: 50%"));
+        assertEquals(1, scene.getDeviceStates().size());
+    }
+
+    /**
+     * Test: delete scene returns true.
+     */
+    @Test
+    public void deleteSceneReturnsTrue() {
+        Scene scene = service.addScene("Study", "Quiet mode", List.of("Main Light: OFF", "Temperature Control: 21°C"));
         assertTrue(service.deleteScene(scene.getId()));
+    }
+
+    /**
+     * Test: delete non-existent scene returns false.
+     */
+    @Test
+    public void deleteNonExistentSceneReturnsFalse() {
         assertFalse(service.deleteScene("does-not-exist"));
     }
 }

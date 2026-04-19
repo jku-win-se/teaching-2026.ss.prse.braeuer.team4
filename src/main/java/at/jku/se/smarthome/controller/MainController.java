@@ -28,6 +28,7 @@ import javafx.util.Duration;
  * Handles navigation between different views (Devices, Rooms, Rules, Energy, Settings)
  * and manages the user session (login/logout).
  */
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public class MainController {
 
     /** Logger instance for application logging. */
@@ -127,6 +128,7 @@ public class MainController {
      * Initializes the controller after FXML has been loaded.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void initialize() {
         initializeToastNotifications();
         refreshSessionState();
@@ -207,6 +209,7 @@ public class MainController {
      * Shows the Rooms view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showRooms() {
         if (!requireOwnerAccess("Room management")) {
             return;
@@ -226,6 +229,7 @@ public class MainController {
      * Shows the Rules view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showAutomation() {
         if (!requireOwnerAccess("Rules")) {
             return;
@@ -237,6 +241,7 @@ public class MainController {
      * Shows the Energy view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showEnergy() {
         loadView("energy-view.fxml");
     }
@@ -245,6 +250,7 @@ public class MainController {
      * Shows the Settings view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showSettings() {
         loadView("settings-view.fxml");
     }
@@ -253,6 +259,7 @@ public class MainController {
      * Shows the Activity Log view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showActivityLog() {
         loadView("activity-log-view.fxml");
     }
@@ -261,6 +268,7 @@ public class MainController {
      * Shows the Schedules view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showSchedules() {
         if (!requireOwnerAccess("Schedules")) {
             return;
@@ -272,6 +280,7 @@ public class MainController {
      * Shows the Scenes view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showScenes() {
         if (!requireOwnerAccess("Scenes")) {
             return;
@@ -283,6 +292,7 @@ public class MainController {
      * Shows the Users view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showUsers() {
         if (!requireOwnerAccess("User management")) {
             return;
@@ -294,6 +304,7 @@ public class MainController {
      * Shows the Vacation Mode view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showVacationMode() {
         if (!requireOwnerAccess("Vacation mode configuration")) {
             return;
@@ -305,6 +316,7 @@ public class MainController {
      * Shows the Simulation view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showSimulation() {
         if (!requireOwnerAccess("Simulation tools")) {
             return;
@@ -316,6 +328,7 @@ public class MainController {
      * Shows the IoT Settings view.
      */
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void showIoTSettings() {
         if (!requireOwnerAccess("IoT integration settings")) {
             return;

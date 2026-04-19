@@ -94,6 +94,7 @@ public class IoTSettingsController {
     private final MockIoTIntegrationService integrationService = MockIoTIntegrationService.getInstance();
     
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void initialize() {
         deviceNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         deviceTypeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -116,6 +117,7 @@ public class IoTSettingsController {
     }
     
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void handleToggleIntegration() {
         boolean enabled = enableToggle.isSelected();
         enableToggle.setText(enabled ? "ON" : "OFF");
@@ -140,6 +142,7 @@ public class IoTSettingsController {
     }
     
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void handleTestConnection() {
         String broker = brokerField.getText();
         if (!enableToggle.isSelected()) {
@@ -158,6 +161,7 @@ public class IoTSettingsController {
     }
     
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void handleSaveSettings() {
         if (enableToggle.isSelected() && integrationService.testConnection(brokerField.getText(), portField.getText())) {
             integrationService.saveConfiguration(
@@ -191,6 +195,7 @@ public class IoTSettingsController {
     }
 
     @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void handleDiscoverDevices() {
         if (!integrationService.refreshDevices()) {
             showError("Connect to the mock MQTT broker before discovering devices");
