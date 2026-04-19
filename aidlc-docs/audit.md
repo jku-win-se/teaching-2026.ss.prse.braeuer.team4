@@ -176,3 +176,11 @@ Also please make a clear distinction between the former Mock services and the re
 **User Input**: "Please implement this feature"
 **AI Response**: "Implemented issue #58 by extending the GitHub Actions CI pipeline to run Maven verify (including JaCoCo check), uploading JaCoCo XML coverage data to Codecov, and adding CI plus coverage badges to README.md."
 **Context**: Construction execution for CI code coverage visibility and README badge integration
+
+---
+
+## Service-Only Coverage Badge Metric (#58)
+**Timestamp**: 2026-04-19T00:00:00Z
+**User Input**: "Yes please, service-only"
+**AI Response**: "Updated the CI badge calculation to use only JaCoCo rows where package matches at.jku.se.smarthome.service* and changed the badge label to service coverage, so README reflects service-layer coverage instead of whole-project coverage."
+**Context**: Construction follow-up for service-only coverage reporting
