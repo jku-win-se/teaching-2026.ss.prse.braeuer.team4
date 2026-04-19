@@ -26,7 +26,18 @@ jobs:
         run: mvn compile -q
 
       - name: Test & coverage check
-        run: mvn test
+        run: mvn verify
+
+      - name: Regenerate JaCoCo XML report
+        if: always()
+        run: mvn -q jacoco:report
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: always()
+        with:
+          files: target/site/jacoco/jacoco.xml
+          fail_ci_if_error: false
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
