@@ -139,15 +139,6 @@ public class TestJdbcScheduleService {
     }
 
     /**
-     * Test: add schedule returns non-null.
-     */
-    @Test
-    public void addScheduleReturnsNonNull() throws Exception {
-        Schedule schedule = service.addSchedule("Warmup", "dev-004", "Temperature Control", "Set to 22°C", "06:30 AM", "Daily", true);
-        assertNotNull(schedule);
-    }
-
-    /**
      * Test: add schedule persists to database.
      */
     @Test

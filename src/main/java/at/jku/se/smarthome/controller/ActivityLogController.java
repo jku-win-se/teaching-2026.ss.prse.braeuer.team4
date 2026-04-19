@@ -14,6 +14,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
  * Controller for the activity log view (FR-08).
  * Displays all manual and automated state changes with filtering options.
  */
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public class ActivityLogController {
     
     /** Table view for displaying activity log entries. */

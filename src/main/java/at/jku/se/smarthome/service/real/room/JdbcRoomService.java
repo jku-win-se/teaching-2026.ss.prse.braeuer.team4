@@ -275,12 +275,12 @@ public final class JdbcRoomService implements RoomService {
             if (room != null) {
                 String normalizedType = normalizeDeviceType(deviceType);
                 if (normalizedType != null) {
-                    String id = UUID.randomUUID().toString();
+                    String deviceId = UUID.randomUUID().toString();
                     try (Connection connection = openConnection()) {
                         ensureSchema(connection);
                         try (PreparedStatement stmt = connection.prepareStatement(
                                 "INSERT INTO devices (id, name, type, room_id, state, brightness, temperature) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
-                            stmt.setString(1, id);
+                            stmt.setString(1, deviceId);
                             stmt.setString(2, deviceName.trim());
                             stmt.setString(3, normalizedType);
                             stmt.setString(4, roomId);
@@ -293,7 +293,7 @@ public final class JdbcRoomService implements RoomService {
                         throw new IllegalStateException("Failed to persist device.", e);
                     }
 
-                    Device device = new Device(id, deviceName.trim(), normalizedType, room.getName(), true);
+                    Device device = new Device(deviceId, deviceName.trim(), normalizedType, room.getName(), true);
                     room.addDevice(device);
                     logService.addLogEntry(device.getName(), room.getName(), "Device created", userService.getCurrentUserEmail());
                     result = device;
@@ -514,8 +514,8 @@ public final class JdbcRoomService implements RoomService {
     private String normalizeDeviceType(String deviceType) {
         String result = null;
         if (deviceType != null) {
-            String t = deviceType.trim().toLowerCase(Locale.ENGLISH);
-            result = switch (t) {
+            String normalizedInput = deviceType.trim().toLowerCase(Locale.ENGLISH);
+            result = switch (normalizedInput) {
                 case "switch", "schalter" -> "Switch";
                 case "dimmer" -> "Dimmer";
                 case "thermostat" -> "Thermostat";
@@ -551,8 +551,8 @@ public final class JdbcRoomService implements RoomService {
                 if (!schemaReady.get()) {
                     try (Statement stmt = connection.createStatement()) {
                         for (String sql : loadInitScript().split(";")) {
-                            String s = sql.trim();
-                            if (!s.isEmpty()) stmt.execute(s);
+                            String sqlStatement = sql.trim();
+                            if (!sqlStatement.isEmpty()) stmt.execute(sqlStatement);
                         }
                         schemaReady.set(true);
                     } catch (SQLException e) {

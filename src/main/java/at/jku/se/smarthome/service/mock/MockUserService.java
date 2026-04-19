@@ -81,6 +81,7 @@ public class MockUserService extends UserService {
      * Resets the singleton for unit testing.
      * Must NOT be called from production code.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             instance = null;
@@ -475,7 +476,11 @@ public class MockUserService extends UserService {
         }
 
         if (System.currentTimeMillis() >= currentSessionExpiresAt) {
-            logout();
+            this.currentUserEmail = null;
+            this.currentUsername = null;
+            this.currentUserRole = "Guest";
+            this.currentUserStatus = null;
+            this.currentSessionExpiresAt = 0;
         }
     }
 

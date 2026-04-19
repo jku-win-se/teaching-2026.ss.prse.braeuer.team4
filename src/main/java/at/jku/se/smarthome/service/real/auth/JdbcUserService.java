@@ -80,6 +80,7 @@ public final class JdbcUserService extends UserService {
     /**
      * Resets the singleton for unit testing.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
             instance = null;
@@ -284,10 +285,6 @@ public final class JdbcUserService extends UserService {
     @Override
     public void logout() {
         synchronized (this) {
-            this.currentUserEmail = null;
-            this.currentUsername = null;
-            this.currentUserRole = null;
-            this.currentUserStatus = null;
             this.currentSessionExpiresAt = 0;
         }
     }

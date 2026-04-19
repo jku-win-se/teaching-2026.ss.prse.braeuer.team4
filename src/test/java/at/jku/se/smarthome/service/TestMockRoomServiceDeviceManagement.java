@@ -37,12 +37,20 @@ public class TestMockRoomServiceDeviceManagement {
     // -----------------------------------------------------------------------
 
     /**
+     * Tests valid device rename returns true.
+     */
+    @Test
+    public void testRenameDeviceValidReturnsTrue() {
+        boolean result = service.renameDevice("room-001", "dev-001", "Hallway Lamp");
+        assertTrue(result);
+    }
+
+    /**
      * Tests valid device rename changes the device name.
      */
     @Test
-    public void testRenameDeviceValid() {
-        boolean result = service.renameDevice("room-001", "dev-001", "Hallway Lamp");
-        assertTrue(result);
+    public void testRenameDeviceValidChangesName() {
+        service.renameDevice("room-001", "dev-001", "Hallway Lamp");
         assertEquals("Hallway Lamp", service.getRoomById("room-001")
                 .getDevices().stream()
                 .filter(d -> d.getId().equals("dev-001"))
@@ -93,11 +101,17 @@ public class TestMockRoomServiceDeviceManagement {
     // removeDeviceFromRoom
     // -----------------------------------------------------------------------
 
-    /** Removing an existing device returns true and the device is gone. */
+    /** Removing an existing device returns true. */
     @Test
-    public void testRemoveDeviceValid() {
+    public void testRemoveDeviceValidReturnsTrue() {
         boolean result = service.removeDeviceFromRoom("room-001", "dev-001");
         assertTrue(result);
+    }
+
+    /** Removing an existing device removes it from the room. */
+    @Test
+    public void testRemoveDeviceValidRemovesDevice() {
+        service.removeDeviceFromRoom("room-001", "dev-001");
         Room room = service.getRoomById("room-001");
         boolean stillExists = room.getDevices().stream()
                 .anyMatch(d -> d.getId().equals("dev-001"));

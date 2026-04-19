@@ -59,41 +59,142 @@ public class TestMockVacationModeService {
     }
 
     /**
-     * Test: activate vacation mode sets status and override summaries.
+     * Test: activate vacation mode enables service.
      */
     @Test
-    public void activateVacationModeSetsStatusAndOverrideSummaries() {
+    public void activateVacationModeEnablesService() {
         Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
         LocalDate start = LocalDate.of(2026, 4, 20);
         LocalDate end = LocalDate.of(2026, 4, 25);
-
         service.activateVacationMode(start, end, selectedSchedule, "Owner");
-
         assertTrue(service.isEnabled());
+    }
+
+    /**
+     * Test: activate vacation mode is active on date.
+     */
+    @Test
+    public void activateVacationModeIsActiveOnDate() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        LocalDate start = LocalDate.of(2026, 4, 20);
+        LocalDate end = LocalDate.of(2026, 4, 25);
+        service.activateVacationMode(start, end, selectedSchedule, "Owner");
         assertTrue(service.isActiveOn(LocalDate.of(2026, 4, 22)));
+    }
+
+    /**
+     * Test: activate vacation mode sets schedule ID.
+     */
+    @Test
+    public void activateVacationModeSetsScheduleId() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        LocalDate start = LocalDate.of(2026, 4, 20);
+        LocalDate end = LocalDate.of(2026, 4, 25);
+        service.activateVacationMode(start, end, selectedSchedule, "Owner");
         assertEquals(selectedSchedule.getId(), service.getConfiguration().getScheduleId());
+    }
+
+    /**
+     * Test: activate vacation mode sets selected schedule.
+     */
+    @Test
+    public void activateVacationModeSetsSelectedSchedule() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        LocalDate start = LocalDate.of(2026, 4, 20);
+        LocalDate end = LocalDate.of(2026, 4, 25);
+        service.activateVacationMode(start, end, selectedSchedule, "Owner");
         assertNotNull(service.getSelectedSchedule());
+    }
+
+    /**
+     * Test: activate vacation mode sets status summary.
+     */
+    @Test
+    public void activateVacationModeSetsStatusSummary() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        LocalDate start = LocalDate.of(2026, 4, 20);
+        LocalDate end = LocalDate.of(2026, 4, 25);
+        service.activateVacationMode(start, end, selectedSchedule, "Owner");
         assertTrue(service.getStatusSummary().contains("Active from 2026-04-20 to 2026-04-25 using 'Morning Lights'"));
+    }
+
+    /**
+     * Test: activate vacation mode sets override summary.
+     */
+    @Test
+    public void activateVacationModeSetsOverrideSummary() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        LocalDate start = LocalDate.of(2026, 4, 20);
+        LocalDate end = LocalDate.of(2026, 4, 25);
+        service.activateVacationMode(start, end, selectedSchedule, "Owner");
         assertTrue(service.getOverrideSummary().contains("Morning Lights"));
+    }
+
+    /**
+     * Test: activate vacation mode sends notification.
+     */
+    @Test
+    public void activateVacationModeSendsNotification() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        LocalDate start = LocalDate.of(2026, 4, 20);
+        LocalDate end = LocalDate.of(2026, 4, 25);
+        service.activateVacationMode(start, end, selectedSchedule, "Owner");
         assertTrue(notificationService.getNotifications().get(0).getMessage().contains("Vacation mode enabled"));
+    }
+
+    /**
+     * Test: activate vacation mode logs action.
+     */
+    @Test
+    public void activateVacationModeLogsAction() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        LocalDate start = LocalDate.of(2026, 4, 20);
+        LocalDate end = LocalDate.of(2026, 4, 25);
+        service.activateVacationMode(start, end, selectedSchedule, "Owner");
         assertTrue(logService.getLogs().get(0).getAction().contains("Vacation mode enabled"));
     }
 
     /**
-     * Test: deactivate and clear reset configuration.
+     * Test: deactivate vacation mode disables service.
      */
     @Test
-    public void deactivateAndClearResetConfiguration() {
+    public void deactivateVacationModeDisablesService() {
         Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
         service.activateVacationMode(LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 25), selectedSchedule, "Owner");
-
         service.deactivateVacationMode("Owner");
         assertFalse(service.isEnabled());
-        assertEquals("Vacation mode is currently disabled.", service.getStatusSummary());
+    }
 
+    /**
+     * Test: deactivate vacation mode resets status summary.
+     */
+    @Test
+    public void deactivateVacationModeResetsStatusSummary() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        service.activateVacationMode(LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 25), selectedSchedule, "Owner");
+        service.deactivateVacationMode("Owner");
+        assertEquals("Vacation mode is currently disabled.", service.getStatusSummary());
+    }
+
+    /**
+     * Test: reactivate and clear resets status summary.
+     */
+    @Test
+    public void reactivateAndClearResetsStatusSummary() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
         service.activateVacationMode(LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 25), selectedSchedule, "Owner");
         service.clearIfUsingSchedule(selectedSchedule.getId(), "Removed selected schedule");
         assertFalse(service.isEnabled());
+    }
+
+    /**
+     * Test: clear if using schedule sends warning notification.
+     */
+    @Test
+    public void clearIfUsingScheduleSendsWarningNotification() {
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        service.activateVacationMode(LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 25), selectedSchedule, "Owner");
+        service.clearIfUsingSchedule(selectedSchedule.getId(), "Removed selected schedule");
         assertEquals("warning", notificationService.getNotifications().get(0).getType());
     }
 }
