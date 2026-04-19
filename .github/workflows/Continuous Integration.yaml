@@ -28,9 +28,13 @@ jobs:
       - name: Test & coverage check
         run: mvn verify
 
+      - name: Regenerate JaCoCo XML report
+        if: always()
+        run: mvn -q jacoco:report
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
-        if: ${{ success() && hashFiles('target/site/jacoco/jacoco.xml') != '' }}
+        if: always()
         with:
           files: target/site/jacoco/jacoco.xml
           fail_ci_if_error: false
