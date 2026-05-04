@@ -7,6 +7,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.LocalTime;
+
 import at.jku.se.smarthome.model.NotificationEntry;
 import at.jku.se.smarthome.model.Rule;
 import at.jku.se.smarthome.service.mock.MockLogService;
@@ -51,7 +53,7 @@ public class TestMockRuleService {
      */
     @Test
     public void executeActiveRuleAppliesAction() {
-        Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
+        Rule rule = service.addRule("Shutdown", "Time", "Clock", nowTime(), "Turn Off", "Main Light");
         assertTrue(service.executeRule(rule.getId()));
     }
 
@@ -60,7 +62,7 @@ public class TestMockRuleService {
      */
     @Test
     public void executeActiveRuleChangesDeviceState() {
-        Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
+        Rule rule = service.addRule("Shutdown", "Time", "Clock", nowTime(), "Turn Off", "Main Light");
         service.executeRule(rule.getId());
         assertFalse(roomService.getDeviceByName("Main Light").getState());
     }
@@ -70,7 +72,7 @@ public class TestMockRuleService {
      */
     @Test
     public void executeActiveRuleCreatesLogEntry() {
-        Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
+        Rule rule = service.addRule("Shutdown", "Time", "Clock", nowTime(), "Turn Off", "Main Light");
         int beforeLogs = logService.getLogs().size();
         service.executeRule(rule.getId());
         assertTrue(logService.getLogs().size() > beforeLogs);
@@ -81,7 +83,7 @@ public class TestMockRuleService {
      */
     @Test
     public void executeActiveRuleCreatesNotification() {
-        Rule rule = service.addRule("Shutdown", "Time", "Clock", "23:00", "Turn Off", "Main Light");
+        Rule rule = service.addRule("Shutdown", "Time", "Clock", nowTime(), "Turn Off", "Main Light");
         int beforeNotifications = notificationService.getNotifications().size();
         service.executeRule(rule.getId());
         assertTrue(notificationService.getNotifications().size() > beforeNotifications);
@@ -182,5 +184,51 @@ public class TestMockRuleService {
         Rule rule = service.addRule("Comfort", "Time", "Clock", "06:00 AM", "Set to 22°C", "Temperature Control");
         service.deleteRule(rule.getId());
         assertFalse(service.hasConflicts(rule.getId()));
+    }
+
+    /**
+     * Test: execute rule does not apply action when condition is not met.
+     */
+    @Test
+    public void executeRule_conditionNotMet_doesNotApplyAction() {
+        // Bed Light is off (state = false) in the mock seed
+        Rule rule = service.addRule("Bed Check", "Device State", "Bed Light", "State = Active", "Turn On", "Main Light");
+        boolean result = service.executeRule(rule.getId());
+        assertFalse(result);
+        assertTrue(roomService.getDeviceByName("Main Light").getState());
+    }
+
+    /**
+     * Test: execute rule applies action when condition is met.
+     */
+    @Test
+    public void executeRule_conditionMet_appliesAction() {
+        // Main Light is on (state = true) in the mock seed
+        Rule rule = service.addRule("Main Check", "Device State", "Main Light", "State = Active", "Turn On", "Bed Light");
+        boolean result = service.executeRule(rule.getId());
+        assertTrue(result);
+        assertTrue(roomService.getDeviceByName("Bed Light").getState());
+    }
+
+    /**
+     * Test: execute rule emits error notification when condition is not met.
+     */
+    @Test
+    public void executeRule_conditionNotMet_emitsErrorNotification() {
+        Rule rule = service.addRule("Bed Check", "Device State", "Bed Light", "State = Active", "Turn On", "Main Light");
+        service.executeRule(rule.getId());
+        NotificationEntry note = notificationService.getNotifications().get(0);
+        assertEquals("error", note.getType());
+        assertTrue(note.getMessage().contains("condition not met"));
+    }
+
+    /**
+     * Helper: returns the current time formatted as HH:mm.
+     *
+     * @return current hour and minute string
+     */
+    private String nowTime() {
+        LocalTime now = LocalTime.now();
+        return String.format("%02d:%02d", now.getHour(), now.getMinute());
     }
 }
