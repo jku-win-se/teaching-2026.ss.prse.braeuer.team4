@@ -94,7 +94,7 @@ public final class JdbcLogService implements LogService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to persist log entry.", e);
         }
-        logs.add(0, new LogEntry(timestamp, device, room, action, actor));
+        logs.addFirst(new LogEntry(timestamp, device, room, action, actor));
     }
 
     @Override
@@ -135,9 +135,9 @@ public final class JdbcLogService implements LogService {
     public String exportToCSV(List<LogEntry> entries) {
         int initialCapacity = entries.size() * 96 + 64;
         StringBuilder csv = new StringBuilder(initialCapacity);
-        csv.append("Timestamp,Device,Room,Action,Actor\n");
+        csv.append("Timestamp;Device;Room;Action;Actor\n");
         for (LogEntry log : entries) {
-            csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+            csv.append(String.format("\"%s\";\"%s\";\"%s\";\"%s\";\"%s\"\n",
                     log.getTimestamp(), log.getDevice(), log.getRoom(), log.getAction(), log.getActor()));
         }
         return csv.toString();
