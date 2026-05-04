@@ -99,28 +99,25 @@ public class ActivityLogController {
      * lexicographic comparison on ISO dates is equivalent to chronological order.
      */
     private void applyFilters() {
-        final LocalDate from = fromDatePicker.getValue();
-        final LocalDate to = toDatePicker.getValue();
+        final LocalDate fromDate = fromDatePicker.getValue();
+        final LocalDate toDate = toDatePicker.getValue();
         final String selectedDevice = deviceFilter.getValue();
         final boolean filterByDevice = selectedDevice != null && !ALL_DEVICES.equals(selectedDevice);
-        final String fromIso = from == null ? null : from.toString();
-        final String toIso = to == null ? null : to.toString();
+        final String fromIso = fromDate == null ? null : fromDate.toString();
+        final String toIso = toDate == null ? null : toDate.toString();
 
         filteredLogs.setPredicate(entry -> matches(entry, filterByDevice, selectedDevice, fromIso, toIso));
     }
 
     private boolean matches(LogEntry entry, boolean filterByDevice, String selectedDevice,
                             String fromIso, String toIso) {
-        if (filterByDevice && !selectedDevice.equals(entry.getDevice())) {
-            return false;
-        }
-        String timestamp = entry.getTimestamp();
-        String date = timestamp == null || timestamp.length() < ISO_DATE_LENGTH
+        final String timestamp = entry.getTimestamp();
+        final String date = timestamp == null || timestamp.length() < ISO_DATE_LENGTH
                 ? "" : timestamp.substring(0, ISO_DATE_LENGTH);
-        if (fromIso != null && date.compareTo(fromIso) < 0) {
-            return false;
-        }
-        return toIso == null || date.compareTo(toIso) <= 0;
+        final boolean deviceOk = !filterByDevice || selectedDevice.equals(entry.getDevice());
+        final boolean fromOk = fromIso == null || date.compareTo(fromIso) >= 0;
+        final boolean toOk = toIso == null || date.compareTo(toIso) <= 0;
+        return deviceOk && fromOk && toOk;
     }
 
     @FXML
