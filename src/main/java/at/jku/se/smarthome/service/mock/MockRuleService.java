@@ -227,37 +227,41 @@ public final class MockRuleService implements RuleService {
      */
     @SuppressWarnings("PMD.CyclomaticComplexity")
     private boolean applyAction(Device targetDevice, String action) {
-        boolean result = switch (action) {
-            case "Turn On", "Open" -> {
-                targetDevice.setState(true);
-                yield true;
-            }
-            case "Turn Off", "Close" -> {
-                targetDevice.setState(false);
-                yield true;
-            }
-            case "Notify User", "Trigger Alert" -> true;
-            default -> {
-                if (action.startsWith("Set to ") && action.endsWith("%")) {
-                    try {
-                        int brightness = Integer.parseInt(action.substring(7, action.length() - 1));
-                        targetDevice.setBrightness(brightness);
-                        yield true;
-                    } catch (NumberFormatException e) {
-                        yield false;
-                    }
-                } else if (action.startsWith("Set to ") && action.endsWith("°C")) {
-                    try {
-                        double temperature = Double.parseDouble(action.substring(7, action.length() - 2));
-                        targetDevice.setTemperature(temperature);
-                        yield true;
-                    } catch (NumberFormatException e) {
+        boolean result = false;
+        if (action != null) {
+            result = switch (action) {
+                case "Turn On", "Open" -> {
+                    targetDevice.setState(true);
+                    yield true;
+                }
+                case "Turn Off", "Close" -> {
+                    targetDevice.setState(false);
+                    yield true;
+                }
+                case "Notify User", "Trigger Alert" -> true;
+                default -> {
+                    if (action.startsWith("Set to ") && action.endsWith("%")) {
+                        try {
+                            int brightness = Integer.parseInt(action.substring(7, action.length() - 1));
+                            targetDevice.setBrightness(brightness);
+                            yield true;
+                        } catch (NumberFormatException e) {
+                            yield false;
+                        }
+                    } else if (action.startsWith("Set to ") && action.endsWith("°C")) {
+                        try {
+                            double temperature = Double.parseDouble(action.substring(7, action.length() - 2));
+                            targetDevice.setTemperature(temperature);
+                            yield true;
+                        } catch (NumberFormatException e) {
+                            yield false;
+                        }
+                    } else {
                         yield false;
                     }
                 }
-                yield false;
-            }
-        };
+            };
+        }
         return result;
     }
     
