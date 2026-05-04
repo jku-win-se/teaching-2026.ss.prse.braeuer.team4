@@ -48,12 +48,15 @@ public class RuleEvaluator {
     public boolean evaluate(Rule rule, Device sourceDevice) {
         boolean result = false;
         if (rule != null) {
-            result = switch (rule.getTriggerType()) {
-                case "Time" -> evaluateTime(rule.getCondition());
-                case "Device State" -> evaluateDeviceState(rule.getCondition(), sourceDevice);
-                case "Sensor Threshold" -> evaluateSensorThreshold(rule.getCondition(), sourceDevice);
-                default -> false;
-            };
+            String triggerType = rule.getTriggerType();
+            if (triggerType != null) {
+                result = switch (triggerType) {
+                    case "Time" -> evaluateTime(rule.getCondition());
+                    case "Device State" -> evaluateDeviceState(rule.getCondition(), sourceDevice);
+                    case "Sensor Threshold" -> evaluateSensorThreshold(rule.getCondition(), sourceDevice);
+                    default -> false;
+                };
+            }
         }
         return result;
     }

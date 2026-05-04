@@ -46,6 +46,8 @@ public final class RuleValidator {
         Result result;
         if (condition == null || condition.isBlank()) {
             result = new Result(false, "condition is required");
+        } else if (triggerType == null) {
+            result = new Result(false, "trigger type is required");
         } else {
             String trimmed = condition.trim();
             result = switch (triggerType) {

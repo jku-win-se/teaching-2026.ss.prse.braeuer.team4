@@ -312,12 +312,16 @@ public class MainController {
         }
 
         private String getTypeIcon(NotificationType type) {
-            return switch (type) {
-                case SUCCESS -> "✅";
-                case FAILURE -> "❌";
-                case WARNING -> "⚠️";
-                case INFO -> "ℹ️";
-            };
+            String icon = "🔔";
+            if (type != null) {
+                icon = switch (type) {
+                    case SUCCESS -> "✅";
+                    case FAILURE -> "❌";
+                    case WARNING -> "⚠️";
+                    case INFO -> "ℹ️";
+                };
+            }
+            return icon;
         }
     }
     
