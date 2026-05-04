@@ -49,7 +49,20 @@ public class TestMockRuleService {
         roomService = MockRoomService.getInstance();
         logService = MockLogService.getInstance();
         notificationService = MockNotificationService.getInstance();
+        // MockRuleService captures ServiceRegistry.getNotificationService() at construction;
+        // register the mock override before MockRuleService.getInstance() so the rule
+        // service does not bind to the JDBC default (which would require a live DB).
+        ServiceRegistry.setNotificationServiceForTesting(notificationService);
         service = MockRuleService.getInstance();
+    }
+
+    /**
+     * Cleans up registry overrides after each test.
+     */
+    @org.junit.After
+    public void tearDown() {
+        ServiceRegistry.setNotificationServiceForTesting(null);
+        ServiceRegistry.setRuleServiceForTesting(null);
     }
 
     /**
@@ -271,12 +284,10 @@ public class TestMockRuleService {
     }
 
     /**
-     * Test: ServiceRegistry returns rule service and setForTesting works.
+     * Test: ServiceRegistry setForTesting works for rule service.
      */
     @Test
-    public void serviceRegistry_returnsRuleService_andSetForTestingWorks() {
-        RuleService original = ServiceRegistry.getRuleService();
-        assertNotNull(original);
+    public void serviceRegistry_setForTestingWorksForRuleService() {
         ServiceRegistry.setRuleServiceForTesting(service);
         assertEquals(service, ServiceRegistry.getRuleService());
         ServiceRegistry.setRuleServiceForTesting(null);

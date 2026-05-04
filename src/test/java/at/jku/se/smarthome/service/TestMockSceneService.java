@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Scene;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockLogService;
 import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockRoomService;
@@ -45,7 +46,16 @@ public class TestMockSceneService {
         roomService = MockRoomService.getInstance();
         logService = MockLogService.getInstance();
         notificationService = MockNotificationService.getInstance();
+        ServiceRegistry.setNotificationServiceForTesting(notificationService);
         service = MockSceneService.getInstance();
+    }
+
+    /**
+     * Cleans up registry overrides after each test.
+     */
+    @org.junit.After
+    public void tearDown() {
+        ServiceRegistry.setNotificationServiceForTesting(null);
     }
 
     /**
