@@ -2,7 +2,9 @@ package at.jku.se.smarthome.service.mock;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Rule;
+import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.rule.RuleEvaluator;
+import at.jku.se.smarthome.service.rule.RuleValidator;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -10,7 +12,7 @@ import javafx.collections.ObservableList;
  * Mock Rule Service providing rule management functionality.
  */
 @SuppressWarnings("PMD.UseObjectForClearerAPI")
-public final class MockRuleService {
+public final class MockRuleService implements RuleService {
     
     /** Singleton instance of the mock rule service. */
     private static MockRuleService instance;
@@ -89,6 +91,10 @@ public final class MockRuleService {
      */
     public Rule addRule(String name, String triggerType, String sourceDevice, String condition,
                        String action, String targetDevice) {
+        RuleValidator.Result validation = RuleValidator.validate(triggerType, condition, sourceDevice, roomService);
+        if (!validation.valid()) {
+            return null;
+        }
         Rule rule = new Rule(
                 "rule-" + String.format("%03d", rules.size() + 1),
                 name,
@@ -118,22 +124,27 @@ public final class MockRuleService {
      */
     public boolean updateRule(String ruleId, String name, String triggerType, String sourceDevice,
                              String condition, String action, String targetDevice) {
-        boolean updated = false;
         Rule rule = rules.stream()
                 .filter(r -> r.getId().equals(ruleId))
                 .findFirst()
                 .orElse(null);
-        
-        if (rule != null) {
-            rule.setName(name);
-            rule.setTriggerType(triggerType);
-            rule.setSourceDevice(sourceDevice);
-            rule.setCondition(condition);
-            rule.setAction(action);
-            rule.setTargetDevice(targetDevice);
-            updated = true;
+
+        if (rule == null) {
+            return false;
         }
-        return updated;
+
+        RuleValidator.Result validation = RuleValidator.validate(triggerType, condition, sourceDevice, roomService);
+        if (!validation.valid()) {
+            return false;
+        }
+
+        rule.setName(name);
+        rule.setTriggerType(triggerType);
+        rule.setSourceDevice(sourceDevice);
+        rule.setCondition(condition);
+        rule.setAction(action);
+        rule.setTargetDevice(targetDevice);
+        return true;
     }
     
     /**

@@ -7,7 +7,8 @@ import java.util.List;
 
 import at.jku.se.smarthome.model.Rule;
 import at.jku.se.smarthome.model.SimulationDeviceState;
-import at.jku.se.smarthome.service.mock.MockRuleService;
+import at.jku.se.smarthome.service.api.RuleService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockSimulationService;
 import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationConfiguration;
 import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationEvent;
@@ -110,7 +111,7 @@ public class SimulationController {
     private TableColumn<SimulationDeviceState, String> simLastChangedColumn;
     
     /** Rule service instance. */
-    private final MockRuleService ruleService = MockRuleService.getInstance();
+    private final RuleService ruleService = ServiceRegistry.getRuleService();
     /** Simulation service instance. */
     private final MockSimulationService simulationService = MockSimulationService.getInstance();
     /** Observable list of simulated device states. */

@@ -11,6 +11,8 @@ import java.time.LocalTime;
 
 import at.jku.se.smarthome.model.NotificationEntry;
 import at.jku.se.smarthome.model.Rule;
+import at.jku.se.smarthome.service.api.RuleService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockLogService;
 import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockRoomService;
@@ -220,6 +222,62 @@ public class TestMockRuleService {
         NotificationEntry note = notificationService.getNotifications().get(0);
         assertEquals("error", note.getType());
         assertTrue(note.getMessage().contains("condition not met"));
+    }
+
+    /**
+     * Test: add rule with invalid trigger type returns null and does not add.
+     */
+    @Test
+    public void addRule_invalidTriggerType_returnsNullAndDoesNotAddRule() {
+        int before = service.getRules().size();
+        Rule rule = service.addRule("Bad", "Magic", "Clock", "07:00", "Turn On", "Main Light");
+        assertEquals(null, rule);
+        assertEquals(before, service.getRules().size());
+    }
+
+    /**
+     * Test: add rule with invalid time condition returns null.
+     */
+    @Test
+    public void addRule_invalidTimeCondition_returnsNull() {
+        Rule rule = service.addRule("Bad", "Time", "Clock", "hello world", "Turn On", "Main Light");
+        assertEquals(null, rule);
+    }
+
+    /**
+     * Test: add rule with invalid threshold source returns null.
+     */
+    @Test
+    public void addRule_invalidThresholdSource_returnsNull() {
+        // Main Light is a Switch, not a sensor
+        Rule rule = service.addRule("Bad", "Sensor Threshold", "Main Light", "Value > 5", "Turn On", "Bed Light");
+        assertEquals(null, rule);
+    }
+
+    /**
+     * Test: update rule with invalid payload returns false and preserves rule.
+     */
+    @Test
+    public void updateRule_invalidPayload_returnsFalseAndPreservesRule() {
+        Rule rule = service.addRule("Good", "Time", "Clock", "06:00 AM", "Turn On", "Main Light");
+        String originalName = rule.getName();
+        String originalCondition = rule.getCondition();
+        boolean result = service.updateRule(rule.getId(), "Bad", "Time", "Clock", " Funday 07:00 ", "Turn On", "Main Light");
+        assertFalse(result);
+        assertEquals(originalName, rule.getName());
+        assertEquals(originalCondition, rule.getCondition());
+    }
+
+    /**
+     * Test: ServiceRegistry returns rule service and setForTesting works.
+     */
+    @Test
+    public void serviceRegistry_returnsRuleService_andSetForTestingWorks() {
+        RuleService original = ServiceRegistry.getRuleService();
+        assertNotNull(original);
+        ServiceRegistry.setRuleServiceForTesting(service);
+        assertEquals(service, ServiceRegistry.getRuleService());
+        ServiceRegistry.setRuleServiceForTesting(null);
     }
 
     /**
