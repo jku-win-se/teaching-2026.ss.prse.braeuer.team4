@@ -11,9 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.time.temporal.WeekFields;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -21,12 +19,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import at.jku.se.smarthome.config.DatabaseConfig;
 import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.config.DeviceEnergyConstants;
+import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.service.api.EnergyService;
+import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 
 /**
  * JDBC-backed EnergyService implementation.
@@ -55,6 +55,9 @@ public final class JdbcEnergyService implements EnergyService {
     /** Singleton instance of the JDBC energy service. */
     private static JdbcEnergyService instance;
 
+    /** Room service for device→room mappings. */
+    private final RoomService roomService;
+
     /** Flag indicating database schema is initialized. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
@@ -75,7 +78,7 @@ public final class JdbcEnergyService implements EnergyService {
 
     /** Initializes JDBC energy service. */
     private JdbcEnergyService() {
-        // Initialize schema on first use
+        this.roomService = ServiceRegistry.getRoomService();
     }
 
     /**
@@ -167,7 +170,269 @@ public final class JdbcEnergyService implements EnergyService {
     }
 
     /**
+     * Retrieves cached daily consumption for a date if it exists and is up-to-date.
+     * Returns null if cache doesn't exist or if new activity has occurred since cache was last updated.
+     *
+     * @param connection database connection
+     * @param date the date to check cache for
+     * @return cached consumption map, or null if cache is missing/invalid
+     * @throws SQLException if database query fails
+     */
+    private Map<String, Double> getCachedDailyConsumption(Connection connection, LocalDate date) throws SQLException {
+        // Get most recent activity timestamp for this date
+        String maxActivitySql = "SELECT MAX(timestamp) as max_ts FROM activity_log "
+                + "WHERE SUBSTRING(timestamp, 1, 10) = ?";
+        
+        String maxActivityTimeStr = null;
+        try (PreparedStatement stmt = connection.prepareStatement(maxActivitySql)) {
+            stmt.setString(1, date.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    maxActivityTimeStr = rs.getString("max_ts");
+                }
+            }
+        }
+        
+        // If no activity on this date, check if empty cache exists
+        if (maxActivityTimeStr == null) {
+            String cacheExistsSql = "SELECT COUNT(*) as cnt FROM energy_daily WHERE date = CAST(? AS DATE)";
+            try (PreparedStatement stmt = connection.prepareStatement(cacheExistsSql)) {
+                stmt.setString(1, date.toString());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next() && rs.getInt("cnt") > 0) {
+                        // Cache exists for this date with no activity
+                        return getCachedDailyFromDb(connection, date);
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Check if cache exists and is more recent than last activity
+        String checkCacheSql = "SELECT COUNT(*) as cnt FROM energy_daily "
+                + "WHERE date = CAST(? AS DATE) AND created_at > ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(checkCacheSql)) {
+            stmt.setString(1, date.toString());
+            // Parse the text timestamp to SQL timestamp
+            java.sql.Timestamp maxActivityTime = null;
+            if (maxActivityTimeStr != null) {
+                try {
+                    java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(maxActivityTimeStr);
+                    maxActivityTime = java.sql.Timestamp.valueOf(ldt);
+                } catch (Exception e) {
+                    // If parsing fails, use current time as fallback
+                    maxActivityTime = new java.sql.Timestamp(System.currentTimeMillis());
+                }
+            } else {
+                maxActivityTime = new java.sql.Timestamp(System.currentTimeMillis());
+            }
+            stmt.setTimestamp(2, maxActivityTime);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next() && rs.getInt("cnt") > 0) {
+                    // Cache exists and is more recent than last activity
+                    return getCachedDailyFromDb(connection, date);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Retrieves cached daily consumption from database for a specific date.
+     *
+     * @param connection database connection
+     * @param date the date to retrieve
+     * @return map of device name to consumption in Wh
+     * @throws SQLException if database query fails
+     */
+    private Map<String, Double> getCachedDailyFromDb(Connection connection, LocalDate date) throws SQLException {
+        @SuppressWarnings("PMD.UseConcurrentHashMap")
+        Map<String, Double> result = new LinkedHashMap<>();
+        
+        String sql = "SELECT device_name, consumption_wh FROM energy_daily WHERE date = CAST(? AS DATE)";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, date.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    result.put(rs.getString("device_name"), rs.getDouble("consumption_wh"));
+                }
+            }
+        }
+        
+        return result;
+    }
+
+    /**
+     * Stores daily consumption in cache table.
+     *
+     * @param connection database connection
+     * @param date the date
+     * @param deviceName device name
+     * @param onTimeHours on-time in hours
+     * @param consumptionWh consumption in Wh
+     * @throws SQLException if database insert fails
+     */
+    private void storeDailyConsumptionCache(Connection connection, LocalDate date, String deviceName, 
+                                            double onTimeHours, double consumptionWh) throws SQLException {
+        String sql = "INSERT INTO energy_daily (date, device_id, device_name, on_time_hours, consumption_wh) "
+                + "VALUES (CAST(? AS DATE), ?, ?, ?, ?) "
+                + "ON CONFLICT (date, device_id) DO UPDATE SET "
+                + "on_time_hours = EXCLUDED.on_time_hours, "
+                + "consumption_wh = EXCLUDED.consumption_wh, "
+                + "created_at = CURRENT_TIMESTAMP";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, date.toString());
+            stmt.setString(2, deviceName); // Use device name as ID for now
+            stmt.setString(3, deviceName);
+            stmt.setDouble(4, onTimeHours);
+            stmt.setDouble(5, consumptionWh);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Retrieves cached weekly consumption for a week if it exists and is up-to-date.
+     * Returns null if cache doesn't exist or if new activity has occurred since cache was last updated.
+     *
+     * @param connection database connection
+     * @param year the year
+     * @param isoWeekOfYear ISO week number
+     * @return cached consumption map, or null if cache is missing/invalid
+     * @throws SQLException if database query fails
+     */
+    private Map<String, Double> getCachedWeeklyConsumption(Connection connection, int year, int isoWeekOfYear) throws SQLException {
+        // Calculate Monday and Sunday of this ISO week
+        WeekFields weekFields = WeekFields.ISO;
+        LocalDate monday = LocalDate.of(year, 1, 4)
+                .with(weekFields.weekOfYear(), isoWeekOfYear)
+                .with(DayOfWeek.MONDAY);
+        LocalDate sunday = monday.plusDays(6);
+        
+        // Get most recent activity timestamp for this week
+        String maxActivitySql = "SELECT MAX(timestamp) as max_ts FROM activity_log "
+                + "WHERE SUBSTRING(timestamp, 1, 10) >= ? "
+                + "AND SUBSTRING(timestamp, 1, 10) <= ?";
+        
+        String maxActivityTimeStr = null;
+        try (PreparedStatement stmt = connection.prepareStatement(maxActivitySql)) {
+            stmt.setString(1, monday.toString());
+            stmt.setString(2, sunday.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    maxActivityTimeStr = rs.getString("max_ts");
+                }
+            }
+        }
+        
+        // If no activity this week, check if empty cache exists
+        if (maxActivityTimeStr == null) {
+            String cacheExistsSql = "SELECT COUNT(*) as cnt FROM energy_weekly "
+                    + "WHERE year = ? AND iso_week = ?";
+            try (PreparedStatement stmt = connection.prepareStatement(cacheExistsSql)) {
+                stmt.setInt(1, year);
+                stmt.setInt(2, isoWeekOfYear);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next() && rs.getInt("cnt") > 0) {
+                        return getCachedWeeklyFromDb(connection, year, isoWeekOfYear);
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Check if cache exists and is more recent than last activity
+        String checkCacheSql = "SELECT COUNT(*) as cnt FROM energy_weekly "
+                + "WHERE year = ? AND iso_week = ? AND created_at > ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(checkCacheSql)) {
+            stmt.setInt(1, year);
+            stmt.setInt(2, isoWeekOfYear);
+            // Parse the text timestamp to SQL timestamp
+            java.sql.Timestamp maxActivityTime = null;
+            try {
+                java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(maxActivityTimeStr);
+                maxActivityTime = java.sql.Timestamp.valueOf(ldt);
+            } catch (Exception e) {
+                // If parsing fails, use current time as fallback
+                maxActivityTime = new java.sql.Timestamp(System.currentTimeMillis());
+            }
+            stmt.setTimestamp(3, maxActivityTime);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next() && rs.getInt("cnt") > 0) {
+                    return getCachedWeeklyFromDb(connection, year, isoWeekOfYear);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Retrieves cached weekly consumption from database for a specific week.
+     *
+     * @param connection database connection
+     * @param year the year
+     * @param isoWeekOfYear ISO week number
+     * @return map of device name to consumption in Wh
+     * @throws SQLException if database query fails
+     */
+    private Map<String, Double> getCachedWeeklyFromDb(Connection connection, int year, int isoWeekOfYear) throws SQLException {
+        @SuppressWarnings("PMD.UseConcurrentHashMap")
+        Map<String, Double> result = new LinkedHashMap<>();
+        
+        String sql = "SELECT device_name, consumption_wh FROM energy_weekly "
+                + "WHERE year = ? AND iso_week = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, year);
+            stmt.setInt(2, isoWeekOfYear);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    result.put(rs.getString("device_name"), rs.getDouble("consumption_wh"));
+                }
+            }
+        }
+        
+        return result;
+    }
+
+    /**
+     * Stores weekly consumption in cache table.
+     *
+     * @param connection database connection
+     * @param year the year
+     * @param isoWeekOfYear ISO week number
+     * @param deviceName device name
+     * @param onTimeHours on-time in hours
+     * @param consumptionWh consumption in Wh
+     * @throws SQLException if database insert fails
+     */
+    private void storeWeeklyConsumptionCache(Connection connection, int year, int isoWeekOfYear, 
+                                             String deviceName, double onTimeHours, double consumptionWh) throws SQLException {
+        String sql = "INSERT INTO energy_weekly (year, iso_week, device_id, device_name, on_time_hours, consumption_wh) "
+                + "VALUES (?, ?, ?, ?, ?, ?) "
+                + "ON CONFLICT (year, iso_week, device_id) DO UPDATE SET "
+                + "on_time_hours = EXCLUDED.on_time_hours, "
+                + "consumption_wh = EXCLUDED.consumption_wh, "
+                + "created_at = CURRENT_TIMESTAMP";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, year);
+            stmt.setInt(2, isoWeekOfYear);
+            stmt.setString(3, deviceName); // Use device name as ID for now
+            stmt.setString(4, deviceName);
+            stmt.setDouble(5, onTimeHours);
+            stmt.setDouble(6, consumptionWh);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
      * Calculates daily energy consumption by device from activity log.
+     * First checks the database cache; if cache exists and is up-to-date, returns cached result.
+     * Otherwise, calculates from activity log and stores in cache.
      *
      * @param date the calendar date to query
      * @return map of device name to consumption in Wh
@@ -179,6 +444,12 @@ public final class JdbcEnergyService implements EnergyService {
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
 
+            // Check if cache exists and is still valid for this date
+            Map<String, Double> cachedResult = getCachedDailyConsumption(connection, date);
+            if (cachedResult != null) {
+                return cachedResult;
+            }
+
             // Get all unique devices first
             Set<String> allDevices = getAllDeviceNamesFromLog(connection);
 
@@ -188,6 +459,9 @@ public final class JdbcEnergyService implements EnergyService {
                 int nominalPowerW = getDeviceNominalPowerFromLog(connection, deviceName);
                 double consumptionWh = onTimeHours * nominalPowerW;
                 result.put(deviceName, consumptionWh);
+                
+                // Store in cache
+                storeDailyConsumptionCache(connection, date, deviceName, onTimeHours, consumptionWh);
             }
 
             // Ensure all known devices are in result (even if no activity)
@@ -206,6 +480,8 @@ public final class JdbcEnergyService implements EnergyService {
 
     /**
      * Calculates weekly energy consumption by device from activity log.
+     * First checks the database cache; if cache exists and is up-to-date, returns cached result.
+     * Otherwise, calculates from activity log and stores in cache.
      *
      * @param isoWeekOfYear ISO week number
      * @param year the year
@@ -218,6 +494,12 @@ public final class JdbcEnergyService implements EnergyService {
         try (Connection connection = openConnection()) {
             ensureSchema(connection);
 
+            // Check if cache exists and is still valid for this week
+            Map<String, Double> cachedResult = getCachedWeeklyConsumption(connection, year, isoWeekOfYear);
+            if (cachedResult != null) {
+                return cachedResult;
+            }
+
             // Get all unique devices first
             Set<String> allDevices = getAllDeviceNamesFromLog(connection);
 
@@ -227,6 +509,9 @@ public final class JdbcEnergyService implements EnergyService {
                 int nominalPowerW = getDeviceNominalPowerFromLog(connection, deviceName);
                 double consumptionWh = onTimeHours * nominalPowerW;
                 result.put(deviceName, consumptionWh);
+                
+                // Store in cache
+                storeWeeklyConsumptionCache(connection, year, isoWeekOfYear, deviceName, onTimeHours, consumptionWh);
             }
 
         } catch (SQLException e) {
@@ -237,7 +522,7 @@ public final class JdbcEnergyService implements EnergyService {
     }
 
     /**
-     * Aggregates device consumption by room.
+     * Aggregates device consumption by room using RoomService device→room mappings.
      *
      * @param deviceConsumption map of device name to consumption in Wh
      * @return map of room name to consumption in Wh
@@ -246,20 +531,26 @@ public final class JdbcEnergyService implements EnergyService {
     private Map<String, Double> aggregateByRoom(Map<String, Double> deviceConsumption) {
         Map<String, Double> roomConsumption = new LinkedHashMap<>();
 
-        // TODO: Integrate with RoomService to get device→room mappings
-        // For now, use static mappings for mock data
-        roomConsumption.put("Living Room",
-                deviceConsumption.getOrDefault("Living Room Light", 0.0)
-                        + deviceConsumption.getOrDefault("Living Room Thermostat", 0.0));
-        roomConsumption.put("Bedroom",
-                deviceConsumption.getOrDefault("Bedroom Dimmer", 0.0));
-        roomConsumption.put("Kitchen",
-                deviceConsumption.getOrDefault("Kitchen Light", 0.0)
-                        + deviceConsumption.getOrDefault("Kitchen Coffee Machine", 0.0));
-        roomConsumption.put("Hallway",
-                deviceConsumption.getOrDefault("Hallway Sensor", 0.0));
-        roomConsumption.put("Bathroom",
-                deviceConsumption.getOrDefault("Bathroom Light", 0.0));
+        try {
+            // Get all rooms from RoomService
+            var rooms = roomService.getRooms();
+            
+            // For each room, sum up consumption of its devices
+            for (var room : rooms) {
+                double roomTotal = 0.0;
+                
+                // Iterate through devices in this room
+                for (Device device : room.getDevices()) {
+                    String deviceName = device.getName();
+                    roomTotal += deviceConsumption.getOrDefault(deviceName, 0.0);
+                }
+                
+                roomConsumption.put(room.getName(), roomTotal);
+            }
+        } catch (NullPointerException | IllegalStateException e) {
+            System.err.println("Warning: Could not retrieve rooms from RoomService: " + e.getMessage());
+            // Fallback to empty aggregation if RoomService unavailable
+        }
 
         return roomConsumption;
     }
@@ -278,7 +569,7 @@ public final class JdbcEnergyService implements EnergyService {
         // Query: Find all ON/OFF state changes for device on given date
         // Calculate time between ON and OFF events
         String sql = "SELECT timestamp, action FROM activity_log "
-                + "WHERE device = ? AND timestamp::date = ?::date "
+                + "WHERE device = ? AND SUBSTRING(timestamp, 1, 10) = ? "
                 + "ORDER BY timestamp ASC";
 
         double totalOnTimeMs = 0.0;
@@ -292,7 +583,26 @@ public final class JdbcEnergyService implements EnergyService {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String action = rs.getString("action").toUpperCase();
-                    long currentTime = rs.getTimestamp("timestamp").getTime();
+                    String timestampStr = rs.getString("timestamp");
+                    
+                    // Parse timestamp - handle various formats
+                    long currentTime = 0;
+                    try {
+                        // Try ISO format first: "2026-04-28T06:00:00"
+                        if (timestampStr.contains("T")) {
+                            java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(timestampStr);
+                            currentTime = java.sql.Timestamp.valueOf(ldt).getTime();
+                        } else {
+                            // Try space-separated format: "2026-04-28 06:00:00"
+                            java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
+                                timestampStr.replace(" ", "T"));
+                            currentTime = java.sql.Timestamp.valueOf(ldt).getTime();
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error parsing timestamp: " + timestampStr + " - " + e.getMessage());
+                        // Skip this record if timestamp can't be parsed
+                        continue;
+                    }
 
                     if (isOnAction(action)) {
                         if (!deviceIsOn) {
@@ -375,17 +685,28 @@ public final class JdbcEnergyService implements EnergyService {
     }
 
     /**
-     * Gets the nominal power for a device from the activity log (looks at device type or defaults).
+     * Gets the nominal power for a device using RoomService device type lookup.
      *
-     * @param connection database connection
+     * @param connection database connection (unused, kept for signature compatibility)
      * @param deviceName device name
      * @return nominal power in watts
      * @throws SQLException if database query fails
      */
     private int getDeviceNominalPowerFromLog(Connection connection, String deviceName) throws SQLException {
-        // TODO: Query device type from RoomService/devices table
-        // For now, infer from device name or use defaults
-
+        try {
+            // Look up device by name using RoomService
+            Device device = roomService.getDeviceByName(deviceName);
+            
+            if (device != null && device.getType() != null) {
+                // Use device type from RoomService
+                String deviceType = device.getType().toUpperCase();
+                return DeviceEnergyConstants.getPowerWatts(deviceType);
+            }
+        } catch (NullPointerException | IllegalStateException e) {
+            System.err.println("Warning: Could not look up device " + deviceName + " in RoomService: " + e.getMessage());
+        }
+        
+        // Fallback: infer from device name or use defaults
         if (deviceName.contains("Thermostat")) {
             return DeviceEnergyConstants.THERMOSTAT_POWER_W;
         } else if (deviceName.contains("Dimmer")) {

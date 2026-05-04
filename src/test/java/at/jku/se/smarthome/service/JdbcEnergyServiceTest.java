@@ -1,15 +1,15 @@
 package at.jku.se.smarthome.service;
 
-import static org.junit.Assert.*;
-
 import java.time.LocalDate;
 import java.util.Map;
 
 import org.junit.After;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import at.jku.se.smarthome.config.DeviceEnergyConstants;
 import at.jku.se.smarthome.service.real.energy.JdbcEnergyService;
 
 /**
