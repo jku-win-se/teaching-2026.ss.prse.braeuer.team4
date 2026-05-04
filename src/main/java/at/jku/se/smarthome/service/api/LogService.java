@@ -1,5 +1,7 @@
 package at.jku.se.smarthome.service.api;
 
+import java.util.List;
+
 import at.jku.se.smarthome.model.LogEntry;
 import javafx.collections.ObservableList;
 
@@ -72,4 +74,13 @@ public interface LogService {
      * @return CSV-formatted string with header row
      */
     String exportToCSV();
+
+    /**
+     * Exports the supplied log entries as a CSV string. Allows callers to export a
+     * pre-filtered subset (e.g. the entries currently visible in the activity log table).
+     *
+     * @param entries log entries to include in the CSV output
+     * @return CSV-formatted string with header row
+     */
+    String exportToCSV(List<LogEntry> entries);
 }

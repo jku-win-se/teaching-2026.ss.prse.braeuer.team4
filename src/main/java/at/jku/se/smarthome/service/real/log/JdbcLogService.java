@@ -128,10 +128,15 @@ public final class JdbcLogService implements LogService {
 
     @Override
     public String exportToCSV() {
-        int initialCapacity = logs.size() * 96 + 64;
+        return exportToCSV(logs);
+    }
+
+    @Override
+    public String exportToCSV(List<LogEntry> entries) {
+        int initialCapacity = entries.size() * 96 + 64;
         StringBuilder csv = new StringBuilder(initialCapacity);
         csv.append("Timestamp,Device,Room,Action,Actor\n");
-        for (LogEntry log : logs) {
+        for (LogEntry log : entries) {
             csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
                     log.getTimestamp(), log.getDevice(), log.getRoom(), log.getAction(), log.getActor()));
         }

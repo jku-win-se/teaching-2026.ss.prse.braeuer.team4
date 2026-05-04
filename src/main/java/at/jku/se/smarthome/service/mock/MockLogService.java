@@ -2,6 +2,7 @@ package at.jku.se.smarthome.service.mock;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import at.jku.se.smarthome.model.LogEntry;
@@ -166,11 +167,16 @@ public final class MockLogService implements LogService {
         * @return CSV representation of the current logs
      */
     public String exportToCSV() {
-        int initialCapacity = logs.size() * 96 + 64;
+        return exportToCSV(logs);
+    }
+
+    @Override
+    public String exportToCSV(List<LogEntry> entries) {
+        int initialCapacity = entries.size() * 96 + 64;
         StringBuilder csv = new StringBuilder(initialCapacity);
         csv.append("Timestamp,Device,Room,Action,Actor\n");
-        
-        for (LogEntry log : logs) {
+
+        for (LogEntry log : entries) {
             csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
                     log.getTimestamp(),
                     log.getDevice(),
@@ -178,7 +184,7 @@ public final class MockLogService implements LogService {
                     log.getAction(),
                     log.getActor()));
         }
-        
+
         return csv.toString();
     }
 }
