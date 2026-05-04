@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.model.VacationModeConfig;
+import at.jku.se.smarthome.service.api.NotificationService;
 import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 
@@ -25,7 +27,7 @@ public final class MockVacationModeService {
     /** Log service for activity logging. */
     private final MockLogService logService = MockLogService.getInstance();
     /** Notification service for alerts. */
-    private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    private final NotificationService notificationService = ServiceRegistry.getNotificationService();
     /** Date formatter for vacation mode dates. */
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -139,7 +141,7 @@ public final class MockVacationModeService {
                         formatDate(startDate),
                         formatDate(endDate)
                 ),
-                "info"
+                NotificationType.INFO
         );
         logService.addLogEntry(
                 schedule.getDevice(),
@@ -169,7 +171,7 @@ public final class MockVacationModeService {
 
         notificationService.addNotification(
                 "Vacation mode deactivated. Normal schedules are active again.",
-                "success"
+                NotificationType.SUCCESS
         );
         logService.addLogEntry(
                 deviceName,
@@ -195,7 +197,7 @@ public final class MockVacationModeService {
         clearConfiguration();
         notificationService.addNotification(
                 "Vacation mode was cleared because the selected schedule is no longer available.",
-                "warning"
+                NotificationType.WARNING
         );
         logService.addLogEntry("Vacation Mode", "System", reason, "System");
     }

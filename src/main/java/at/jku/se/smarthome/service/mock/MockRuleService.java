@@ -1,8 +1,11 @@
 package at.jku.se.smarthome.service.mock;
 
 import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Rule;
+import at.jku.se.smarthome.service.api.NotificationService;
 import at.jku.se.smarthome.service.api.RuleService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.rule.RuleEvaluator;
 import at.jku.se.smarthome.service.rule.RuleValidator;
 import javafx.collections.FXCollections;
@@ -21,7 +24,7 @@ public final class MockRuleService implements RuleService {
     /** Room service for device lookups. */
     private final MockRoomService roomService = MockRoomService.getInstance();
     /** Notification service for rule events. */
-    private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    private final NotificationService notificationService = ServiceRegistry.getNotificationService();
     /** Log service for activity tracking. */
     private final MockLogService logService = MockLogService.getInstance();
     private MockRuleService() {
@@ -190,25 +193,27 @@ public final class MockRuleService implements RuleService {
                 .orElse(null);
 
         if (rule == null) {
-            notificationService.addNotification("Rule execution failed: rule not found", "error");
+            notificationService.addNotification("Rule execution failed: rule not found", NotificationType.FAILURE);
         } else if (rule.isEnabled()) {
             Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
             if (new RuleEvaluator().evaluate(rule, sourceDevice)) {
                 Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
                 if (targetDevice != null && applyAction(targetDevice, rule.getAction())) {
                     logService.addLogEntry(targetDevice.getName(), targetDevice.getRoom(), rule.getAction(), "Rule: " + rule.getName());
-                    notificationService.addNotification("Rule executed: " + rule.getName(), "success");
+                    notificationService.addNotification(
+                            "Rule '" + rule.getName() + "' executed: " + rule.getAction() + " → " + rule.getTargetDevice(),
+                            NotificationType.SUCCESS);
                     executed = true;
                 } else if (targetDevice == null) {
-                    notificationService.addNotification("Rule execution failed: target device missing for " + rule.getName(), "error");
+                    notificationService.addNotification("Rule execution failed: target device missing for " + rule.getName(), NotificationType.FAILURE);
                 } else {
-                    notificationService.addNotification("Rule execution failed: unsupported action in " + rule.getName(), "error");
+                    notificationService.addNotification("Rule execution failed: unsupported action in " + rule.getName(), NotificationType.FAILURE);
                 }
             } else {
-                notificationService.addNotification("Rule execution failed: condition not met for " + rule.getName(), "error");
+                notificationService.addNotification("Rule execution failed: condition not met for " + rule.getName(), NotificationType.FAILURE);
             }
         } else {
-            notificationService.addNotification("Rule execution failed: " + rule.getName() + " is inactive", "error");
+            notificationService.addNotification("Rule execution failed: " + rule.getName() + " is inactive", NotificationType.FAILURE);
         }
         return executed;
     }

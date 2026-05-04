@@ -7,19 +7,26 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import at.jku.se.smarthome.model.NotificationEntry;
+import at.jku.se.smarthome.model.NotificationType;
+import at.jku.se.smarthome.service.api.NotificationService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.UserService;
-import at.jku.se.smarthome.service.mock.MockNotificationService;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Popup;
 import javafx.util.Duration;
 
 /**
@@ -28,7 +35,7 @@ import javafx.util.Duration;
  * Handles navigation between different views (Devices, Rooms, Rules, Energy, Settings)
  * and manages the user session (login/logout).
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods", "PMD.TooManyFields", "PMD.UnusedPrivateMethod"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods", "PMD.TooManyFields", "PMD.UnusedPrivateMethod", "PMD.CouplingBetweenObjects", "PMD.GodClass"})
 public class MainController {
 
 
@@ -98,9 +105,17 @@ public class MainController {
     /** Button to navigate to settings view. */
     @FXML
     private Button settingsBtn;
+
+    /** Button for notification bell in header. */
+    @FXML
+    private Button bellButton;
+
+    /** Badge overlay for unread notification count. */
+    @FXML
+    private Label unreadBadge;
     
     /** Notification service instance. */
-    private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    private final NotificationService notificationService = ServiceRegistry.getNotificationService();
     /** User service instance. */
     private final UserService userService = ServiceRegistry.getUserService();
     /** Callback for main controller events. */
@@ -132,6 +147,7 @@ public class MainController {
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void initialize() {
         initializeToastNotifications();
+        initializeBellBadge();
         refreshSessionState();
     }
 
@@ -163,6 +179,146 @@ public class MainController {
                 }
             }
         });
+    }
+
+    /**
+     * Binds the unread badge to the notification service's unread count.
+     */
+    private void initializeBellBadge() {
+        if (unreadBadge == null) {
+            return;
+        }
+        unreadBadge.textProperty().bind(Bindings.convert(notificationService.unreadCountProperty()));
+        unreadBadge.visibleProperty().bind(Bindings.greaterThan(notificationService.unreadCountProperty(), 0));
+    }
+
+    /**
+     * Handles clicks on the notification bell.
+     */
+    @FXML
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private void handleBellClick() {
+        Popup popup = buildNotificationPopup();
+        Bounds bounds = bellButton.localToScreen(bellButton.getBoundsInLocal());
+        // Show popup below the bell button
+        popup.show(bellButton.getScene().getWindow(),
+                bounds.getMinX() - 280, // Offset to align right side roughly
+                bounds.getMaxY() + 5);
+    }
+
+    /**
+     * Constructs the notification list popup.
+     *
+     * @return the configured popup
+     */
+    private Popup buildNotificationPopup() {
+        VBox container = new VBox(10);
+        container.getStyleClass().add("notification-popup");
+        container.setStyle("-fx-background-color: white; -fx-padding: 10; "
+                + "-fx-border-color: #bdc3c7; -fx-border-width: 1; "
+                + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0); "
+                + "-fx-min-width: 320; -fx-max-width: 320;");
+
+        HBox header = new HBox();
+        header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        Label title = new Label("Notifications");
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        Button markAllBtn = new Button("Mark all read");
+        markAllBtn.setStyle("-fx-font-size: 11;");
+        markAllBtn.setOnAction(e -> notificationService.markAllAsRead());
+        header.getChildren().addAll(title, spacer, markAllBtn);
+
+        ListView<NotificationEntry> listView = new ListView<>(notificationService.getNotifications());
+        listView.setPrefHeight(350);
+        listView.setCellFactory(lv -> new NotificationCell(notificationService));
+        listView.setStyle("-fx-background-insets: 0; -fx-padding: 0;");
+
+        container.getChildren().addAll(header, listView);
+
+        Popup popup = new Popup();
+        popup.setAutoHide(true);
+        popup.getContent().add(container);
+        return popup;
+    }
+
+    /**
+     * Custom ListCell for displaying NotificationEntry in the popup list.
+     */
+    private static class NotificationCell extends ListCell<NotificationEntry> {
+        /** The notification service used to mark entries as read. */
+        private final NotificationService service;
+
+        /**
+         * Creates a new notification cell.
+         *
+         * @param service notification service
+         */
+        /* default */ NotificationCell(NotificationService service) {
+            super();
+            this.service = service;
+        }
+
+        @Override
+        protected void updateItem(NotificationEntry entry, boolean empty) {
+            super.updateItem(entry, empty);
+            if (empty || entry == null) {
+                setGraphic(null);
+                setText(null);
+            } else {
+                renderCell(entry);
+            }
+        }
+
+        /**
+         * Renders the cell content for a valid notification entry.
+         *
+         * @param entry the notification entry to render
+         */
+        private void renderCell(NotificationEntry entry) {
+            HBox root = new HBox(10);
+            root.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+            root.setPadding(new javafx.geometry.Insets(5));
+
+            Label typeIcon = new Label(getTypeIcon(entry.getType()));
+            typeIcon.setStyle("-fx-font-weight: bold; -fx-min-width: 20;");
+
+            VBox content = new VBox(2);
+            Label msg = new Label(entry.getMessage());
+            msg.setWrapText(true);
+            msg.setMaxWidth(220);
+            msg.setStyle(entry.isRead() ? "-fx-text-fill: #7f8c8d;" : "-fx-font-weight: bold;");
+
+            Label time = new Label(entry.getTimestamp());
+            time.setStyle("-fx-font-size: 10; -fx-text-fill: #95a5a6;");
+            content.getChildren().addAll(msg, time);
+
+            root.getChildren().addAll(typeIcon, content);
+
+            if (entry.isRead()) {
+                root.setStyle("-fx-background-color: transparent;");
+            } else {
+                javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+                HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+                Button readBtn = new Button("✓");
+                readBtn.setStyle("-fx-font-size: 10; -fx-padding: 2 5;");
+                readBtn.setOnAction(e -> service.markAsRead(entry));
+                root.getChildren().addAll(spacer, readBtn);
+                root.setStyle("-fx-background-color: #f0f7fd;");
+            }
+
+            setGraphic(root);
+        }
+
+        private String getTypeIcon(NotificationType type) {
+            return switch (type) {
+                case SUCCESS -> "✅";
+                case FAILURE -> "❌";
+                case WARNING -> "⚠️";
+                case INFO -> "ℹ️";
+            };
+        }
     }
     
     /**
@@ -430,12 +586,11 @@ public class MainController {
     private String resolveToastTitle(NotificationEntry entry) {
         String message = entry.getMessage() == null ? "" : entry.getMessage().toLowerCase();
         boolean isScene = message.contains("scene '") || message.contains("scene \"");
-        
-        return isScene ?
-            "error".equals(entry.getType()) ? "Scene Failed" : "Scene Executed" :
-            switch (entry.getType()) {
-                case "success" -> "Rule Executed";
-                case "error" -> "Rule Failed";
+        return isScene
+            ? entry.getType() == NotificationType.FAILURE ? "Scene Failed" : "Scene Executed"
+            : switch (entry.getType()) {
+                case SUCCESS -> "Rule Executed";
+                case FAILURE -> "Rule Failed";
                 default -> "Notification";
             };
     }

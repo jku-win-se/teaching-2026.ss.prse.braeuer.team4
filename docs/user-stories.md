@@ -43,7 +43,7 @@ The **Related FR** column ensures traceability to the requirements document.
 |---|---|---|
 | ✅US-17 | FR-08 | As a **user**, I want **every manual or automated device state change to be recorded with timestamp, device, and actor**, so that **I can review what happened in the system later**. |
 | ✅US-18 | FR-08 | As a **user**, I want to **view an activity log**, so that **I can understand past actions and device changes**. |
-| US-22 | FR-12 | As a **user**, I want to **receive in-app notifications when a rule is executed or when its execution fails**, so that **I know whether the automation worked as intended**. |
+| ✅US-22 | FR-12 | As a **user**, I want to **receive in-app notifications when a rule is executed or when its execution fails**, so that **I know whether the automation worked as intended**. |
 | US-28 | FR-16 | As a **user**, I want to **export the activity log and energy usage summary as a CSV file**, so that **I can analyze the data outside the system**. |
 
 ---

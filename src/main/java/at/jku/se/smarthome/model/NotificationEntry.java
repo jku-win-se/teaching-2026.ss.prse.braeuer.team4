@@ -1,30 +1,47 @@
 package at.jku.se.smarthome.model;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 /**
  * Represents an in-app notification message.
  */
 public class NotificationEntry {
-    
+
     /** Timestamp when the notification was created. */
     private final SimpleStringProperty timestamp;
     /** Notification message text. */
     private final SimpleStringProperty message;
-    /** Notification type or severity (info, success, error, warning). */
-    private final SimpleStringProperty type;
-    
+    /** Notification type or severity. */
+    private final NotificationType type;
+    /** Whether the notification has been read. */
+    private final BooleanProperty read;
+
     /**
-     * Creates a notification entry.
+     * Creates an unread notification entry.
      *
      * @param timestamp time at which the notification was created
      * @param message notification message text
      * @param type notification category or severity
      */
-    public NotificationEntry(String timestamp, String message, String type) {
+    public NotificationEntry(String timestamp, String message, NotificationType type) {
+        this(timestamp, message, type, false);
+    }
+
+    /**
+     * Creates a notification entry with an explicit read state (used for seed data).
+     *
+     * @param timestamp time at which the notification was created
+     * @param message notification message text
+     * @param type notification category or severity
+     * @param read initial read state
+     */
+    public NotificationEntry(String timestamp, String message, NotificationType type, boolean read) {
         this.timestamp = new SimpleStringProperty(timestamp);
         this.message = new SimpleStringProperty(message);
-        this.type = new SimpleStringProperty(type);
+        this.type = type;
+        this.read = new SimpleBooleanProperty(read);
     }
 
     /**
@@ -68,16 +85,32 @@ public class NotificationEntry {
      *
      * @return notification type
      */
-    public String getType() {
-        return type.get();
+    public NotificationType getType() {
+        return type;
     }
 
     /**
-     * Exposes the JavaFX type property.
+     * Returns whether this notification has been read.
      *
-     * @return type property
+     * @return true if read
      */
-    public SimpleStringProperty typeProperty() {
-        return type;
+    public boolean isRead() {
+        return read.get();
+    }
+
+    /**
+     * Marks this notification as read.
+     */
+    public void markRead() {
+        read.set(true);
+    }
+
+    /**
+     * Exposes the JavaFX read property.
+     *
+     * @return read property
+     */
+    public BooleanProperty readProperty() {
+        return read;
     }
 }
