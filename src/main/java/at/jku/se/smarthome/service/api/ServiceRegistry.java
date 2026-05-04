@@ -1,4 +1,5 @@
 package at.jku.se.smarthome.service.api;
+import at.jku.se.smarthome.service.mock.MockRuleService;
 import at.jku.se.smarthome.service.real.auth.JdbcUserService;
 import at.jku.se.smarthome.service.real.log.JdbcLogService;
 import at.jku.se.smarthome.service.real.room.JdbcRoomService;
@@ -20,6 +21,8 @@ public final class ServiceRegistry {
     private static RoomService testRoomServiceOverride;
     /** Override for user service used in tests. */
     private static UserService testUserServiceOverride;
+    /** Override for rule service used in tests. */
+    private static RuleService testRuleServiceOverride;
 
     /** Private constructor prevents instantiation. */
     private ServiceRegistry() {
@@ -137,6 +140,34 @@ public final class ServiceRegistry {
     public static void setUserServiceForTesting(UserService testUserService) {
         synchronized (OVERRIDE_LOCK) {
             testUserServiceOverride = testUserService;
+        }
+    }
+
+    /**
+     * Returns the active rule service instance.
+     *
+     * @return lazily initialized rule service
+     */
+    public static RuleService getRuleService() {
+        return testRuleServiceOverride != null ? testRuleServiceOverride : RuleServiceHolder.INSTANCE;
+    }
+
+    /**
+     * Holder for lazy initialization of rule service.
+     */
+    private static final class RuleServiceHolder {
+        /** Singleton rule service instance. */
+        private static final RuleService INSTANCE = MockRuleService.getInstance();
+    }
+
+    /**
+     * Overrides the rule service for tests or alternate runtime wiring.
+     *
+     * @param testRuleService replacement rule service instance
+     */
+    public static void setRuleServiceForTesting(RuleService testRuleService) {
+        synchronized (OVERRIDE_LOCK) {
+            testRuleServiceOverride = testRuleService;
         }
     }
 

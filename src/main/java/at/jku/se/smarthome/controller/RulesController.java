@@ -5,10 +5,10 @@ import java.util.Optional;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.model.Rule;
+import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.UserService;
-import at.jku.se.smarthome.service.mock.MockRuleService;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -78,7 +78,7 @@ public class RulesController {
     private Button addRuleBtn;
     
     /** Rule service for rule operations. */
-    private final MockRuleService ruleService = MockRuleService.getInstance();
+    private final RuleService ruleService = ServiceRegistry.getRuleService();
     /** Room service for room data access. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
     /** User service for authorization checks. */
