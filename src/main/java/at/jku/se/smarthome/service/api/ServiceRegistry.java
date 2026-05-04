@@ -1,4 +1,5 @@
 package at.jku.se.smarthome.service.api;
+import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockRuleService;
 import at.jku.se.smarthome.service.real.auth.JdbcUserService;
 import at.jku.se.smarthome.service.real.log.JdbcLogService;
@@ -23,6 +24,8 @@ public final class ServiceRegistry {
     private static UserService testUserServiceOverride;
     /** Override for rule service used in tests. */
     private static RuleService testRuleServiceOverride;
+    /** Override for notification service used in tests. */
+    private static NotificationService testNotificationServiceOverride;
 
     /** Private constructor prevents instantiation. */
     private ServiceRegistry() {
@@ -168,6 +171,30 @@ public final class ServiceRegistry {
     public static void setRuleServiceForTesting(RuleService testRuleService) {
         synchronized (OVERRIDE_LOCK) {
             testRuleServiceOverride = testRuleService;
+        }
+    }
+
+    /**
+     * Returns the active notification service instance.
+     * Delegates directly to MockNotificationService.getInstance() so that
+     * resetForTesting() is visible to all callers without holder-class caching.
+     *
+     * @return notification service
+     */
+    public static NotificationService getNotificationService() {
+        return testNotificationServiceOverride != null
+                ? testNotificationServiceOverride
+                : MockNotificationService.getInstance();
+    }
+
+    /**
+     * Overrides the notification service for tests or alternate runtime wiring.
+     *
+     * @param svc replacement notification service instance
+     */
+    public static void setNotificationServiceForTesting(NotificationService svc) {
+        synchronized (OVERRIDE_LOCK) {
+            testNotificationServiceOverride = svc;
         }
     }
 

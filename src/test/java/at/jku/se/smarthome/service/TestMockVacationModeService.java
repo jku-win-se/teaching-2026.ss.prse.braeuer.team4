@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockLogService;
@@ -197,6 +198,6 @@ public class TestMockVacationModeService {
         Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
         service.activateVacationMode(LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 25), selectedSchedule, "Owner");
         service.clearIfUsingSchedule(selectedSchedule.getId(), "Removed selected schedule");
-        assertEquals("warning", notificationService.getNotifications().get(0).getType());
+        assertEquals(NotificationType.WARNING, notificationService.getNotifications().get(0).getType());
     }
 }

@@ -4,7 +4,10 @@ import java.util.List;
 import java.util.Locale;
 
 import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Scene;
+import at.jku.se.smarthome.service.api.NotificationService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -27,7 +30,7 @@ public final class MockSceneService {
     /** Log service for activity tracking. */
     private final MockLogService logService = MockLogService.getInstance();
     /** Notification service for scene events. */
-    private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    private final NotificationService notificationService = ServiceRegistry.getNotificationService();
     
     private MockSceneService() {
         this.scenes = FXCollections.observableArrayList();
@@ -158,11 +161,11 @@ public final class MockSceneService {
             );
 
             if (skippedStates == 0) {
-                notificationService.addNotification("Scene '" + scene.getName() + "' activated successfully", "success");
+                notificationService.addNotification("Scene '" + scene.getName() + "' activated successfully", NotificationType.SUCCESS);
             } else {
                 notificationService.addNotification(
                         "Scene '" + scene.getName() + "' activated with " + skippedStates + " skipped device state(s)",
-                        "info"
+                        NotificationType.INFO
                 );
             }
             activated = true;

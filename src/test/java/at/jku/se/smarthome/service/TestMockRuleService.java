@@ -10,6 +10,7 @@ import org.junit.Test;
 import java.time.LocalTime;
 
 import at.jku.se.smarthome.model.NotificationEntry;
+import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Rule;
 import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
@@ -120,7 +121,7 @@ public class TestMockRuleService {
         Rule rule = service.addRule("Alert", "Sensor Threshold", "Motion Sensor", "Value > 0", "Notify User", "Main Light");
         service.toggleRule(rule.getId());
         service.executeRule(rule.getId());
-        assertEquals("error", notificationService.getNotifications().get(0).getType());
+        assertEquals(NotificationType.FAILURE, notificationService.getNotifications().get(0).getType());
     }
 
     /**
@@ -221,7 +222,7 @@ public class TestMockRuleService {
         Rule rule = service.addRule("Bed Check", "Device State", "Bed Light", "State = Active", "Turn On", "Main Light");
         service.executeRule(rule.getId());
         NotificationEntry note = notificationService.getNotifications().get(0);
-        assertEquals("error", note.getType());
+        assertEquals(NotificationType.FAILURE, note.getType());
         assertTrue(note.getMessage().contains("condition not met"));
     }
 

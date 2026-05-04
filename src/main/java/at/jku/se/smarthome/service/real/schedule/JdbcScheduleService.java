@@ -31,12 +31,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import at.jku.se.smarthome.config.DatabaseConfig;
 import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.service.api.LogService;
+import at.jku.se.smarthome.service.api.NotificationService;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -70,7 +71,7 @@ public final class JdbcScheduleService implements ScheduleService {
     /** Log service for activity logging. */
     private final LogService logService = ServiceRegistry.getLogService();
     /** Notification service for alerts. */
-    private final MockNotificationService notificationService = MockNotificationService.getInstance();
+    private final NotificationService notificationService = ServiceRegistry.getNotificationService();
     /** Tracks last processed minute for each schedule (prevents duplicate execution). */
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new ConcurrentHashMap<>();
     /** Flag indicating database schema is ready. */
@@ -255,7 +256,7 @@ public final class JdbcScheduleService implements ScheduleService {
             Device device = resolveDevice(schedule);
             if (device != null && applyScheduleAction(device, schedule.getAction())) {
                 logService.addLogEntry(device.getName(), device.getRoom(), schedule.getAction(), "Schedule: " + schedule.getName());
-                notificationService.addNotification("Executed schedule '" + schedule.getName() + "'", "info");
+                notificationService.addNotification("Executed schedule '" + schedule.getName() + "'", NotificationType.INFO);
                 updateLastTriggered(scheduleId);
                 executed = true;
             }

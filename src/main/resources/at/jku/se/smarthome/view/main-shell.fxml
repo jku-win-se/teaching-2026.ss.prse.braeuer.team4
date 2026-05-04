@@ -17,6 +17,18 @@
     <top>
         <HBox styleClass="header" alignment="CENTER_RIGHT" spacing="20" style="-fx-padding: 15 20; -fx-background-color: #2c3e50;">
             <HBox HBox.hgrow="ALWAYS"/>
+            <!-- Bell button with badge overlay -->
+            <StackPane>
+                <Button fx:id="bellButton" text="🔔" onAction="#handleBellClick"
+                        style="-fx-background-color: transparent; -fx-text-fill: white;
+                               -fx-font-size: 16; -fx-cursor: hand;"/>
+                <Label fx:id="unreadBadge" text="0"
+                       StackPane.alignment="TOP_RIGHT"
+                       style="-fx-background-color: #e74c3c; -fx-text-fill: white;
+                              -fx-background-radius: 8; -fx-padding: 1 4;
+                              -fx-font-size: 9; -fx-font-weight: bold;"
+                       mouseTransparent="true"/>
+            </StackPane>
             <Label fx:id="userLabel" text="User" style="-fx-text-fill: white; -fx-font-size: 14;"/>
             <Button fx:id="logoutButton" text="Logout" styleClass="btn-secondary"
                     onAction="#handleLogout"/>
