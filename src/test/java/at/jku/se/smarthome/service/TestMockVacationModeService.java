@@ -50,6 +50,7 @@ public class TestMockVacationModeService {
         ServiceRegistry.setScheduleServiceForTesting(scheduleService);
         logService = MockLogService.getInstance();
         notificationService = MockNotificationService.getInstance();
+        ServiceRegistry.setNotificationServiceForTesting(notificationService);
         service = MockVacationModeService.getInstance();
     }
 
@@ -59,6 +60,7 @@ public class TestMockVacationModeService {
     @After
     public void tearDown() {
         ServiceRegistry.setScheduleServiceForTesting(scheduleService);
+        ServiceRegistry.setNotificationServiceForTesting(null);
     }
 
     /**

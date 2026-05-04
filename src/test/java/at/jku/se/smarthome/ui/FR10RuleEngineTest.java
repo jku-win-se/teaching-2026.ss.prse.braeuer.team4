@@ -55,6 +55,7 @@ public class FR10RuleEngineTest extends ApplicationTest {
         MockRuleService ruleService = MockRuleService.getInstance();
 
         ServiceRegistry.setRoomServiceForTesting(roomService);
+        ServiceRegistry.setRuleServiceForTesting(ruleService);
 
         // Pre-condition: Main Light starts OFF so state-change is observable
         roomService.getDeviceByName("Main Light").setState(false);

@@ -22,7 +22,15 @@ public class TestMockNotificationService {
     @Before
     public void setUp() {
         MockNotificationService.resetForTesting();
-        notificationService = (MockNotificationService) ServiceRegistry.getNotificationService();
+        notificationService = MockNotificationService.getInstance();
+        // Default notification service is now JDBC-backed; register the mock as an
+        // override so this test exercises the in-memory implementation directly.
+        ServiceRegistry.setNotificationServiceForTesting(notificationService);
+    }
+
+    @org.junit.After
+    public void tearDown() {
+        ServiceRegistry.setNotificationServiceForTesting(null);
     }
 
     @Test

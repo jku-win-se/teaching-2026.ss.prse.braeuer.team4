@@ -66,12 +66,6 @@ public final class JdbcScheduleService implements ScheduleService {
 
     /** Observable list of all schedules. */
     private final ObservableList<Schedule> schedules = FXCollections.observableArrayList();
-    /** Room service for room data access. */
-    private final RoomService roomService = ServiceRegistry.getRoomService();
-    /** Log service for activity logging. */
-    private final LogService logService = ServiceRegistry.getLogService();
-    /** Notification service for alerts. */
-    private final NotificationService notificationService = ServiceRegistry.getNotificationService();
     /** Tracks last processed minute for each schedule (prevents duplicate execution). */
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new ConcurrentHashMap<>();
     /** Flag indicating database schema is ready. */
@@ -255,8 +249,8 @@ public final class JdbcScheduleService implements ScheduleService {
         if (schedule != null && schedule.isActive()) {
             Device device = resolveDevice(schedule);
             if (device != null && applyScheduleAction(device, schedule.getAction())) {
-                logService.addLogEntry(device.getName(), device.getRoom(), schedule.getAction(), "Schedule: " + schedule.getName());
-                notificationService.addNotification("Executed schedule '" + schedule.getName() + "'", NotificationType.INFO);
+                ServiceRegistry.getLogService().addLogEntry(device.getName(), device.getRoom(), schedule.getAction(), "Schedule: " + schedule.getName());
+                ServiceRegistry.getNotificationService().addNotification("Executed schedule '" + schedule.getName() + "'", NotificationType.INFO);
                 updateLastTriggered(scheduleId);
                 executed = true;
             }
@@ -451,6 +445,7 @@ public final class JdbcScheduleService implements ScheduleService {
     }
 
     private Device resolveDevice(Schedule schedule) {
+        RoomService roomService = ServiceRegistry.getRoomService();
         Device device = roomService.getDeviceById(schedule.getDeviceId());
         if (device == null) {
             device = roomService.getDeviceByName(schedule.getDevice());
