@@ -27,6 +27,8 @@ public class Device {
     private final SimpleIntegerProperty brightness;
     /** Temperature for thermostats (in degrees). */
     private final SimpleDoubleProperty temperature;
+    /** Current sensor reading value. */
+    private final SimpleDoubleProperty currentValue;
     
     /**
      * Constructs a Device with the specified parameters.
@@ -45,6 +47,7 @@ public class Device {
         this.state = new SimpleBooleanProperty(state);
         this.brightness = new SimpleIntegerProperty(100);
         this.temperature = new SimpleDoubleProperty(20.0);
+        this.currentValue = new SimpleDoubleProperty(0.0);
     }
     
     /**
@@ -235,6 +238,33 @@ public class Device {
      */
     public SimpleDoubleProperty temperatureProperty() {
         return temperature;
+    }
+
+    /**
+     * Returns the current sensor reading value.
+     *
+     * @return current sensor value
+     */
+    public double getCurrentValue() {
+        return currentValue.get();
+    }
+
+    /**
+     * Updates the current sensor reading value.
+     *
+     * @param value new sensor reading
+     */
+    public void setCurrentValue(double value) {
+        currentValue.set(value);
+    }
+
+    /**
+     * Exposes the JavaFX currentValue property.
+     *
+     * @return currentValue property
+     */
+    public SimpleDoubleProperty currentValueProperty() {
+        return currentValue;
     }
 
     /**

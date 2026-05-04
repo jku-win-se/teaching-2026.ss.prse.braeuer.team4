@@ -59,7 +59,10 @@ public final class MockRuleService {
                           "Turn On", "Main Light", true, "Active"));
         rules.add(new Rule("rule-002", "Motion Welcome", "Device State", "Bedroom Light", "State = Active", 
                           "Turn On", "Main Light", true, "Active"));
-        rules.add(new Rule("rule-003", "Heat Boost", "Sensor Threshold", "Motion Sensor", 
+        // Heat Boost relies on Motion Sensor currentValue (default 0.0) so it
+        // does not fire by accident; previously it matched because temperature
+        // defaulted to 20.0. See FR-11 / Issue #20.
+        rules.add(new Rule("rule-003", "Heat Boost", "Sensor Threshold", "Motion Sensor",
                           "Value > 0", "Set to 22°C", "Temperature Control", true, "Inactive"));
     }
     

@@ -3,9 +3,11 @@ package at.jku.se.smarthome.service.rule;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Rule;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Optional;
 
 /**
  * Evaluates whether a rule's condition is satisfied given the current device state or time.
@@ -15,12 +17,14 @@ import java.time.format.DateTimeParseException;
  *
  * <p>Supported trigger types and condition formats:</p>
  * <ul>
- *   <li><b>Time</b> — condition is a time string, e.g. {@code "06:00 AM"}.
- *       Returns true when the current local time matches within the same minute.</li>
+ *   <li><b>Time</b> — condition is a time string, optionally prefixed with a weekday
+ *       spec, e.g. {@code "Weekdays 06:00 AM"} or {@code "06:00 AM"}.
+ *       Returns true when the current local time matches within the same minute
+ *       and the weekday spec (if present) matches today.</li>
  *   <li><b>Device State</b> — condition is {@code "State = Active"} or
  *       {@code "State = Inactive"}. Evaluated against {@code sourceDevice.getState()}.</li>
  *   <li><b>Sensor Threshold</b> — condition is {@code "Value [op] [number]"}, e.g.
- *       {@code "Value > 22.5"}. Evaluated against {@code sourceDevice.getTemperature()}.</li>
+ *       {@code "Value > 22.5"}. Evaluated against {@code sourceDevice.getCurrentValue()}.</li>
  * </ul>
  */
 @SuppressWarnings("PMD.AtLeastOneConstructor")
@@ -54,13 +58,30 @@ public class RuleEvaluator {
         return result;
     }
 
+    @SuppressWarnings("PMD.NullAssignment")
     private boolean evaluateTime(String condition) {
         boolean result = false;
         if (condition != null && !condition.isBlank()) {
-            LocalTime target = parseTime(condition.trim());
-            if (target != null) {
-                LocalTime now = LocalTime.now();
-                result = now.getHour() == target.getHour() && now.getMinute() == target.getMinute();
+            String trimmed = condition.trim();
+            String timePart = trimmed;
+            boolean dayMatches = true;
+
+            int firstSpace = trimmed.indexOf(' ');
+            if (firstSpace > 0) {
+                String prefix = trimmed.substring(0, firstSpace);
+                Optional<WeekdaySpec> spec = WeekdaySpec.parse(prefix);
+                if (spec.isPresent()) {
+                    dayMatches = spec.get().matches(LocalDate.now().getDayOfWeek());
+                    timePart = trimmed.substring(firstSpace + 1).trim();
+                }
+            }
+
+            if (dayMatches) {
+                LocalTime target = parseTime(timePart);
+                if (target != null) {
+                    LocalTime now = LocalTime.now();
+                    result = now.getHour() == target.getHour() && now.getMinute() == target.getMinute();
+                }
             }
         }
         return result;
@@ -103,7 +124,7 @@ public class RuleEvaluator {
                 String operator = parts[1];
                 try {
                     double threshold = Double.parseDouble(parts[2]);
-                    double sensorValue = sourceDevice.getTemperature();
+                    double sensorValue = sourceDevice.getCurrentValue();
                     result = switch (operator) {
                         case ">" -> sensorValue > threshold;
                         case ">=" -> sensorValue >= threshold;

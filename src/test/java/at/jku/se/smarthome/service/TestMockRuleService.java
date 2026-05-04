@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import at.jku.se.smarthome.model.NotificationEntry;
 import at.jku.se.smarthome.model.Rule;
 import at.jku.se.smarthome.service.mock.MockLogService;
 import at.jku.se.smarthome.service.mock.MockNotificationService;
