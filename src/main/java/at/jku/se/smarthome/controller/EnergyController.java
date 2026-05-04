@@ -1,5 +1,10 @@
 package at.jku.se.smarthome.controller;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.IsoFields;
+import java.util.Map;
+
 import at.jku.se.smarthome.service.api.EnergyService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import javafx.collections.FXCollections;
@@ -14,11 +19,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.IsoFields;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Controller for the energy dashboard view with time-based navigation.
@@ -96,25 +96,28 @@ public class EnergyController {
     
     /** Currently displayed year and week (for weekly view). Uses year*100+week format. */
     private int currentWeekYear = getWeekYearForDate(LocalDate.now());
-
-    /** Activity log listener to trigger reactive refresh on data changes. */
-    private Runnable refreshCallback;
     
     @FXML
     private void initialize() {
-        // Inject energy service from ServiceRegistry
-        energyService = ServiceRegistry.getEnergyService();
-        
-        // Disable chart animations for performance
-        roomChart.setAnimated(false);
-        deviceChart.setAnimated(false);
-        timelineChart.setAnimated(false);
-        
-        // Register reactive update listener on LogService
-        registerActivityLogListener();
-        
-        // Initial dashboard refresh
-        refreshDashboard();
+        try {
+            // Inject energy service from ServiceRegistry
+            energyService = ServiceRegistry.getEnergyService();
+            
+            // Disable chart animations for performance (if charts are bound)
+            if (roomChart != null) roomChart.setAnimated(false);
+            if (deviceChart != null) deviceChart.setAnimated(false);
+            if (timelineChart != null) timelineChart.setAnimated(false);
+            
+            // Register reactive update listener on LogService
+            registerActivityLogListener();
+            
+            // Initial dashboard refresh
+            refreshDashboard();
+        } catch (Exception e) {
+            System.err.println("Error initializing EnergyController: " + e.getMessage());
+            e.printStackTrace();
+            // Don't let initialization errors prevent FXML from loading
+        }
     }
 
     /**
@@ -123,13 +126,14 @@ public class EnergyController {
      */
     private void registerActivityLogListener() {
         try {
-            var logService = ServiceRegistry.getLogService();
-            // Create callback for reactive updates
-            refreshCallback = this::refreshDashboard;
-            // Note: If LogService has observer pattern, register callback here
+            // Attempt to retrieve log service for reactive updates
+            ServiceRegistry.getLogService();
+            // Note: If LogService implements observer pattern, register callback here:
+            // logService.addListener(this::refreshDashboard);
             // For now, this is a placeholder for future observer registration
-        } catch (Exception e) {
-            // Log service not available, proceed without reactive updates
+        } catch (NullPointerException | IllegalStateException e) {
+            // Log service not available, proceed without reactive updates (graceful degradation)
+            System.err.println("LogService unavailable for reactive energy updates: " + e.getMessage());
         }
     }
 
@@ -145,7 +149,7 @@ public class EnergyController {
                 refreshWeeklyView();
             }
             updateNavigationButtons();
-        } catch (Exception e) {
+        } catch (NullPointerException | IllegalStateException | IllegalArgumentException e) {
             showErrorAlert("Dashboard Refresh Error", "Failed to refresh energy data: " + e.getMessage());
         }
     }
@@ -163,7 +167,9 @@ public class EnergyController {
         loadDeviceChart(deviceConsumption);
         loadDailyTimelineChart(currentDate);
         
-        aggregationHintLabel.setText(String.format("Daily - %s", currentDate.format(DateTimeFormatter.ofPattern("EEE, MMM d, yyyy"))));
+        if (aggregationHintLabel != null) {
+            aggregationHintLabel.setText(String.format("Daily - %s", currentDate.format(DateTimeFormatter.ofPattern("EEE, MMM d, yyyy"))));
+        }
     }
 
     /**
@@ -182,7 +188,9 @@ public class EnergyController {
         loadDeviceChart(deviceConsumption);
         loadWeeklyTimelineChart(year, week);
         
-        aggregationHintLabel.setText(String.format("Weekly - Week %d of %d", week, year));
+        if (aggregationHintLabel != null) {
+            aggregationHintLabel.setText(String.format("Weekly - Week %d of %d", week, year));
+        }
     }
 
     /**
@@ -190,7 +198,9 @@ public class EnergyController {
      */
     private void loadSummaryData(Map<String, Double> deviceConsumption, Map<String, Double> roomConsumption, double householdTotal) {
         double totalKwh = householdTotal / 1000.0; // Convert Wh to kWh
-        totalUsageLabel.setText(String.format("%.2f kWh", totalKwh));
+        if (totalUsageLabel != null) {
+            totalUsageLabel.setText(String.format("%.2f kWh", totalKwh));
+        }
         
         // Find top device
         String topDevice = "N/A";
@@ -201,7 +211,9 @@ public class EnergyController {
                 topDevice = entry.getKey();
             }
         }
-        topDeviceLabel.setText(String.format("%s (%.2f kWh)", topDevice, topDeviceValue / 1000.0));
+        if (topDeviceLabel != null) {
+            topDeviceLabel.setText(String.format("%s (%.2f kWh)", topDevice, topDeviceValue / 1000.0));
+        }
         
         // Find top room
         String topRoom = "N/A";
@@ -212,17 +224,22 @@ public class EnergyController {
                 topRoom = entry.getKey();
             }
         }
-        topRoomLabel.setText(String.format("%s (%.2f kWh)", topRoom, topRoomValue / 1000.0));
+        if (topRoomLabel != null) {
+            topRoomLabel.setText(String.format("%s (%.2f kWh)", topRoom, topRoomValue / 1000.0));
+        }
     }
 
     /**
      * Loads and displays pie chart of energy consumption by room.
      */
     private void loadRoomChart(Map<String, Double> roomConsumption) {
+        if (roomChart == null) {
+            return;
+        }
         ObservableList<PieChart.Data> roomData = FXCollections.observableArrayList();
-        roomConsumption.forEach((room, valueWh) ->
-            roomData.add(new PieChart.Data(room, valueWh / 1000.0)) // Convert to kWh for display
-        );
+        roomConsumption.forEach((room, valueWh) -> {
+            roomData.add(new PieChart.Data(room, valueWh / 1000.0)); // Convert to kWh for display
+        });
         roomChart.setData(roomData);
         roomChart.setTitle(isDaily ? "Daily Room Consumption" : "Weekly Room Consumption");
     }
@@ -231,13 +248,16 @@ public class EnergyController {
      * Loads and displays bar chart of energy consumption by device.
      */
     private void loadDeviceChart(Map<String, Double> deviceConsumption) {
+        if (deviceChart == null) {
+            return;
+        }
         deviceChart.getData().clear();
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName(isDaily ? "Daily (kWh)" : "Weekly (kWh)");
 
-        deviceConsumption.forEach((device, valueWh) ->
-            series.getData().add(new XYChart.Data<>(device, valueWh / 1000.0)) // Convert to kWh
-        );
+        deviceConsumption.forEach((device, valueWh) -> {
+            series.getData().add(new XYChart.Data<>(device, valueWh / 1000.0)); // Convert to kWh
+        });
 
         deviceChart.getData().add(series);
     }
@@ -246,6 +266,7 @@ public class EnergyController {
      * Loads and displays timeline chart for daily aggregation (hourly breakdown).
      */
     private void loadDailyTimelineChart(LocalDate date) {
+        if (timelineChart == null) return;
         timelineChart.getData().clear();
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Hourly Consumption (kWh)");
@@ -261,7 +282,9 @@ public class EnergyController {
         }
         
         timelineChart.getData().add(series);
-        timelineTitleLabel.setText("Daily Consumption Profile - " + date.format(DateTimeFormatter.ofPattern("MMM d, yyyy")));
+        if (timelineTitleLabel != null) {
+            timelineTitleLabel.setText("Daily Consumption Profile - " + date.format(DateTimeFormatter.ofPattern("MMM d, yyyy")));
+        }
         
         Axis<String> xAxis = timelineChart.getXAxis();
         xAxis.setLabel("Hour of Day");
@@ -274,6 +297,7 @@ public class EnergyController {
      * Loads and displays timeline chart for weekly aggregation (daily breakdown).
      */
     private void loadWeeklyTimelineChart(int year, int week) {
+        if (timelineChart == null) return;
         timelineChart.getData().clear();
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Daily Consumption (kWh)");
@@ -292,7 +316,9 @@ public class EnergyController {
         }
         
         timelineChart.getData().add(series);
-        timelineTitleLabel.setText(String.format("Weekly Consumption Profile - Week %d, %d", week, year));
+        if (timelineTitleLabel != null) {
+            timelineTitleLabel.setText(String.format("Weekly Consumption Profile - Week %d, %d", week, year));
+        }
         
         Axis<String> xAxis = timelineChart.getXAxis();
         xAxis.setLabel("Day of Week");
@@ -303,77 +329,90 @@ public class EnergyController {
 
     /**
      * Updates the enabled/disabled state of navigation buttons based on current view.
+     * Gracefully handles missing buttons (null-safe for optional FXML bindings).
      */
     private void updateNavigationButtons() {
         boolean isDay = isDaily;
-        dayToggle.setSelected(isDay);
-        weekToggle.setSelected(!isDay);
+        if (dayToggle != null) dayToggle.setSelected(isDay);
+        if (weekToggle != null) weekToggle.setSelected(!isDay);
         
         if (isDay) {
-            dayToggle.setDisable(true);
-            weekToggle.setDisable(false);
-            thisWeekButton.setDisable(false);
-            lastWeekButton.setDisable(false);
-            todayButton.setDisable(false);
-            yesterdayButton.setDisable(false);
+            if (dayToggle != null) dayToggle.setDisable(true);
+            if (weekToggle != null) weekToggle.setDisable(false);
+            if (thisWeekButton != null) thisWeekButton.setDisable(false);
+            if (lastWeekButton != null) lastWeekButton.setDisable(false);
+            if (todayButton != null) todayButton.setDisable(false);
+            if (yesterdayButton != null) yesterdayButton.setDisable(false);
         } else {
-            dayToggle.setDisable(false);
-            weekToggle.setDisable(true);
-            thisWeekButton.setDisable(false);
-            lastWeekButton.setDisable(false);
-            todayButton.setDisable(true);
-            yesterdayButton.setDisable(true);
+            if (dayToggle != null) dayToggle.setDisable(false);
+            if (weekToggle != null) weekToggle.setDisable(true);
+            if (thisWeekButton != null) thisWeekButton.setDisable(false);
+            if (lastWeekButton != null) lastWeekButton.setDisable(false);
+            if (todayButton != null) todayButton.setDisable(true);
+            if (yesterdayButton != null) yesterdayButton.setDisable(true);
         }
     }
     
     @FXML
     private void handleDayToggle() {
-        isDaily = true;
-        currentDate = LocalDate.now();
-        refreshDashboard();
+        if (!isDaily) {
+            isDaily = true;
+            currentDate = LocalDate.now();
+            updateNavigationButtons();
+            refreshDashboard();
+        }
     }
     
     @FXML
     private void handleWeekToggle() {
-        isDaily = false;
-        currentWeekYear = getWeekYearForDate(LocalDate.now());
-        refreshDashboard();
+        if (isDaily) {
+            isDaily = false;
+            currentWeekYear = getWeekYearForDate(LocalDate.now());
+            updateNavigationButtons();
+            refreshDashboard();
+        }
     }
 
     @FXML
     private void handleTodayButton() {
-        isDaily = true;
-        currentDate = LocalDate.now();
-        dayToggle.setSelected(true);
-        weekToggle.setSelected(false);
-        refreshDashboard();
+        if (!isDaily || !currentDate.equals(LocalDate.now())) {
+            isDaily = true;
+            currentDate = LocalDate.now();
+            updateNavigationButtons();
+            refreshDashboard();
+        }
     }
 
     @FXML
     private void handleYesterdayButton() {
-        isDaily = true;
-        currentDate = LocalDate.now().minusDays(1);
-        dayToggle.setSelected(true);
-        weekToggle.setSelected(false);
-        refreshDashboard();
+        if (!isDaily || !currentDate.equals(LocalDate.now().minusDays(1))) {
+            isDaily = true;
+            currentDate = LocalDate.now().minusDays(1);
+            updateNavigationButtons();
+            refreshDashboard();
+        }
     }
 
     @FXML
     private void handleThisWeekButton() {
-        isDaily = false;
-        currentWeekYear = getWeekYearForDate(LocalDate.now());
-        dayToggle.setSelected(false);
-        weekToggle.setSelected(true);
-        refreshDashboard();
+        int thisWeek = getWeekYearForDate(LocalDate.now());
+        if (isDaily || currentWeekYear != thisWeek) {
+            isDaily = false;
+            currentWeekYear = thisWeek;
+            updateNavigationButtons();
+            refreshDashboard();
+        }
     }
 
     @FXML
     private void handleLastWeekButton() {
-        isDaily = false;
-        currentWeekYear = getWeekYearForDate(LocalDate.now().minusWeeks(1));
-        dayToggle.setSelected(false);
-        weekToggle.setSelected(true);
-        refreshDashboard();
+        int lastWeek = getWeekYearForDate(LocalDate.now().minusWeeks(1));
+        if (isDaily || currentWeekYear != lastWeek) {
+            isDaily = false;
+            currentWeekYear = lastWeek;
+            updateNavigationButtons();
+            refreshDashboard();
+        }
     }
     
     @FXML
