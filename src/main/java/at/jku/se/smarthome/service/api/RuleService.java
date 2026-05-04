@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 /**
  * Defines operations for managing automation rules in the smart-home system.
  */
+@SuppressWarnings("PMD.UseObjectForClearerAPI")
 public interface RuleService {
 
     /**

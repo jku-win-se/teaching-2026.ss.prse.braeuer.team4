@@ -3,6 +3,7 @@ package at.jku.se.smarthome.service.rule;
 import java.time.DayOfWeek;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Stateless parser and matcher for weekday prefixes used in time trigger conditions.
@@ -19,10 +20,23 @@ import java.util.Optional;
  */
 public final class WeekdaySpec {
 
-    /** Parsed set of days this spec matches. */
-    private final EnumSet<DayOfWeek> days;
+    /** Token for daily match. */
+    private static final String TOKEN_DAILY = "daily";
+    /** Token for weekdays match. */
+    private static final String TOKEN_WEEKDAYS = "weekdays";
+    /** Token for weekends match. */
+    private static final String TOKEN_WEEKENDS = "weekends";
+    /** Separator for day lists. */
+    private static final String LIST_SEPARATOR = ",";
+    /** Separator for day ranges. */
+    private static final String RANGE_SEPARATOR = "-";
+    /** Expected number of parts in a range. */
+    private static final int RANGE_PARTS = 2;
 
-    private WeekdaySpec(EnumSet<DayOfWeek> days) {
+    /** Parsed set of days this spec matches. */
+    private final Set<DayOfWeek> days;
+
+    private WeekdaySpec(Set<DayOfWeek> days) {
         this.days = days;
     }
 
@@ -33,15 +47,14 @@ public final class WeekdaySpec {
      * @return the parsed spec, or empty if the token is unrecognised
      */
     public static Optional<WeekdaySpec> parse(String token) {
-        if (token == null || token.isBlank()) {
-            return Optional.empty();
+        Optional<WeekdaySpec> result = Optional.empty();
+        if (token != null && !token.isBlank()) {
+            Set<DayOfWeek> parsed = parseToken(token.trim().toLowerCase());
+            if (parsed != null) {
+                result = Optional.of(new WeekdaySpec(parsed));
+            }
         }
-        String normalised = token.trim();
-        EnumSet<DayOfWeek> days = parseToken(normalised);
-        if (days == null) {
-            return Optional.empty();
-        }
-        return Optional.of(new WeekdaySpec(days));
+        return result;
     }
 
     /**
@@ -54,70 +67,78 @@ public final class WeekdaySpec {
         return days.contains(day);
     }
 
-    @SuppressWarnings("PMD.CyclomaticComplexity")
-    private static EnumSet<DayOfWeek> parseToken(String token) {
-        String lower = token.toLowerCase();
-        if ("daily".equals(lower)) {
-            return EnumSet.allOf(DayOfWeek.class);
+    private static Set<DayOfWeek> parseToken(String lower) {
+        Set<DayOfWeek> result = null;
+        if (TOKEN_DAILY.equals(lower)) {
+            result = EnumSet.allOf(DayOfWeek.class);
+        } else if (TOKEN_WEEKDAYS.equals(lower)) {
+            result = EnumSet.range(DayOfWeek.MONDAY, DayOfWeek.FRIDAY);
+        } else if (TOKEN_WEEKENDS.equals(lower)) {
+            result = EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
+        } else if (lower.contains(LIST_SEPARATOR)) {
+            result = parseList(lower);
+        } else if (lower.contains(RANGE_SEPARATOR)) {
+            result = parseRange(lower);
+        } else {
+            DayOfWeek single = parseDay(lower);
+            if (single != null) {
+                result = EnumSet.of(single);
+            }
         }
-        if ("weekdays".equals(lower)) {
-            return EnumSet.range(DayOfWeek.MONDAY, DayOfWeek.FRIDAY);
-        }
-        if ("weekends".equals(lower)) {
-            return EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
-        }
-        if (lower.contains(",")) {
-            return parseList(lower);
-        }
-        if (lower.contains("-")) {
-            return parseRange(lower);
-        }
-        DayOfWeek single = parseDay(lower);
-        if (single != null) {
-            return EnumSet.of(single);
-        }
-        return null;
+        return result;
     }
 
-    private static EnumSet<DayOfWeek> parseList(String list) {
-        EnumSet<DayOfWeek> result = EnumSet.noneOf(DayOfWeek.class);
-        String[] parts = list.split(",");
+    private static Set<DayOfWeek> parseList(String list) {
+        Set<DayOfWeek> result = EnumSet.noneOf(DayOfWeek.class);
+        String[] parts = list.split(LIST_SEPARATOR);
+        boolean valid = true;
         for (String part : parts) {
             if (part.isBlank()) {
-                return null;
+                valid = false;
+                break;
             }
             DayOfWeek day = parseDay(part.trim());
             if (day == null) {
-                return null;
+                valid = false;
+                break;
             }
             result.add(day);
         }
-        return result.isEmpty() ? null : result;
+        return valid && !result.isEmpty() ? result : null;
     }
 
-    private static EnumSet<DayOfWeek> parseRange(String range) {
-        String[] parts = range.split("-");
-        if (parts.length != 2) {
-            return null;
+    private static Set<DayOfWeek> parseRange(String range) {
+        Set<DayOfWeek> result = null;
+        String[] parts = range.split(RANGE_SEPARATOR);
+        if (parts.length == RANGE_PARTS) {
+            DayOfWeek start = parseDay(parts[0].trim());
+            DayOfWeek end = parseDay(parts[1].trim());
+            if (start != null && end != null && end.getValue() >= start.getValue()) {
+                result = EnumSet.range(start, end);
+            }
         }
-        DayOfWeek start = parseDay(parts[0].trim());
-        DayOfWeek end = parseDay(parts[1].trim());
-        if (start == null || end == null || end.getValue() < start.getValue()) {
-            return null;
-        }
-        return EnumSet.range(start, end);
+        return result;
     }
 
+    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.AvoidLiteralsInIfCondition"})
     private static DayOfWeek parseDay(String day) {
-        return switch (day.toLowerCase()) {
-            case "mon", "monday" -> DayOfWeek.MONDAY;
-            case "tue", "tuesday" -> DayOfWeek.TUESDAY;
-            case "wed", "wednesday" -> DayOfWeek.WEDNESDAY;
-            case "thu", "thursday" -> DayOfWeek.THURSDAY;
-            case "fri", "friday" -> DayOfWeek.FRIDAY;
-            case "sat", "saturday" -> DayOfWeek.SATURDAY;
-            case "sun", "sunday" -> DayOfWeek.SUNDAY;
-            default -> null;
-        };
+        DayOfWeek result = null;
+        String lower = day.toLowerCase();
+        if ("mon".equals(lower) || "monday".equals(lower)) {
+            result = DayOfWeek.MONDAY;
+        } else if ("tue".equals(lower) || "tuesday".equals(lower)) {
+            result = DayOfWeek.TUESDAY;
+        } else if ("wed".equals(lower) || "wednesday".equals(lower)) {
+            result = DayOfWeek.WEDNESDAY;
+        } else if ("thu".equals(lower) || "thursday".equals(lower)) {
+            result = DayOfWeek.THURSDAY;
+        } else if ("fri".equals(lower) || "friday".equals(lower)) {
+            result = DayOfWeek.FRIDAY;
+        } else if ("sat".equals(lower) || "saturday".equals(lower)) {
+            result = DayOfWeek.SATURDAY;
+        } else if ("sun".equals(lower) || "sunday".equals(lower)) {
+            result = DayOfWeek.SUNDAY;
+        }
+        return result;
     }
 }

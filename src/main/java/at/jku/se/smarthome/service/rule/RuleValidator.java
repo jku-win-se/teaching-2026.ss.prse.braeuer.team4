@@ -20,6 +20,8 @@ public final class RuleValidator {
     /** Time formatter for 24-hour format (HH:mm). */
     private static final DateTimeFormatter TIME_FORMAT_24H =
             DateTimeFormatter.ofPattern("HH:mm");
+    /** Expected device type for threshold sources. */
+    private static final String DEVICE_TYPE_SENSOR = "sensor";
 
     /**
      * Validation result carrying a boolean flag and an optional reason.
@@ -41,19 +43,23 @@ public final class RuleValidator {
     @SuppressWarnings("PMD.CyclomaticComplexity")
     public static Result validate(String triggerType, String condition,
                                   String sourceDevice, RoomService rooms) {
+        Result result;
         if (condition == null || condition.isBlank()) {
-            return new Result(false, "condition is required");
+            result = new Result(false, "condition is required");
+        } else {
+            String trimmed = condition.trim();
+            result = switch (triggerType) {
+                case "Time" -> validateTime(trimmed);
+                case "Sensor Threshold" -> validateSensorThreshold(trimmed, sourceDevice, rooms);
+                case "Device State" -> validateDeviceState(trimmed, sourceDevice, rooms);
+                default -> new Result(false, "unknown trigger type: " + triggerType);
+            };
         }
-        String trimmed = condition.trim();
-        return switch (triggerType) {
-            case "Time" -> validateTime(trimmed);
-            case "Sensor Threshold" -> validateSensorThreshold(trimmed, sourceDevice, rooms);
-            case "Device State" -> validateDeviceState(trimmed, sourceDevice, rooms);
-            default -> new Result(false, "unknown trigger type: " + triggerType);
-        };
+        return result;
     }
 
     private static Result validateTime(String condition) {
+        Result result;
         String timePart = condition;
         int firstSpace = condition.indexOf(' ');
         if (firstSpace > 0) {
@@ -64,9 +70,11 @@ public final class RuleValidator {
             }
         }
         if (parseTime(timePart) == null) {
-            return new Result(false, "malformed time expression: " + timePart);
+            result = new Result(false, "malformed time expression: " + timePart);
+        } else {
+            result = new Result(true, null);
         }
-        return new Result(true, null);
+        return result;
     }
 
     @SuppressWarnings("PMD.EmptyCatchBlock")
@@ -84,29 +92,38 @@ public final class RuleValidator {
         return parsedTime;
     }
 
+    @SuppressWarnings("PMD.CyclomaticComplexity")
     private static Result validateSensorThreshold(String condition, String sourceDevice,
                                                    RoomService rooms) {
+        Result result;
         String[] parts = condition.split("\\s+");
-        if (parts.length != 3 || !"Value".equalsIgnoreCase(parts[0])) {
-            return new Result(false, "malformed threshold condition");
+        boolean wellFormed = parts.length == 3 && "Value".equalsIgnoreCase(parts[0]);
+        if (wellFormed && isValidOperator(parts[1])) {
+            boolean numeric;
+            try {
+                Double.parseDouble(parts[2]);
+                numeric = true;
+            } catch (NumberFormatException e) {
+                numeric = false;
+            }
+            if (numeric) {
+                Device device = rooms.getDeviceByName(sourceDevice);
+                if (device == null) {
+                    result = new Result(false, "source device not found: " + sourceDevice);
+                } else if (DEVICE_TYPE_SENSOR.equalsIgnoreCase(device.getType())) {
+                    result = new Result(true, null);
+                } else {
+                    result = new Result(false, "source device is not a sensor: " + sourceDevice);
+                }
+            } else {
+                result = new Result(false, "non-numeric threshold: " + parts[2]);
+            }
+        } else if (wellFormed) {
+            result = new Result(false, "unknown operator: " + parts[1]);
+        } else {
+            result = new Result(false, "malformed threshold condition");
         }
-        String operator = parts[1];
-        if (!isValidOperator(operator)) {
-            return new Result(false, "unknown operator: " + operator);
-        }
-        try {
-            Double.parseDouble(parts[2]);
-        } catch (NumberFormatException e) {
-            return new Result(false, "non-numeric threshold: " + parts[2]);
-        }
-        Device device = rooms.getDeviceByName(sourceDevice);
-        if (device == null) {
-            return new Result(false, "source device not found: " + sourceDevice);
-        }
-        if (!"sensor".equalsIgnoreCase(device.getType())) {
-            return new Result(false, "source device is not a sensor: " + sourceDevice);
-        }
-        return new Result(true, null);
+        return result;
     }
 
     private static boolean isValidOperator(String operator) {
@@ -117,14 +134,19 @@ public final class RuleValidator {
 
     private static Result validateDeviceState(String condition, String sourceDevice,
                                                RoomService rooms) {
+        Result result;
         String normalised = condition.toLowerCase();
-        if (!"state = active".equals(normalised) && !"state = inactive".equals(normalised)
-                && !"state = on".equals(normalised) && !"state = off".equals(normalised)) {
-            return new Result(false, "malformed device state condition");
+        boolean validState = "state = active".equals(normalised)
+                || "state = inactive".equals(normalised)
+                || "state = on".equals(normalised)
+                || "state = off".equals(normalised);
+        if (validState && rooms.getDeviceByName(sourceDevice) != null) {
+            result = new Result(true, null);
+        } else if (validState) {
+            result = new Result(false, "source device not found: " + sourceDevice);
+        } else {
+            result = new Result(false, "malformed device state condition");
         }
-        if (rooms.getDeviceByName(sourceDevice) == null) {
-            return new Result(false, "source device not found: " + sourceDevice);
-        }
-        return new Result(true, null);
+        return result;
     }
 }

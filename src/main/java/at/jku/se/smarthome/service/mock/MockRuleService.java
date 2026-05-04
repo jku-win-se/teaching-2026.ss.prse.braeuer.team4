@@ -91,22 +91,22 @@ public final class MockRuleService implements RuleService {
      */
     public Rule addRule(String name, String triggerType, String sourceDevice, String condition,
                        String action, String targetDevice) {
+        Rule rule = null;
         RuleValidator.Result validation = RuleValidator.validate(triggerType, condition, sourceDevice, roomService);
-        if (!validation.valid()) {
-            return null;
+        if (validation.valid()) {
+            rule = new Rule(
+                    "rule-" + String.format("%03d", rules.size() + 1),
+                    name,
+                    triggerType,
+                    sourceDevice,
+                    condition,
+                    action,
+                    targetDevice,
+                    true,
+                    "Active"
+            );
+            rules.add(rule);
         }
-        Rule rule = new Rule(
-                "rule-" + String.format("%03d", rules.size() + 1),
-                name,
-                triggerType,
-                sourceDevice,
-                condition,
-                action,
-                targetDevice,
-                true,
-                "Active"
-        );
-        rules.add(rule);
         return rule;
     }
     
@@ -124,27 +124,25 @@ public final class MockRuleService implements RuleService {
      */
     public boolean updateRule(String ruleId, String name, String triggerType, String sourceDevice,
                              String condition, String action, String targetDevice) {
+        boolean updated = false;
         Rule rule = rules.stream()
                 .filter(r -> r.getId().equals(ruleId))
                 .findFirst()
                 .orElse(null);
 
-        if (rule == null) {
-            return false;
+        if (rule != null) {
+            RuleValidator.Result validation = RuleValidator.validate(triggerType, condition, sourceDevice, roomService);
+            if (validation.valid()) {
+                rule.setName(name);
+                rule.setTriggerType(triggerType);
+                rule.setSourceDevice(sourceDevice);
+                rule.setCondition(condition);
+                rule.setAction(action);
+                rule.setTargetDevice(targetDevice);
+                updated = true;
+            }
         }
-
-        RuleValidator.Result validation = RuleValidator.validate(triggerType, condition, sourceDevice, roomService);
-        if (!validation.valid()) {
-            return false;
-        }
-
-        rule.setName(name);
-        rule.setTriggerType(triggerType);
-        rule.setSourceDevice(sourceDevice);
-        rule.setCondition(condition);
-        rule.setAction(action);
-        rule.setTargetDevice(targetDevice);
-        return true;
+        return updated;
     }
     
     /**
@@ -191,24 +189,24 @@ public final class MockRuleService implements RuleService {
                 .findFirst()
                 .orElse(null);
 
-        if (rule != null && rule.isEnabled()) {
-            Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
-            if (!new RuleEvaluator().evaluate(rule, sourceDevice)) {
-                notificationService.addNotification("Rule execution failed: condition not met for " + rule.getName(), "error");
-                return false;
-            }
-            Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
-            if (targetDevice != null && applyAction(targetDevice, rule.getAction())) {
-                logService.addLogEntry(targetDevice.getName(), targetDevice.getRoom(), rule.getAction(), "Rule: " + rule.getName());
-                notificationService.addNotification("Rule executed: " + rule.getName(), "success");
-                executed = true;
-            } else if (targetDevice == null) {
-                notificationService.addNotification("Rule execution failed: target device missing for " + rule.getName(), "error");
-            } else {
-                notificationService.addNotification("Rule execution failed: unsupported action in " + rule.getName(), "error");
-            }
-        } else if (rule == null) {
+        if (rule == null) {
             notificationService.addNotification("Rule execution failed: rule not found", "error");
+        } else if (rule.isEnabled()) {
+            Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
+            if (new RuleEvaluator().evaluate(rule, sourceDevice)) {
+                Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
+                if (targetDevice != null && applyAction(targetDevice, rule.getAction())) {
+                    logService.addLogEntry(targetDevice.getName(), targetDevice.getRoom(), rule.getAction(), "Rule: " + rule.getName());
+                    notificationService.addNotification("Rule executed: " + rule.getName(), "success");
+                    executed = true;
+                } else if (targetDevice == null) {
+                    notificationService.addNotification("Rule execution failed: target device missing for " + rule.getName(), "error");
+                } else {
+                    notificationService.addNotification("Rule execution failed: unsupported action in " + rule.getName(), "error");
+                }
+            } else {
+                notificationService.addNotification("Rule execution failed: condition not met for " + rule.getName(), "error");
+            }
         } else {
             notificationService.addNotification("Rule execution failed: " + rule.getName() + " is inactive", "error");
         }

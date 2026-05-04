@@ -58,33 +58,38 @@ public class RuleEvaluator {
         return result;
     }
 
-    @SuppressWarnings("PMD.NullAssignment")
     private boolean evaluateTime(String condition) {
         boolean result = false;
         if (condition != null && !condition.isBlank()) {
             String trimmed = condition.trim();
-            String timePart = trimmed;
-            boolean dayMatches = true;
-
-            int firstSpace = trimmed.indexOf(' ');
-            if (firstSpace > 0) {
-                String prefix = trimmed.substring(0, firstSpace);
-                Optional<WeekdaySpec> spec = WeekdaySpec.parse(prefix);
-                if (spec.isPresent()) {
-                    dayMatches = spec.get().matches(LocalDate.now().getDayOfWeek());
-                    timePart = trimmed.substring(firstSpace + 1).trim();
-                }
-            }
-
-            if (dayMatches) {
-                LocalTime target = parseTime(timePart);
-                if (target != null) {
-                    LocalTime now = LocalTime.now();
-                    result = now.getHour() == target.getHour() && now.getMinute() == target.getMinute();
-                }
+            TimeParts parts = splitTimeCondition(trimmed);
+            LocalTime target = parts.dayMatches() ? parseTime(parts.timePart()) : null;
+            if (target != null) {
+                LocalTime now = LocalTime.now();
+                result = now.getHour() == target.getHour() && now.getMinute() == target.getMinute();
             }
         }
         return result;
+    }
+
+    /**
+     * Helper record for splitting a time condition into weekday spec and time part.
+     */
+    private record TimeParts(boolean dayMatches, String timePart) { }
+
+    private TimeParts splitTimeCondition(String trimmed) {
+        boolean dayMatches = true;
+        String timePart = trimmed;
+        int firstSpace = trimmed.indexOf(' ');
+        if (firstSpace > 0) {
+            String prefix = trimmed.substring(0, firstSpace);
+            Optional<WeekdaySpec> spec = WeekdaySpec.parse(prefix);
+            if (spec.isPresent()) {
+                dayMatches = spec.get().matches(LocalDate.now().getDayOfWeek());
+                timePart = trimmed.substring(firstSpace + 1).trim();
+            }
+        }
+        return new TimeParts(dayMatches, timePart);
     }
 
     @SuppressWarnings("PMD.EmptyCatchBlock")
