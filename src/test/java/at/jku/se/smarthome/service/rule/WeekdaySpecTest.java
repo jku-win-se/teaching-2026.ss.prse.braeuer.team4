@@ -9,7 +9,8 @@ import java.time.DayOfWeek;
 /**
  * Unit tests for WeekdaySpec parser and matcher.
  */
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.CommentRequired",
+        "PMD.MethodNamingConventions", "PMD.UnitTestContainsTooManyAsserts"})
 public class WeekdaySpecTest {
 
     @Test

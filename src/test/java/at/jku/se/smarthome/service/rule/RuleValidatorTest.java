@@ -13,7 +13,9 @@ import javafx.collections.ObservableList;
 /**
  * Unit tests for RuleValidator.
  */
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.CommentRequired",
+        "PMD.MethodNamingConventions", "PMD.TooManyMethods",
+        "PMD.UnitTestContainsTooManyAsserts"})
 public class RuleValidatorTest {
 
     /** Stub room service with predictable device lookup. */
@@ -21,20 +23,20 @@ public class RuleValidatorTest {
 
     @Test
     public void validate_unknownTriggerType_returnsInvalid() {
-        RuleValidator.Result r = RuleValidator.validate("Magic", "x", null, rooms);
-        assertFalse(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Magic", "x", null, rooms);
+        assertFalse(result.valid());
     }
 
     @Test
     public void validate_timeWithBadWeekday_returnsInvalid() {
-        RuleValidator.Result r = RuleValidator.validate("Time", "Funday 07:00", null, rooms);
-        assertFalse(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Time", "Funday 07:00", null, rooms);
+        assertFalse(result.valid());
     }
 
     @Test
     public void validate_timeWithBadTimeFormat_returnsInvalid() {
-        RuleValidator.Result r = RuleValidator.validate("Time", "Daily hello", null, rooms);
-        assertFalse(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Time", "Daily hello", null, rooms);
+        assertFalse(result.valid());
     }
 
     @Test
@@ -46,38 +48,38 @@ public class RuleValidatorTest {
 
     @Test
     public void validate_thresholdNonNumericValue_returnsInvalid() {
-        RuleValidator.Result r = RuleValidator.validate("Sensor Threshold", "Value > hot", "Motion Sensor", rooms);
-        assertFalse(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Sensor Threshold", "Value > hot", "Motion Sensor", rooms);
+        assertFalse(result.valid());
     }
 
     @Test
     public void validate_thresholdUnknownOperator_returnsInvalid() {
-        RuleValidator.Result r = RuleValidator.validate("Sensor Threshold", "Value <> 5", "Motion Sensor", rooms);
-        assertFalse(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Sensor Threshold", "Value <> 5", "Motion Sensor", rooms);
+        assertFalse(result.valid());
     }
 
     @Test
     public void validate_thresholdSourceNotASensor_returnsInvalid() {
-        RuleValidator.Result r = RuleValidator.validate("Sensor Threshold", "Value > 5", "Main Light", rooms);
-        assertFalse(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Sensor Threshold", "Value > 5", "Main Light", rooms);
+        assertFalse(result.valid());
     }
 
     @Test
     public void validate_thresholdSourceUnresolvable_returnsInvalid() {
-        RuleValidator.Result r = RuleValidator.validate("Sensor Threshold", "Value > 5", "Ghost", rooms);
-        assertFalse(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Sensor Threshold", "Value > 5", "Ghost", rooms);
+        assertFalse(result.valid());
     }
 
     @Test
     public void validate_thresholdValid_returnsValid() {
-        RuleValidator.Result r = RuleValidator.validate("Sensor Threshold", "Value > 5", "Motion Sensor", rooms);
-        assertTrue(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Sensor Threshold", "Value > 5", "Motion Sensor", rooms);
+        assertTrue(result.valid());
     }
 
     @Test
     public void validate_deviceStateMalformedCondition_returnsInvalid() {
-        RuleValidator.Result r = RuleValidator.validate("Device State", "State = Unknown", "Main Light", rooms);
-        assertFalse(r.valid());
+        RuleValidator.Result result = RuleValidator.validate("Device State", "State = Unknown", "Main Light", rooms);
+        assertFalse(result.valid());
     }
 
     @Test
@@ -94,15 +96,18 @@ public class RuleValidatorTest {
      */
     @SuppressWarnings("PMD.TooManyMethods")
     private static final class StubRoomService implements RoomService {
+        private static final String MOTION_SENSOR = "Motion Sensor";
+        private static final String MAIN_LIGHT = "Main Light";
+
         @Override
         public Device getDeviceByName(String deviceName) {
-            if ("Motion Sensor".equals(deviceName)) {
-                return new Device("d1", "Motion Sensor", "sensor", "Hallway", true);
+            Device result = null;
+            if (MOTION_SENSOR.equals(deviceName)) {
+                result = new Device("d1", MOTION_SENSOR, "sensor", "Hallway", true);
+            } else if (MAIN_LIGHT.equals(deviceName)) {
+                result = new Device("d2", MAIN_LIGHT, "Switch", "Living Room", true);
             }
-            if ("Main Light".equals(deviceName)) {
-                return new Device("d2", "Main Light", "Switch", "Living Room", true);
-            }
-            return null;
+            return result;
         }
 
         @Override

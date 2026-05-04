@@ -18,7 +18,9 @@ import at.jku.se.smarthome.model.Rule;
  *
  * No mocks needed: RuleEvaluator is stateless and accepts plain model objects.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods",
+        "PMD.CommentRequired", "PMD.MethodNamingConventions",
+        "PMD.UnitTestContainsTooManyAsserts"})
 public class RuleEvaluatorTest {
 
 
