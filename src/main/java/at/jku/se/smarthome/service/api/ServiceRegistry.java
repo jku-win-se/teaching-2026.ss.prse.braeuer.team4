@@ -2,6 +2,7 @@ package at.jku.se.smarthome.service.api;
 import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockRuleService;
 import at.jku.se.smarthome.service.real.auth.JdbcUserService;
+import at.jku.se.smarthome.service.real.energy.JdbcEnergyService;
 import at.jku.se.smarthome.service.real.log.JdbcLogService;
 import at.jku.se.smarthome.service.real.room.JdbcRoomService;
 import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
@@ -26,6 +27,8 @@ public final class ServiceRegistry {
     private static RuleService testRuleServiceOverride;
     /** Override for notification service used in tests. */
     private static NotificationService testNotificationServiceOverride;
+    /** Override for energy service used in tests. */
+    private static EnergyService testEnergyServiceOverride;
 
     /** Private constructor prevents instantiation. */
     private ServiceRegistry() {
@@ -195,6 +198,34 @@ public final class ServiceRegistry {
     public static void setNotificationServiceForTesting(NotificationService svc) {
         synchronized (OVERRIDE_LOCK) {
             testNotificationServiceOverride = svc;
+        }
+    }
+
+    /**
+     * Returns the active energy service instance.
+     *
+     * @return lazily initialized energy service
+     */
+    public static EnergyService getEnergyService() {
+        return testEnergyServiceOverride != null ? testEnergyServiceOverride : EnergyServiceHolder.INSTANCE;
+    }
+
+    /**
+     * Holder for lazy initialization of energy service.
+     */
+    private static final class EnergyServiceHolder {
+        /** Singleton energy service instance. */
+        private static final EnergyService INSTANCE = JdbcEnergyService.getInstance();
+    }
+
+    /**
+     * Overrides the energy service for tests or alternate runtime wiring.
+     *
+     * @param testEnergyService replacement energy service instance
+     */
+    public static void setEnergyServiceForTesting(EnergyService testEnergyService) {
+        synchronized (OVERRIDE_LOCK) {
+            testEnergyServiceOverride = testEnergyService;
         }
     }
 
