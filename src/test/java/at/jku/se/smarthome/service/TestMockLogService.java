@@ -57,7 +57,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryInsertsAtFront() {
         service.addLogEntry("Garden Blind", "Garden", "Opened", "User");
-        assertEquals("Garden Blind", service.getLogs().get(0).getDevice());
+        assertEquals("Garden Blind", service.getLogs().getFirst().getDevice());
     }
 
     /**
@@ -66,7 +66,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryStoresDevice() {
         service.addLogEntry("Garden Blind", "Garden", "Opened", "User");
-        LogEntry entry = service.getLogs().get(0);
+        LogEntry entry = service.getLogs().getFirst();
         assertEquals("Garden Blind", entry.getDevice());
     }
 
@@ -76,7 +76,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryStoresRoom() {
         service.addLogEntry("Garden Blind", "Garden", "Opened", "User");
-        LogEntry entry = service.getLogs().get(0);
+        LogEntry entry = service.getLogs().getFirst();
         assertEquals("Garden", entry.getRoom());
     }
 
@@ -86,7 +86,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryStoresAction() {
         service.addLogEntry("Garden Blind", "Garden", "Opened", "User");
-        LogEntry entry = service.getLogs().get(0);
+        LogEntry entry = service.getLogs().getFirst();
         assertEquals("Opened", entry.getAction());
     }
 
@@ -96,7 +96,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryStoresActor() {
         service.addLogEntry("Garden Blind", "Garden", "Opened", "User");
-        LogEntry entry = service.getLogs().get(0);
+        LogEntry entry = service.getLogs().getFirst();
         assertEquals("User", entry.getActor());
     }
 
@@ -106,7 +106,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryTimestampIsNotBlank() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
-        assertFalse(service.getLogs().get(0).getTimestamp().isBlank());
+        assertFalse(service.getLogs().getFirst().getTimestamp().isBlank());
     }
 
     // -----------------------------------------------------------------------
@@ -119,7 +119,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryLegacyStoresDevice() {
         service.addLogEntry("Main Light", "Turned ON", "User");
-        LogEntry entry = service.getLogs().get(0);
+        LogEntry entry = service.getLogs().getFirst();
         assertEquals("Main Light", entry.getDevice());
     }
 
@@ -129,7 +129,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryLegacyDefaultsRoomToUnknown() {
         service.addLogEntry("Main Light", "Turned ON", "User");
-        LogEntry entry = service.getLogs().get(0);
+        LogEntry entry = service.getLogs().getFirst();
         assertEquals("Unknown", entry.getRoom());
     }
 
@@ -139,7 +139,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryLegacyStoresAction() {
         service.addLogEntry("Main Light", "Turned ON", "User");
-        LogEntry entry = service.getLogs().get(0);
+        LogEntry entry = service.getLogs().getFirst();
         assertEquals("Turned ON", entry.getAction());
     }
 
@@ -149,7 +149,7 @@ public class TestMockLogService {
     @Test
     public void addLogEntryLegacyStoresActor() {
         service.addLogEntry("Main Light", "Turned ON", "User");
-        LogEntry entry = service.getLogs().get(0);
+        LogEntry entry = service.getLogs().getFirst();
         assertEquals("User", entry.getActor());
     }
 
@@ -177,7 +177,7 @@ public class TestMockLogService {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         service.addLogEntry("Bed Light", "Bedroom", "Turned OFF", "User");
         ObservableList<LogEntry> result = service.getLogsByRoom("Living Room");
-        assertTrue(result.size() >= 1);
+        assertFalse(result.isEmpty());
     }
 
     /**
@@ -223,7 +223,7 @@ public class TestMockLogService {
     public void shouldReturnOnlyMatchingEntriesForDevice() {
         service.addLogEntry("Unique Device ABC", "Room", "Action", "User");
         ObservableList<LogEntry> result = service.getLogsByDevice("Unique Device ABC");
-        assertEquals("Unique Device ABC", result.get(0).getDevice());
+        assertEquals("Unique Device ABC", result.getFirst().getDevice());
     }
 
     /**
@@ -246,7 +246,7 @@ public class TestMockLogService {
     public void shouldReturnAtLeastOneEntryForUserActor() {
         service.addLogEntry("Main Light", "Living Room", "Turned ON", "User");
         ObservableList<LogEntry> result = service.getLogsByActor("User");
-        assertTrue(result.size() >= 1);
+        assertFalse(result.isEmpty());
     }
 
     /**
@@ -268,7 +268,7 @@ public class TestMockLogService {
     public void shouldReturnAtLeastOneEntryForRuleActor() {
         service.addLogEntry("Dimmer Light", "Bedroom", "Set to 50%", "Rule: Morning Routine");
         ObservableList<LogEntry> result = service.getLogsByActor("Rule: Morning Routine");
-        assertTrue(result.size() >= 1);
+        assertFalse(result.isEmpty());
     }
 
     /**
@@ -290,7 +290,7 @@ public class TestMockLogService {
     public void shouldReturnAtLeastOneEntryForScheduleActor() {
         service.addLogEntry("Kitchen Light", "Kitchen", "Turned OFF", "Schedule: Evening Shutdown");
         ObservableList<LogEntry> result = service.getLogsByActor("Schedule: Evening Shutdown");
-        assertTrue(result.size() >= 1);
+        assertFalse(result.isEmpty());
     }
 
     /**
@@ -315,7 +315,7 @@ public class TestMockLogService {
     @Test
     public void exportToCSVContainsHeader() {
         String csv = service.exportToCSV();
-        assertTrue(csv.startsWith("Timestamp,Device,Room,Action,Actor"));
+        assertTrue(csv.startsWith("Timestamp;Device;Room;Action;Actor"));
     }
 
     /**

@@ -90,7 +90,7 @@ public final class MockLogService implements LogService {
                 action,
                 actor
         );
-        logs.add(0, entry); // Add to beginning
+        logs.addFirst(entry);
     }
     
     /**
@@ -174,10 +174,10 @@ public final class MockLogService implements LogService {
     public String exportToCSV(List<LogEntry> entries) {
         int initialCapacity = entries.size() * 96 + 64;
         StringBuilder csv = new StringBuilder(initialCapacity);
-        csv.append("Timestamp,Device,Room,Action,Actor\n");
+        csv.append("Timestamp;Device;Room;Action;Actor\n");
 
         for (LogEntry log : entries) {
-            csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+            csv.append(String.format("\"%s\";\"%s\";\"%s\";\"%s\";\"%s\"\n",
                     log.getTimestamp(),
                     log.getDevice(),
                     log.getRoom(),
