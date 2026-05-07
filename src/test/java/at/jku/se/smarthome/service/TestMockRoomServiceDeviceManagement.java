@@ -20,7 +20,7 @@ import at.jku.se.smarthome.service.mock.MockRoomService;
  *   room-002 / Bedroom      → dev-003 (Bed Light),  dev-004 (Temperature Control)
  *   room-003 / Kitchen      → dev-005 (Ceiling Light)
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods", "PMD.TooManyStaticImports"})
 public class TestMockRoomServiceDeviceManagement {
 
 
