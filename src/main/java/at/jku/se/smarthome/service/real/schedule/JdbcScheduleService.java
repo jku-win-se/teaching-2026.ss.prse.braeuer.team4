@@ -1,14 +1,9 @@
 package at.jku.se.smarthome.service.real.schedule;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,10 +21,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import at.jku.se.smarthome.config.DatabaseConfig;
-import at.jku.se.smarthome.config.DatabaseSettings;
+import at.jku.se.smarthome.service.real.AbstractJdbcService;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Schedule;
@@ -47,7 +40,7 @@ import javafx.collections.ObservableList;
  * JDBC-based schedule service for persistent schedule storage and recurring execution.
  */
 @SuppressWarnings({"PMD.DoNotUseThreads", "PMD.TooManyMethods", "PMD.UseObjectForClearerAPI", "PMD.CyclomaticComplexity", "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports", "PMD.GodClass"})
-public final class JdbcScheduleService implements ScheduleService {
+public final class JdbcScheduleService extends AbstractJdbcService implements ScheduleService {
 
     /** Path to schedule initialization SQL script. */
     private static final String INIT_SCRIPT_PATH = "/db/init-schedules.sql";
@@ -68,12 +61,11 @@ public final class JdbcScheduleService implements ScheduleService {
     private final ObservableList<Schedule> schedules = FXCollections.observableArrayList();
     /** Tracks last processed minute for each schedule (prevents duplicate execution). */
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new ConcurrentHashMap<>();
-    /** Flag indicating database schema is ready. */
-    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
     /** Executor service for recurring schedule execution. */
     private ScheduledExecutorService scheduler;
 
     private JdbcScheduleService() {
+        super("schedule", INIT_SCRIPT_PATH);
         refreshSchedules();
     }
 
@@ -519,43 +511,5 @@ public final class JdbcScheduleService implements ScheduleService {
         statement.setString(6, schedule.getTime());
         statement.setString(7, schedule.getRecurrence());
         statement.setBoolean(8, schedule.isActive());
-    }
-
-    private Connection openConnection() throws SQLException {
-        DatabaseSettings settings = DatabaseConfig.load()
-                .orElseThrow(() -> new IllegalStateException("Schedule database is not configured."));
-        return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
-    }
-
-    private void ensureSchema(Connection connection) {
-        boolean needsSchema = !schemaReady.get();
-        if (needsSchema) {
-            synchronized (this) {
-                if (!schemaReady.get()) {
-                    try (Statement statement = connection.createStatement()) {
-                        for (String sqlStatement : loadInitScript().split(";")) {
-                            String trimmedStatement = sqlStatement.trim();
-                            if (!trimmedStatement.isEmpty()) {
-                                statement.execute(trimmedStatement);
-                            }
-                        }
-                        schemaReady.set(true);
-                    } catch (SQLException exception) {
-                        throw new IllegalStateException("Failed to initialize the schedules schema.", exception);
-                    }
-                }
-            }
-        }
-    }
-
-    private String loadInitScript() {
-        try (InputStream inputStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
-            if (inputStream == null) {
-                throw new IllegalStateException("Schedule schema script was not found at " + INIT_SCRIPT_PATH + ".");
-            }
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new IllegalStateException("Failed to read the schedule schema script.", exception);
-        }
     }
 }

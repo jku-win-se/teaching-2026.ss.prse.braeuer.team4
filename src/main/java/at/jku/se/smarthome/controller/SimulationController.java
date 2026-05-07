@@ -14,6 +14,7 @@ import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationConfigur
 import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationEvent;
 import at.jku.se.smarthome.service.mock.MockSimulationService.SimulationPlan;
 import javafx.animation.KeyFrame;
+import javafx.animation.Animation;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -250,7 +251,7 @@ public class SimulationController {
         }
 
         playbackTimeline = new Timeline(new KeyFrame(Duration.millis(resolvePlaybackMillis()), event -> playNextSimulationEvent()));
-        playbackTimeline.setCycleCount(Timeline.INDEFINITE);
+        playbackTimeline.setCycleCount(Animation.INDEFINITE);
     }
 
     private void playNextSimulationEvent() {

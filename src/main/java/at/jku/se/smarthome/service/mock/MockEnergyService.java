@@ -10,6 +10,7 @@ import javafx.scene.chart.XYChart;
  */
 public final class MockEnergyService {
 
+    private static final String HALLWAY_SENSOR = "Hallway Sensor";
     /** Lock for singleton synchronization. */
     private static final Object INSTANCE_LOCK = new Object();
     /** Singleton instance of the mock energy service. */
@@ -118,14 +119,14 @@ public final class MockEnergyService {
             data.put("Bedroom Dimmer", 2.7);
             data.put("Kitchen Light", 5.4);
             data.put("Kitchen Coffee Machine", 3.8);
-            data.put("Hallway Sensor", 0.9);
+            data.put(HALLWAY_SENSOR, 0.9);
         } else {
             data.put("Living Room Light", 32.4);
             data.put("Living Room Thermostat", 74.2);
             data.put("Bedroom Dimmer", 18.1);
             data.put("Kitchen Light", 36.7);
             data.put("Kitchen Coffee Machine", 24.9);
-            data.put("Hallway Sensor", 6.3);
+            data.put(HALLWAY_SENSOR, 6.3);
         }
         return data;
     }
@@ -143,7 +144,7 @@ public final class MockEnergyService {
         roomData.put("Living Room", deviceData.get("Living Room Light") + deviceData.get("Living Room Thermostat"));
         roomData.put("Bedroom", deviceData.get("Bedroom Dimmer"));
         roomData.put("Kitchen", deviceData.get("Kitchen Light") + deviceData.get("Kitchen Coffee Machine"));
-        roomData.put("Hallway", deviceData.get("Hallway Sensor"));
+        roomData.put("Hallway", deviceData.get(HALLWAY_SENSOR));
 
         if (period == AggregationPeriod.WEEK) {
             roomData.put("Bathroom", 8.5);

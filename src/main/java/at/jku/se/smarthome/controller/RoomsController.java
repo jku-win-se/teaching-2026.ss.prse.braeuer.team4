@@ -23,6 +23,8 @@ import javafx.scene.layout.HBox;
 @SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod"})
 public class RoomsController {
 
+    private static final String ALERT_TITLE_ERROR = "Error";
+
     
     /** Table view displaying all rooms. */
     @FXML
@@ -130,7 +132,7 @@ public class RoomsController {
                     // Success, table will update automatically
                 } else {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Error");
+                    alert.setTitle(ALERT_TITLE_ERROR);
                     alert.setHeaderText("Failed to add room");
                     alert.setContentText("Room name must be unique and non-empty.");
                     alert.showAndWait();
@@ -276,7 +278,7 @@ public class RoomsController {
                     roomsTable.refresh();
                 } else {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Error");
+                    alert.setTitle(ALERT_TITLE_ERROR);
                     alert.setHeaderText("Failed to rename room");
                     alert.setContentText("Room name must be unique and non-empty.");
                     alert.showAndWait();
@@ -306,7 +308,7 @@ public class RoomsController {
                 boolean success = roomService.deleteRoom(room.getId());
                 if (!success) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Error");
+                    alert.setTitle(ALERT_TITLE_ERROR);
                     alert.setHeaderText("Failed to delete room");
                     alert.setContentText("An unexpected error occurred.");
                     alert.showAndWait();

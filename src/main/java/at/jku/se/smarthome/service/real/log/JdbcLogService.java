@@ -1,25 +1,17 @@
 package at.jku.se.smarthome.service.real.log;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
-import at.jku.se.smarthome.config.DatabaseConfig;
-import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.LogEntry;
 import at.jku.se.smarthome.service.api.LogService;
+import at.jku.se.smarthome.service.real.AbstractJdbcService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -27,7 +19,7 @@ import javafx.collections.ObservableList;
  * JDBC-backed LogService implementation. Persists activity log entries to the configured database.
  */
 @SuppressWarnings("PMD.UseObjectForClearerAPI")
-public final class JdbcLogService implements LogService {
+public final class JdbcLogService extends AbstractJdbcService implements LogService {
 
     /** Path to database schema initialization script in classpath. */
     private static final String INIT_SCRIPT_PATH = "/db/init-activity-log.sql";
@@ -40,11 +32,10 @@ public final class JdbcLogService implements LogService {
     private final ObservableList<LogEntry> logs = FXCollections.observableArrayList();
     /** Formatter for timestamps in database. */
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    /** Flag indicating database schema is initialized. */
-    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     /** Initializes JDBC log service and loads existing log entries. */
     private JdbcLogService() {
+        super("activity_log", INIT_SCRIPT_PATH);
         refreshLogs();
     }
 
@@ -105,25 +96,25 @@ public final class JdbcLogService implements LogService {
     @Override
     public ObservableList<LogEntry> getLogsByRoom(String room) {
         return FXCollections.observableArrayList(
-                logs.stream().filter(l -> l.getRoom().equals(room)).collect(Collectors.toList()));
+                logs.stream().filter(l -> l.getRoom().equals(room)).toList());
     }
 
     @Override
     public ObservableList<LogEntry> getLogsByDevice(String device) {
         return FXCollections.observableArrayList(
-                logs.stream().filter(l -> l.getDevice().equals(device)).collect(Collectors.toList()));
+                logs.stream().filter(l -> l.getDevice().equals(device)).toList());
     }
 
     @Override
     public ObservableList<LogEntry> getLogsByActor(String actor) {
         return FXCollections.observableArrayList(
-                logs.stream().filter(l -> l.getActor().equals(actor)).collect(Collectors.toList()));
+                logs.stream().filter(l -> l.getActor().equals(actor)).toList());
     }
 
     @Override
     public ObservableList<String> getUniqueDevices() {
         return FXCollections.observableArrayList(
-                logs.stream().map(LogEntry::getDevice).distinct().sorted().collect(Collectors.toList()));
+                logs.stream().map(LogEntry::getDevice).distinct().sorted().toList());
     }
 
     @Override
@@ -137,7 +128,7 @@ public final class JdbcLogService implements LogService {
         StringBuilder csv = new StringBuilder(initialCapacity);
         csv.append("Timestamp,Device,Room,Action,Actor\n");
         for (LogEntry log : entries) {
-            csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+            csv.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
                     log.getTimestamp(), log.getDevice(), log.getRoom(), log.getAction(), log.getActor()));
         }
         return csv.toString();
@@ -166,59 +157,5 @@ public final class JdbcLogService implements LogService {
             throw new IllegalStateException("Failed to load activity log from the database.", e);
         }
         logs.setAll(loaded);
-    }
-
-    /**
-     * Helper: opens a database connection using configured settings.
-     *
-     * @return open database connection
-     * @throws SQLException if connection fails
-     */
-    private Connection openConnection() throws SQLException {
-        DatabaseSettings settings = DatabaseConfig.load()
-                .orElseThrow(() -> new IllegalStateException("Log database is not configured."));
-        return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
-    }
-
-    /**
-     * Helper: ensures database schema is initialized.
-     *
-     * @param connection database connection to use
-     */
-    @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
-    private void ensureSchema(Connection connection) {
-        if (!schemaReady.get()) {
-            synchronized (this) {
-                if (!schemaReady.get()) {
-                    try (Statement stmt = connection.createStatement()) {
-                        for (String sql : loadInitScript().split(";")) {
-                            String statementSql = sql.trim();
-                            if (!statementSql.isEmpty()) {
-                                stmt.execute(statementSql);
-                            }
-                        }
-                        schemaReady.set(true);
-                    } catch (SQLException e) {
-                        throw new IllegalStateException("Failed to initialize activity_log schema.", e);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Helper: loads database schema initialization script from classpath.
-     *
-     * @return SQL script content as string
-     */
-    private String loadInitScript() {
-        try (InputStream scriptStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
-            if (scriptStream == null) {
-                throw new IllegalStateException("Log schema script not found at " + INIT_SCRIPT_PATH);
-            }
-            return new String(scriptStream.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read log schema script.", e);
-        }
     }
 }

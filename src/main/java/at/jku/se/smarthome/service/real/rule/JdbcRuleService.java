@@ -1,20 +1,12 @@
 package at.jku.se.smarthome.service.real.rule;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import at.jku.se.smarthome.config.DatabaseConfig;
-import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Rule;
@@ -23,6 +15,7 @@ import at.jku.se.smarthome.service.api.NotificationService;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.real.AbstractJdbcService;
 import at.jku.se.smarthome.service.rule.RuleEvaluator;
 import at.jku.se.smarthome.service.rule.RuleValidator;
 import javafx.collections.FXCollections;
@@ -40,7 +33,7 @@ import javafx.collections.ObservableList;
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.TooManyMethods",
         "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports",
         "PMD.GodClass", "PMD.AvoidDeeplyNestedIfStmts"})
-public final class JdbcRuleService implements RuleService {
+public final class JdbcRuleService extends AbstractJdbcService implements RuleService {
 
     /** Path to rule schema initialization script in classpath. */
     private static final String INIT_SCRIPT_PATH = "/db/init-rules.sql";
@@ -51,10 +44,9 @@ public final class JdbcRuleService implements RuleService {
 
     /** Observable mirror of the rules table — bound by the UI. */
     private final ObservableList<Rule> rules = FXCollections.observableArrayList();
-    /** Flag indicating database schema is initialized. */
-    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     private JdbcRuleService() {
+        super("rule", INIT_SCRIPT_PATH);
         refreshRules();
         seedDemoRules();
     }
@@ -389,41 +381,4 @@ public final class JdbcRuleService implements RuleService {
         statement.setString(9, rule.getStatus());
     }
 
-    private Connection openConnection() throws SQLException {
-        DatabaseSettings settings = DatabaseConfig.load()
-                .orElseThrow(() -> new IllegalStateException("Rule database is not configured."));
-        return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
-    }
-
-    @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
-    private void ensureSchema(Connection connection) {
-        if (!schemaReady.get()) {
-            synchronized (this) {
-                if (!schemaReady.get()) {
-                    try (Statement stmt = connection.createStatement()) {
-                        for (String sql : loadInitScript().split(";")) {
-                            String trimmed = sql.trim();
-                            if (!trimmed.isEmpty()) {
-                                stmt.execute(trimmed);
-                            }
-                        }
-                        schemaReady.set(true);
-                    } catch (SQLException exception) {
-                        throw new IllegalStateException("Failed to initialize rules schema.", exception);
-                    }
-                }
-            }
-        }
-    }
-
-    private String loadInitScript() {
-        try (InputStream scriptStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
-            if (scriptStream == null) {
-                throw new IllegalStateException("Rule schema script not found at " + INIT_SCRIPT_PATH);
-            }
-            return new String(scriptStream.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new IllegalStateException("Failed to read rule schema script.", exception);
-        }
-    }
 }

@@ -22,6 +22,8 @@ public final class JdbcUserService extends UserService {
     private static final long SESSION_TIMEOUT_MILLIS = 30 * 60 * 1000L;
     /** Maximum failed login attempts before throttling. */
     private static final int THROTTLE_THRESHOLD = 3;
+    /** Default user status for active accounts. */
+    private static final String STATUS_ACTIVE = "Active";
     /** Lock for singleton synchronization. */
     private static final Object INSTANCE_LOCK = new Object();
 
@@ -117,10 +119,10 @@ public final class JdbcUserService extends UserService {
                     normalizedUsername,
                     passwordHash,
                     "Member",
-                    "Active"
+                    STATUS_ACTIVE
             ));
 
-            users.add(new User(normalizedEmail, normalizedUsername, passwordHash, "Member", "Active"));
+            users.add(new User(normalizedEmail, normalizedUsername, passwordHash, "Member", STATUS_ACTIVE));
             return RegistrationStatus.SUCCESS;
         } catch (UserRegistrationStore.StoreConfigurationException exception) {
             return RegistrationStatus.DATABASE_NOT_CONFIGURED;
@@ -207,7 +209,7 @@ public final class JdbcUserService extends UserService {
                             currentUsername != null ? currentUsername : currentUserEmail,
                             "",
                             currentUserRole != null ? currentUserRole : "Guest",
-                            currentUserStatus != null ? currentUserStatus : "Active"
+                            currentUserStatus != null ? currentUserStatus : STATUS_ACTIVE
                     );
                 }
             }
@@ -283,7 +285,7 @@ public final class JdbcUserService extends UserService {
                 .orElse(null);
 
         if (user != null && !"Owner".equalsIgnoreCase(user.getRole())) {
-            user.setStatus("Active");
+            user.setStatus(STATUS_ACTIVE);
             restored = true;
         }
         return restored;
@@ -296,18 +298,21 @@ public final class JdbcUserService extends UserService {
         }
     }
 
+    @SuppressWarnings("squid:S2068")
     private void initializeDefaultUsers() {
+        String defaultHash = BCrypt.hashpw("password123", BCrypt.gensalt());
         if (users.stream().noneMatch(user -> "owner@smarthome.com".equalsIgnoreCase(user.getEmail()))) {
-            users.add(new User("owner@smarthome.com", "owner", "password123", "Owner", "Active"));
+            users.add(new User("owner@smarthome.com", "owner", defaultHash, "Owner", STATUS_ACTIVE));
         }
         if (users.stream().noneMatch(user -> "member@smarthome.com".equalsIgnoreCase(user.getEmail()))) {
-            users.add(new User("member@smarthome.com", "member", "password123", "Member", "Active"));
+            users.add(new User("member@smarthome.com", "member", defaultHash, "Member", STATUS_ACTIVE));
         }
         if (users.stream().noneMatch(user -> "guest@smarthome.com".equalsIgnoreCase(user.getEmail()))) {
-            users.add(new User("guest@smarthome.com", "guest", "password123", "Member", "Inactive"));
+            users.add(new User("guest@smarthome.com", "guest", defaultHash, "Member", "Inactive"));
         }
         if (users.stream().noneMatch(user -> "test".equalsIgnoreCase(user.getEmail()))) {
-            users.add(new User("test", "test", "test", "Member", "Active"));
+            String testHash = BCrypt.hashpw("test", BCrypt.gensalt());
+            users.add(new User("test", "test", testHash, "Member", STATUS_ACTIVE));
         }
     }
 
@@ -362,7 +367,7 @@ public final class JdbcUserService extends UserService {
     }
 
     private boolean isActive(String status) {
-        return "Active".equalsIgnoreCase(status);
+        return STATUS_ACTIVE.equalsIgnoreCase(status);
     }
 
     private void establishSession(String email, String username, String role, String status, long now) {
@@ -384,14 +389,13 @@ public final class JdbcUserService extends UserService {
     }
 
     private boolean isBlocked(String normalizedEmail, long now) {
-        boolean blocked = false;
         Long blockedUntil = blockedUntilByEmail.get(normalizedEmail);
         if (blockedUntil != null && blockedUntil > now) {
-            blocked = true;
-        } else if (blockedUntil != null && blockedUntil <= now) {
+            return true;
+        } else if (blockedUntil != null) {
             blockedUntilByEmail.remove(normalizedEmail);
         }
-        return blocked;
+        return false;
     }
 
     private void recordFailedLogin(String normalizedEmail, long now) {

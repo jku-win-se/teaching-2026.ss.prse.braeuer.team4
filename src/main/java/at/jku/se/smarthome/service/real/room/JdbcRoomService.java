@@ -1,28 +1,21 @@
 package at.jku.se.smarthome.service.real.room;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import at.jku.se.smarthome.config.DatabaseConfig;
-import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.UserService;
 import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.real.AbstractJdbcService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -30,7 +23,7 @@ import javafx.collections.ObservableList;
  * JDBC-backed RoomService implementation. Persists rooms and devices to the configured database.
  */
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity", "PMD.GodClass"})
-public final class JdbcRoomService implements RoomService {
+public final class JdbcRoomService extends AbstractJdbcService implements RoomService {
 
     /** Lock for singleton lifecycle operations. */
     private static final Object INSTANCE_LOCK = new Object();
@@ -46,11 +39,10 @@ public final class JdbcRoomService implements RoomService {
     private final MockLogService logService = MockLogService.getInstance();
     /** Service for user authentication and permissions. */
     private final UserService userService = ServiceRegistry.getUserService();
-    /** Flag indicating database schema is initialized. */
-    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     /** Initializes JDBC room service and loads existing rooms and devices. */
     private JdbcRoomService() {
+        super("room", INIT_SCRIPT_PATH);
         refreshRooms();
     }
 
@@ -356,35 +348,60 @@ public final class JdbcRoomService implements RoomService {
      * @return true when the device existed and was updated, otherwise false
      */
     public boolean renameDevice(String roomId, String deviceId, String newName) {
-        boolean renamed = false;
-        if (newName != null && !newName.isBlank()) {
-            try (Connection connection = openConnection()) {
-                ensureSchema(connection);
-                try (PreparedStatement stmt = connection.prepareStatement("UPDATE devices SET name = ? WHERE id = ? AND room_id = ?")) {
-                    stmt.setString(1, newName.trim());
-                    stmt.setString(2, deviceId);
-                    stmt.setString(3, roomId);
-                    if (stmt.executeUpdate() > 0) {
-                        renamed = true;
-                    }
-                }
-            } catch (SQLException e) {
-                throw new IllegalStateException("Failed to rename device.", e);
-            }
-
-            if (renamed) {
-                Room room = getRoomById(roomId);
-                if (room != null) {
-                    Device device = room.getDevices().stream().filter(d -> d.getId().equals(deviceId)).findFirst().orElse(null);
-                    if (device != null) {
-                        device.setName(newName.trim());
-                    } else {
-                        renamed = false;
-                    }
-                }
-            }
+        if (newName == null || newName.isBlank()) {
+            return false;
+        }
+        boolean renamed = persistDeviceRename(deviceId, roomId, newName.trim());
+        if (renamed) {
+            renamed = syncRenamedDeviceInMemory(roomId, deviceId, newName.trim());
         }
         return renamed;
+    }
+
+    /**
+     * Persists a device rename to the database.
+     *
+     * @param deviceId device identifier
+     * @param roomId   room identifier
+     * @param trimmedName new trimmed name
+     * @return true when the database row was updated
+     */
+    private boolean persistDeviceRename(String deviceId, String roomId, String trimmedName) {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement stmt = connection.prepareStatement("UPDATE devices SET name = ? WHERE id = ? AND room_id = ?")) {
+                stmt.setString(1, trimmedName);
+                stmt.setString(2, deviceId);
+                stmt.setString(3, roomId);
+                return stmt.executeUpdate() > 0;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to rename device.", e);
+        }
+    }
+
+    /**
+     * Updates the in-memory device name after a successful database rename.
+     *
+     * @param roomId      room identifier
+     * @param deviceId    device identifier
+     * @param trimmedName new trimmed name
+     * @return true when the in-memory device was found and updated
+     */
+    private boolean syncRenamedDeviceInMemory(String roomId, String deviceId, String trimmedName) {
+        Room room = getRoomById(roomId);
+        if (room == null) {
+            return false;
+        }
+        Device device = room.getDevices().stream()
+                .filter(d -> d.getId().equals(deviceId))
+                .findFirst()
+                .orElse(null);
+        if (device == null) {
+            return false;
+        }
+        device.setName(trimmedName);
+        return true;
     }
 
     @Override
@@ -537,58 +554,5 @@ public final class JdbcRoomService implements RoomService {
         return result;
     }
 
-    /**
-     * Helper: opens a database connection using configured settings.
-     *
-     * @return open database connection
-     * @throws SQLException if connection fails
-     */
-    private Connection openConnection() throws SQLException {
-        DatabaseSettings settings = DatabaseConfig.load()
-                .orElseThrow(() -> new IllegalStateException("Room database is not configured."));
-        return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
-    }
-
-    /**
-     * Helper: ensures database schema is initialized.
-     *
-     * @param connection database connection to use
-     */
-    private void ensureSchema(Connection connection) {
-        boolean needsSchema = !schemaReady.get();
-        if (needsSchema) {
-            synchronized (this) {
-                if (!schemaReady.get()) {
-                    try (Statement stmt = connection.createStatement()) {
-                        for (String sql : loadInitScript().split(";")) {
-                            String sqlStatement = sql.trim();
-                            if (!sqlStatement.isEmpty()) {
-                                stmt.execute(sqlStatement);
-                            }
-                        }
-                        schemaReady.set(true);
-                    } catch (SQLException e) {
-                        throw new IllegalStateException("Failed to initialize rooms schema.", e);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Helper: loads database schema initialization script from classpath.
-     *
-     * @return SQL script content as string
-     */
-    private String loadInitScript() {
-        try (InputStream scriptStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
-            if (scriptStream == null) {
-                throw new IllegalStateException("Room schema script not found at " + INIT_SCRIPT_PATH);
-            }
-            return new String(scriptStream.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read room schema script.", e);
-        }
-    }
 }
 

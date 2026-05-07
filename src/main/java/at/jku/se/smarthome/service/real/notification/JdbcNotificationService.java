@@ -1,25 +1,18 @@
 package at.jku.se.smarthome.service.real.notification;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import at.jku.se.smarthome.config.DatabaseConfig;
-import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.NotificationEntry;
 import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.service.api.NotificationService;
+import at.jku.se.smarthome.service.real.AbstractJdbcService;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -37,7 +30,7 @@ import javafx.collections.ObservableList;
  */
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.TooManyMethods",
         "PMD.CouplingBetweenObjects"})
-public final class JdbcNotificationService implements NotificationService {
+public final class JdbcNotificationService extends AbstractJdbcService implements NotificationService {
 
     /** Path to notification schema initialization script in classpath. */
     private static final String INIT_SCRIPT_PATH = "/db/init-notifications.sql";
@@ -54,10 +47,9 @@ public final class JdbcNotificationService implements NotificationService {
     private final IntegerProperty unreadCount = new SimpleIntegerProperty(0);
     /** Time formatter for notification timestamps (matches mock for parity). */
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-    /** Flag indicating database schema is initialized. */
-    private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     private JdbcNotificationService() {
+        super("notification", INIT_SCRIPT_PATH);
         refreshNotifications();
     }
 
@@ -184,43 +176,4 @@ public final class JdbcNotificationService implements NotificationService {
         unreadCount.set(unread);
     }
 
-    private Connection openConnection() throws SQLException {
-        DatabaseSettings settings = DatabaseConfig.load()
-                .orElseThrow(() -> new IllegalStateException("Notification database is not configured."));
-        return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
-    }
-
-    @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
-    private void ensureSchema(Connection connection) {
-        if (!schemaReady.get()) {
-            synchronized (this) {
-                if (!schemaReady.get()) {
-                    try (Statement stmt = connection.createStatement()) {
-                        for (String sql : loadInitScript().split(";")) {
-                            String trimmed = sql.trim();
-                            if (!trimmed.isEmpty()) {
-                                stmt.execute(trimmed);
-                            }
-                        }
-                        schemaReady.set(true);
-                    } catch (SQLException exception) {
-                        throw new IllegalStateException(
-                                "Failed to initialize notifications schema.", exception);
-                    }
-                }
-            }
-        }
-    }
-
-    private String loadInitScript() {
-        try (InputStream scriptStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
-            if (scriptStream == null) {
-                throw new IllegalStateException(
-                        "Notification schema script not found at " + INIT_SCRIPT_PATH);
-            }
-            return new String(scriptStream.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException exception) {
-            throw new IllegalStateException("Failed to read notification schema script.", exception);
-        }
-    }
 }

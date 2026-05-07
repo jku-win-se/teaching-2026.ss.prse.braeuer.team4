@@ -3,6 +3,7 @@ package at.jku.se.smarthome.service.mock;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.service.api.RoomService;
+import java.util.Random;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -11,6 +12,11 @@ import javafx.collections.ObservableList;
  */
 @SuppressWarnings("PMD.TooManyMethods")
 public final class MockRoomService implements RoomService {
+
+    private static final String ROOM_LIVING = "Living Room";
+    private static final String ROOM_BEDROOM = "Bedroom";
+    private static final String ROOM_HALLWAY = "Hallway";
+    private static final Random ID_RANDOM = new Random();
 
     /** Lock for singleton synchronization. */
     private static final Object INSTANCE_LOCK = new Object();
@@ -29,14 +35,14 @@ public final class MockRoomService implements RoomService {
     }
 
     private void initializeMockRooms() {
-        Room livingRoom = new Room("room-001", "Living Room", 0);
-        livingRoom.addDevice(new Device("dev-001", "Main Light", "Switch", "Living Room", true));
-        livingRoom.addDevice(new Device("dev-002", "Dimmer Light", "Dimmer", "Living Room", true));
+        Room livingRoom = new Room("room-001", ROOM_LIVING, 0);
+        livingRoom.addDevice(new Device("dev-001", "Main Light", "Switch", ROOM_LIVING, true));
+        livingRoom.addDevice(new Device("dev-002", "Dimmer Light", "Dimmer", ROOM_LIVING, true));
         rooms.add(livingRoom);
 
-        Room bedroom = new Room("room-002", "Bedroom", 0);
-        bedroom.addDevice(new Device("dev-003", "Bed Light", "Switch", "Bedroom", false));
-        bedroom.addDevice(new Device("dev-004", "Temperature Control", "Thermostat", "Bedroom", true));
+        Room bedroom = new Room("room-002", ROOM_BEDROOM, 0);
+        bedroom.addDevice(new Device("dev-003", "Bed Light", "Switch", ROOM_BEDROOM, false));
+        bedroom.addDevice(new Device("dev-004", "Temperature Control", "Thermostat", ROOM_BEDROOM, true));
         rooms.add(bedroom);
 
         Room kitchen = new Room("room-003", "Kitchen", 0);
@@ -47,9 +53,9 @@ public final class MockRoomService implements RoomService {
         bathroom.addDevice(new Device("dev-006", "Exhaust Fan", "Switch", "Bathroom", false));
         rooms.add(bathroom);
 
-        Room hallway = new Room("room-005", "Hallway", 0);
-        hallway.addDevice(new Device("dev-007", "Motion Sensor", "Sensor", "Hallway", true));
-        hallway.addDevice(new Device("dev-008", "Hallway Blind", "Cover/Blind", "Hallway", false));
+        Room hallway = new Room("room-005", ROOM_HALLWAY, 0);
+        hallway.addDevice(new Device("dev-007", "Motion Sensor", "Sensor", ROOM_HALLWAY, true));
+        hallway.addDevice(new Device("dev-008", "Hallway Blind", "Cover/Blind", ROOM_HALLWAY, false));
         rooms.add(hallway);
     }
 
@@ -216,7 +222,7 @@ public final class MockRoomService implements RoomService {
         Room room = getRoomById(roomId);
         if (room != null) {
             result = new Device(
-                    "dev-" + String.format("%03d", 1000 + (int)(Math.random() * 9000)),
+                    "dev-" + String.format("%03d", 1000 + ID_RANDOM.nextInt(9000)),
                     deviceName,
                     deviceType,
                     room.getName(),
