@@ -62,7 +62,7 @@ public class FR10RuleEngineTest extends ApplicationTest {
 
         // Add the FR-10 test rule: IF Motion Sensor active THEN Turn On Main Light
         ruleService.addRule(
-                "Motion → Light",
+                "Motion To Light",
                 "Device State",
                 "Motion Sensor",
                 "State = Active",
@@ -89,7 +89,7 @@ public class FR10RuleEngineTest extends ApplicationTest {
         Device mainLight = roomService.getDeviceByName("Main Light");
         assertFalse("Pre-condition: Main Light must start OFF", mainLight.getState());
 
-        clickRunFor("Motion → Light");
+        clickRunFor("Motion To Light");
 
         assertTrue("Main Light must be ON after rule fires (condition was met)", mainLight.getState());
     }
@@ -109,7 +109,7 @@ public class FR10RuleEngineTest extends ApplicationTest {
         Device mainLight = roomService.getDeviceByName("Main Light");
         assertFalse("Pre-condition: Main Light must start OFF", mainLight.getState());
 
-        clickRunFor("Motion → Light");
+        clickRunFor("Motion To Light");
 
         assertFalse("Main Light must remain OFF — condition was not met, action was blocked",
                 mainLight.getState());
@@ -121,7 +121,7 @@ public class FR10RuleEngineTest extends ApplicationTest {
      *
      * <p>Lookup chain: rule name text → TableCell → TableRow → scoped .button lookup.
      *
-     * @param ruleName the display name of the rule (e.g. "Motion → Light")
+     * @param ruleName the display name of the rule (e.g. "Motion To Light")
      */
     private void clickRunFor(String ruleName) {
         Node nameCell = lookup(hasText(ruleName)).query();

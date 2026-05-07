@@ -7,8 +7,15 @@
 	<artifactId>smarthome</artifactId>
 	<version>0.0.1.beta</version>
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.target>21</maven.compiler.target>
 		<maven.compiler.source>21</maven.compiler.source>
+		<sonar.projectKey>xinli19_teaching-2026.ss.prse.braeuer.team4</sonar.projectKey>
+		<sonar.organization>xinli19</sonar.organization>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.exclusions>**/*.fxml,**/*.css,**/*.sql,**/*.properties</sonar.exclusions>
+		<sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.java.pmd.reportPaths>target/pmd.xml</sonar.java.pmd.reportPaths>
 	</properties>
 	<build>
 		<plugins>

@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   checks: write
+  id-token: write
 
 jobs:
   build:
@@ -86,6 +87,11 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco/
+
+      - name: SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn verify sonar:sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
       - name: PMD static analysis
         uses: pmd/pmd-github-action@v2
