@@ -5,8 +5,8 @@ import java.util.Optional;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.model.Rule;
-import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.UserService;
 import javafx.fxml.FXML;
@@ -165,12 +165,12 @@ public class RulesController {
     }
 
     /**
-     * Handles run rule action, executing rule immediately.
+     * Handles run rule action, executing rule immediately without checking condition.
      *
      * @param rule rule to execute
      */
     private void handleRunRule(Rule rule) {
-        ruleService.executeRule(rule.getId());
+        ruleService.executeRule(rule.getId(), true);
     }
 
     /**

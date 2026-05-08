@@ -206,6 +206,11 @@ public final class JdbcRuleService implements RuleService {
 
     @Override
     public boolean executeRule(String ruleId) {
+        return executeRule(ruleId, false);
+    }
+
+    @Override
+    public boolean executeRule(String ruleId, boolean isManual) {
         boolean executed = false;
         Rule rule = findRule(ruleId);
         NotificationService notificationService = ServiceRegistry.getNotificationService();
@@ -213,7 +218,7 @@ public final class JdbcRuleService implements RuleService {
             notificationService.addNotification(
                     "Rule execution failed: rule not found", NotificationType.FAILURE);
         } else if (rule.isEnabled()) {
-            executed = executeEnabledRule(rule);
+            executed = executeEnabledRule(rule, isManual);
         } else {
             notificationService.addNotification(
                     "Rule execution failed: " + rule.getName() + " is inactive",
@@ -228,12 +233,17 @@ public final class JdbcRuleService implements RuleService {
     }
 
     private boolean executeEnabledRule(Rule rule) {
+        return executeEnabledRule(rule, false);
+    }
+
+    private boolean executeEnabledRule(Rule rule, boolean isManual) {
         boolean executed = false;
         RoomService roomService = ServiceRegistry.getRoomService();
         NotificationService notificationService = ServiceRegistry.getNotificationService();
         LogService logService = ServiceRegistry.getLogService();
         Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
-        if (new RuleEvaluator().evaluate(rule, sourceDevice)) {
+        boolean conditionMet = isManual || new RuleEvaluator().evaluate(rule, sourceDevice);
+        if (conditionMet) {
             Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
             if (targetDevice == null) {
                 notificationService.addNotification(

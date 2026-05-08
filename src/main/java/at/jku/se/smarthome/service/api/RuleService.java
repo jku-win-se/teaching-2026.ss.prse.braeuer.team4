@@ -71,6 +71,16 @@ public interface RuleService {
     boolean executeRule(String ruleId);
 
     /**
+     * Executes a rule in the engine and emits in-app notifications.
+     * When executed manually, the rule's condition is not evaluated and the action is performed directly.
+     *
+     * @param ruleId identifier of the rule to execute
+     * @param isManual true to skip condition evaluation, false to evaluate condition normally
+     * @return true when execution succeeded, otherwise false
+     */
+    boolean executeRule(String ruleId, boolean isManual);
+
+    /**
      * Detects conflicts between rules.
      *
      * @param ruleId identifier of the rule being validated
