@@ -232,10 +232,6 @@ public final class JdbcRuleService implements RuleService {
         return false;
     }
 
-    private boolean executeEnabledRule(Rule rule) {
-        return executeEnabledRule(rule, false);
-    }
-
     private boolean executeEnabledRule(Rule rule, boolean isManual) {
         boolean executed = false;
         RoomService roomService = ServiceRegistry.getRoomService();
