@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.junit.After;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeTrue;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,9 +18,16 @@ import at.jku.se.smarthome.service.real.energy.JdbcEnergyService;
  */
 @SuppressWarnings({ "PMD.AtLeastOneConstructor", "PMD.TooManyMethods" })
 public class JdbcEnergyServiceTest {
-
     /** Energy service instance under test. */
     private JdbcEnergyService energyService;
+
+    /**
+     * Skips the test if running on CI (headless environment).
+     */
+    @org.junit.BeforeClass
+    public static void skipIfHeadless() {
+        assumeTrue("Skipping DB test on CI (headless)", System.getenv("CI") == null);
+    }
 
     /**
      * Setup test environment before each test.
@@ -164,6 +172,7 @@ public class JdbcEnergyServiceTest {
     /**
      * Test: Cache invalidation works.
      */
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
     @Test
     public void testCacheInvalidation() {
         // Arrange

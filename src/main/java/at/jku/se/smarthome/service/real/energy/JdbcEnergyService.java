@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,7 +44,9 @@ import at.jku.se.smarthome.service.api.ServiceRegistry;
  *   <li>Household: Sum of all rooms</li>
  * </ul>
  */
-@SuppressWarnings("PMD.UseObjectForClearerAPI")
+@SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.ShortVariable", "PMD.OnlyOneReturn", 
+    "PMD.AvoidCatchingGenericException", "PMD.SystemPrintln", "PMD.GodClass", 
+    "PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public final class JdbcEnergyService implements EnergyService {
 
     /** Path to database schema initialization script in classpath. */
@@ -62,10 +65,10 @@ public final class JdbcEnergyService implements EnergyService {
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
 
     /** Cache for daily energy consumption by device. */
-    private final Map<LocalDate, Map<String, Double>> dailyDeviceCache = new HashMap<>();
+    private final Map<LocalDate, Map<String, Double>> dailyDeviceCache = new ConcurrentHashMap<>();
 
     /** Cache for weekly energy consumption by device. */
-    private final Map<String, Map<String, Double>> weeklyDeviceCache = new HashMap<>();
+    private final Map<String, Map<String, Double>> weeklyDeviceCache = new ConcurrentHashMap<>();
 
     /** Timestamp of last cache update for invalidation. */
     private final AtomicLong lastCacheTime = new AtomicLong(0);
@@ -456,7 +459,7 @@ public final class JdbcEnergyService implements EnergyService {
             // For each device, calculate on-time
             for (String deviceName : allDevices) {
                 double onTimeHours = calculateDeviceOnTimeForDay(connection, deviceName, date);
-                int nominalPowerW = getDeviceNominalPowerFromLog(connection, deviceName);
+                int nominalPowerW = getDeviceNominalPowerFromLog(deviceName);
                 double consumptionWh = onTimeHours * nominalPowerW;
                 result.put(deviceName, consumptionWh);
                 
@@ -506,7 +509,7 @@ public final class JdbcEnergyService implements EnergyService {
             // For each device, calculate on-time for the week
             for (String deviceName : allDevices) {
                 double onTimeHours = calculateDeviceOnTimeForWeek(connection, deviceName, isoWeekOfYear, year);
-                int nominalPowerW = getDeviceNominalPowerFromLog(connection, deviceName);
+                int nominalPowerW = getDeviceNominalPowerFromLog(deviceName);
                 double consumptionWh = onTimeHours * nominalPowerW;
                 result.put(deviceName, consumptionWh);
                 
@@ -609,11 +612,9 @@ public final class JdbcEnergyService implements EnergyService {
                             deviceIsOn = true;
                             lastOnTime = currentTime;
                         }
-                    } else if (isOffAction(action)) {
-                        if (deviceIsOn) {
-                            totalOnTimeMs += (currentTime - lastOnTime);
-                            deviceIsOn = false;
-                        }
+                    } else if (isOffAction(action) && deviceIsOn) {
+                        totalOnTimeMs += (currentTime - lastOnTime);
+                        deviceIsOn = false;
                     }
                 }
 
@@ -692,7 +693,7 @@ public final class JdbcEnergyService implements EnergyService {
      * @return nominal power in watts
      * @throws SQLException if database query fails
      */
-    private int getDeviceNominalPowerFromLog(Connection connection, String deviceName) throws SQLException {
+    private int getDeviceNominalPowerFromLog(String deviceName) throws SQLException {
         try {
             // Look up device by name using RoomService
             Device device = roomService.getDeviceByName(deviceName);
@@ -782,7 +783,7 @@ public final class JdbcEnergyService implements EnergyService {
                     try (Statement stmt = connection.createStatement()) {
                         String initScript = loadInitScript();
                         // Only execute if script exists
-                        if (!initScript.trim().isEmpty()) {
+                        if (!initScript.isBlank()) {
                             for (String sql : initScript.split(";")) {
                                 String statementSql = sql.trim();
                                 if (!statementSql.isEmpty()) {

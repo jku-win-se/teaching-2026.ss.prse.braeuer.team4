@@ -1,9 +1,9 @@
 package at.jku.se.smarthome.config;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Centralized source of truth for device nominal power consumption values.
@@ -43,7 +43,7 @@ public final class DeviceEnergyConstants {
     private static final Map<String, Integer> POWER_MAP;
 
     static {
-        Map<String, Integer> map = new HashMap<>();
+        Map<String, Integer> map = new ConcurrentHashMap<>();
         map.put("SWITCH", SWITCH_POWER_W);
         map.put("DIMMER", DIMMER_POWER_W);
         map.put("THERMOSTAT", THERMOSTAT_POWER_W);
@@ -68,10 +68,8 @@ public final class DeviceEnergyConstants {
      * @return nominal power in watts; never negative; DEFAULT_POWER_W if unknown
      */
     public static int getPowerWatts(String deviceType) {
-        if (deviceType == null || deviceType.isBlank()) {
-            return DEFAULT_POWER_W;
-        }
-        return POWER_MAP.getOrDefault(deviceType.toUpperCase(), DEFAULT_POWER_W);
+        return (deviceType == null || deviceType.isBlank()) ? DEFAULT_POWER_W
+                : POWER_MAP.getOrDefault(deviceType.toUpperCase(), DEFAULT_POWER_W);
     }
 
     /**
