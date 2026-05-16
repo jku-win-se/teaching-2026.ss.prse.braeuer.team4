@@ -230,12 +230,18 @@ public final class ServiceRegistry {
     }
 
     /**
-     * Clears the cached schedule service so it is re-created on next access.
+     * Clears all test overrides, restoring the default service implementations.
+     * Intended for test lifecycle management where overrides must be cleared between tests.
      */
     @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (OVERRIDE_LOCK) {
+            testLogServiceOverride = null;
             testScheduleServiceOverride = null;
+            testRoomServiceOverride = null;
+            testUserServiceOverride = null;
+            testRuleServiceOverride = null;
+            testNotificationServiceOverride = null;
             testSceneServiceOverride = null;
         }
     }

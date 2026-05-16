@@ -95,32 +95,31 @@ public final class JdbcSceneService implements SceneService {
     public Scene addScene(String name, String description, List<String> deviceStates) {
         Scene created = null;
         if (name != null && !name.isBlank()) {
-            ensureSchema();
             String generatedId = "scene-" + java.util.UUID.randomUUID().toString();
-
             try (Connection conn = openConnection()) {
+                ensureSchema(conn);
                 conn.setAutoCommit(false);
                 try {
-                    String sql = "INSERT INTO scenes (id, name, description) VALUES (?, ?, ?)";
-                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    try (PreparedStatement stmt = conn.prepareStatement(
+                            "INSERT INTO scenes (id, name, description) VALUES (?, ?, ?)")) {
                         stmt.setString(1, generatedId);
                         stmt.setString(2, name);
                         stmt.setString(3, description);
                         stmt.executeUpdate();
                     }
-
                     insertDeviceStates(conn, generatedId, deviceStates);
                     conn.commit();
-
                     created = new Scene(generatedId, name, description);
                     created.setDeviceStates(deviceStates);
                     scenes.add(created);
                 } catch (SQLException e) {
                     conn.rollback();
-                    System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Failed to add scene", e);
+                    System.getLogger(JdbcSceneService.class.getName()).log(
+                            System.Logger.Level.ERROR, "Failed to add scene", e);
                 }
             } catch (SQLException e) {
-                System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Database connection error", e);
+                System.getLogger(JdbcSceneService.class.getName()).log(
+                        System.Logger.Level.ERROR, "Database connection error", e);
             }
         }
         return created;
@@ -133,32 +132,30 @@ public final class JdbcSceneService implements SceneService {
 
     @Override
     public boolean updateScene(String sceneId, String name, String description, List<String> deviceStates) {
-        ensureSchema();
         boolean success = false;
         try (Connection conn = openConnection()) {
+            ensureSchema(conn);
             conn.setAutoCommit(false);
             try {
-                String sql = "UPDATE scenes SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                try (PreparedStatement stmt = conn.prepareStatement(
+                        "UPDATE scenes SET name = ?, description = ?,"
+                        + " updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
                     stmt.setString(1, name);
                     stmt.setString(2, description);
                     stmt.setString(3, sceneId);
-                    int rows = stmt.executeUpdate();
-                    if (rows > 0) {
-                        success = true;
-                    }
+                    success = stmt.executeUpdate() > 0;
                 }
-
                 if (success) {
-                    String deleteSql = "DELETE FROM scene_device_states WHERE scene_id = ?";
-                    try (PreparedStatement stmt = conn.prepareStatement(deleteSql)) {
+                    try (PreparedStatement stmt = conn.prepareStatement(
+                            "DELETE FROM scene_device_states WHERE scene_id = ?")) {
                         stmt.setString(1, sceneId);
                         stmt.executeUpdate();
                     }
                     insertDeviceStates(conn, sceneId, deviceStates);
                     conn.commit();
-
-                    Scene memScene = scenes.stream().filter(s -> s.getId().equals(sceneId)).findFirst().orElse(null);
+                    Scene memScene = scenes.stream()
+                            .filter(s -> s.getId().equals(sceneId))
+                            .findFirst().orElse(null);
                     if (memScene != null) {
                         memScene.setName(name);
                         memScene.setDescription(description);
@@ -169,27 +166,32 @@ public final class JdbcSceneService implements SceneService {
                 }
             } catch (SQLException e) {
                 conn.rollback();
-                System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Failed to update scene", e);
+                System.getLogger(JdbcSceneService.class.getName()).log(
+                        System.Logger.Level.ERROR, "Failed to update scene", e);
             }
         } catch (SQLException e) {
-            System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Database connection error", e);
+            System.getLogger(JdbcSceneService.class.getName()).log(
+                    System.Logger.Level.ERROR, "Database connection error", e);
         }
         return success;
     }
 
     @Override
     public boolean deleteScene(String sceneId) {
-        ensureSchema();
         boolean success = false;
-        try (Connection conn = openConnection();
-             PreparedStatement stmt = conn.prepareStatement("DELETE FROM scenes WHERE id = ?")) {
-            stmt.setString(1, sceneId);
-            if (stmt.executeUpdate() > 0) {
-                scenes.removeIf(s -> s.getId().equals(sceneId));
-                success = true;
+        try (Connection conn = openConnection()) {
+            ensureSchema(conn);
+            try (PreparedStatement stmt = conn.prepareStatement(
+                    "DELETE FROM scenes WHERE id = ?")) {
+                stmt.setString(1, sceneId);
+                if (stmt.executeUpdate() > 0) {
+                    scenes.removeIf(s -> s.getId().equals(sceneId));
+                    success = true;
+                }
             }
         } catch (SQLException e) {
-            System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Failed to delete scene", e);
+            System.getLogger(JdbcSceneService.class.getName()).log(
+                    System.Logger.Level.ERROR, "Failed to delete scene", e);
         }
         return success;
     }
@@ -201,7 +203,7 @@ public final class JdbcSceneService implements SceneService {
                 .filter(s -> s.getId().equals(sceneId))
                 .findFirst()
                 .orElse(null);
-        
+
         if (sceneToActivate != null) {
             int appliedStates = 0;
             int skippedStates = 0;
@@ -219,28 +221,33 @@ public final class JdbcSceneService implements SceneService {
             logService.addLogEntry(
                     "Scene: " + sceneToActivate.getName(),
                     "Overall",
-                    "Activated with " + appliedStates + " applied state" + (appliedStates == 1 ? "" : "s")
+                    "Activated with " + appliedStates + " applied state"
+                            + (appliedStates == 1 ? "" : "s")
                             + (skippedStates > 0 ? " and " + skippedStates + " skipped" : ""),
                     "User"
             );
 
             if (skippedStates == 0) {
-                notificationService.addNotification("Scene '" + sceneToActivate.getName() + "' activated successfully", NotificationType.SUCCESS);
+                notificationService.addNotification(
+                        "Scene '" + sceneToActivate.getName() + "' activated successfully",
+                        NotificationType.SUCCESS);
             } else {
                 notificationService.addNotification(
-                        "Scene '" + sceneToActivate.getName() + "' activated with " + skippedStates + " skipped device state(s)",
-                        NotificationType.INFO
-                );
+                        "Scene '" + sceneToActivate.getName() + "' activated with "
+                                + skippedStates + " skipped device state(s)",
+                        NotificationType.INFO);
             }
             activated = true;
         }
         return activated;
     }
 
-    private void insertDeviceStates(Connection conn, String sceneId, List<String> deviceStates) throws SQLException {
+    private void insertDeviceStates(Connection conn, String sceneId,
+                                    List<String> deviceStates) throws SQLException {
         if (deviceStates != null && !deviceStates.isEmpty()) {
-            String insertSql = "INSERT INTO scene_device_states (scene_id, device_state, sort_order) VALUES (?, ?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
+            try (PreparedStatement stmt = conn.prepareStatement(
+                    "INSERT INTO scene_device_states (scene_id, device_state, sort_order)"
+                    + " VALUES (?, ?, ?)")) {
                 for (int i = 0; i < deviceStates.size(); i++) {
                     stmt.setString(1, sceneId);
                     stmt.setString(2, deviceStates.get(i));
@@ -253,30 +260,32 @@ public final class JdbcSceneService implements SceneService {
     }
 
     private void refreshScenes() {
-        ensureSchema();
         scenes.clear();
-        try (Connection conn = openConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet resultSet = stmt.executeQuery("SELECT id, name, description FROM scenes ORDER BY created_at, id")) {
-
-            while (resultSet.next()) {
-                String sceneId = resultSet.getString("id");
-                String sceneName = resultSet.getString("name");
-                String sceneDescription = resultSet.getString("description");
-                
-                Scene loadedScene = new Scene(sceneId, sceneName, sceneDescription);
-                loadedScene.setDeviceStates(loadDeviceStates(conn, sceneId));
-                scenes.add(loadedScene);
+        try (Connection conn = openConnection()) {
+            ensureSchema(conn);
+            try (Statement stmt = conn.createStatement();
+                 ResultSet resultSet = stmt.executeQuery(
+                         "SELECT id, name, description FROM scenes ORDER BY created_at, id")) {
+                while (resultSet.next()) {
+                    String sceneId = resultSet.getString("id");
+                    String sceneName = resultSet.getString("name");
+                    String sceneDescription = resultSet.getString("description");
+                    Scene loadedScene = new Scene(sceneId, sceneName, sceneDescription);
+                    loadedScene.setDeviceStates(loadDeviceStates(conn, sceneId));
+                    scenes.add(loadedScene);
+                }
             }
         } catch (SQLException e) {
-            System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Failed to refresh scenes", e);
+            System.getLogger(JdbcSceneService.class.getName()).log(
+                    System.Logger.Level.ERROR, "Failed to refresh scenes", e);
         }
     }
 
     private List<String> loadDeviceStates(Connection conn, String sceneId) throws SQLException {
         List<String> states = new ArrayList<>();
-        String sql = "SELECT device_state FROM scene_device_states WHERE scene_id = ? ORDER BY sort_order, id";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "SELECT device_state FROM scene_device_states"
+                + " WHERE scene_id = ? ORDER BY sort_order, id")) {
             stmt.setString(1, sceneId);
             try (ResultSet resultSet = stmt.executeQuery()) {
                 while (resultSet.next()) {
@@ -291,43 +300,32 @@ public final class JdbcSceneService implements SceneService {
         if (!scenes.isEmpty()) {
             return;
         }
-        Scene movieScene = addScene("Movie Night", "Dim all lights and close shutters");
-        if (movieScene != null) {
-            updateScene(movieScene.getId(), "Movie Night", "Dim all lights and close shutters",
-                    List.of("Dimmer Light: 20%", "Main Light: OFF", "Ceiling Light: OFF"));
-        }
-        
-        Scene awayScene = addScene("Away", "Reduce energy usage while nobody is home");
-        if (awayScene != null) {
-            updateScene(awayScene.getId(), "Away", "Reduce energy usage while nobody is home",
-                    List.of("Main Light: OFF", "Dimmer Light: 0%", "Ceiling Light: OFF", "Thermostat: 18°C", "Exhaust Fan: OFF"));
-        }
-        
-        Scene morningScene = addScene("Morning", "Wake up routine");
-        if (morningScene != null) {
-            updateScene(morningScene.getId(), "Morning", "Wake up routine",
-                    List.of("Main Light: ON", "Dimmer Light: 75%", "Ceiling Light: ON", "Temperature Control: 22°C"));
-        }
+        addScene("Movie Night", "Dim all lights and close shutters",
+                List.of("Dimmer Light: 20%", "Main Light: OFF", "Ceiling Light: OFF"));
+        addScene("Away", "Reduce energy usage while nobody is home",
+                List.of("Main Light: OFF", "Dimmer Light: 0%", "Ceiling Light: OFF",
+                        "Thermostat: 18°C", "Exhaust Fan: OFF"));
+        addScene("Morning", "Wake up routine",
+                List.of("Main Light: ON", "Dimmer Light: 75%", "Ceiling Light: ON",
+                        "Temperature Control: 22°C"));
     }
 
-    private boolean applyDeviceState(String sceneName, String stateDefinition, LogService logService) {
+    private boolean applyDeviceState(String sceneName, String stateDefinition,
+                                     LogService logService) {
         boolean applied = false;
         String[] parts = stateDefinition.split(":", DEVICE_STATE_PART_COUNT);
         if (parts.length == DEVICE_STATE_PART_COUNT) {
             String deviceName = parts[0].trim();
             String targetState = parts[1].trim();
-
             RoomService roomService = ServiceRegistry.getRoomService();
             Device device = roomService.getDeviceByName(deviceName);
             if (device != null) {
                 applied = applyStateToDevice(device, targetState);
                 if (applied) {
                     logService.addLogEntry(
-                            device.getName(),
-                            device.getRoom(),
+                            device.getName(), device.getRoom(),
                             "Scene '" + sceneName + "' set state to " + targetState,
-                            "Scene"
-                    );
+                            "Scene");
                 }
             }
         }
@@ -338,10 +336,10 @@ public final class JdbcSceneService implements SceneService {
     private boolean applyStateToDevice(Device device, String targetState) {
         boolean applied = false;
         String normalized = targetState.trim().toLowerCase(Locale.ROOT);
-
         if (normalized.endsWith("%")) {
             try {
-                int brightness = Integer.parseInt(normalized.substring(0, normalized.length() - 1).trim());
+                int brightness = Integer.parseInt(
+                        normalized.substring(0, normalized.length() - 1).trim());
                 device.setBrightness(brightness);
                 device.setState(brightness > 0);
                 applied = true;
@@ -377,27 +375,25 @@ public final class JdbcSceneService implements SceneService {
         DatabaseSettings settings = DatabaseConfig.load()
                 .orElseThrow(() -> new IllegalStateException("Scene database is not configured."));
         return DriverManager.getConnection(
-                settings.jdbcUrl(),
-                settings.username(),
-                settings.password()
-        );
+                settings.jdbcUrl(), settings.username(), settings.password());
     }
 
-    private void ensureSchema() {
+    @SuppressWarnings("PMD.EmptyCatchBlock")
+    private void ensureSchema(Connection connection) {
         if (!schemaReady.get()) {
             synchronized (INSTANCE_LOCK) {
                 if (!schemaReady.get()) {
-                    try (Connection conn = openConnection();
-                         Statement stmt = conn.createStatement()) {
-                        String script = loadInitScript();
-                        for (String statement : script.split(";")) {
-                            if (!statement.isBlank()) {
-                                stmt.execute(statement.trim());
+                    try (Statement stmt = connection.createStatement()) {
+                        for (String sql : loadInitScript().split(";")) {
+                            String trimmed = sql.trim();
+                            if (!trimmed.isEmpty()) {
+                                stmt.execute(trimmed);
                             }
                         }
                         schemaReady.set(true);
-                    } catch (SQLException e) {
-                        throw new IllegalStateException("Failed to initialize scene schema.", e);
+                    } catch (SQLException exception) {
+                        throw new IllegalStateException(
+                                "Failed to initialize scene schema.", exception);
                     }
                 }
             }
@@ -407,7 +403,8 @@ public final class JdbcSceneService implements SceneService {
     private String loadInitScript() {
         try (InputStream scriptStream = getClass().getResourceAsStream(INIT_SCRIPT_PATH)) {
             if (scriptStream == null) {
-                throw new IllegalStateException("Database initialization script not found: " + INIT_SCRIPT_PATH);
+                throw new IllegalStateException(
+                        "Scene schema script not found at " + INIT_SCRIPT_PATH);
             }
             return new String(scriptStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException exception) {
