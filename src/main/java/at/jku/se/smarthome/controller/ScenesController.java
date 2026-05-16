@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Scene;
 import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.SceneService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.UserService;
-import at.jku.se.smarthome.service.mock.MockSceneService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -51,7 +51,7 @@ public class ScenesController {
     private GridPane scenesGrid;
     
     /** Service for scene management. */
-    private final MockSceneService sceneService = MockSceneService.getInstance();
+    private final SceneService sceneService = ServiceRegistry.getSceneService();
     /** Service for room and device management. */
     private final RoomService roomService = ServiceRegistry.getRoomService();
     /** Service for user authentication and permissions. */

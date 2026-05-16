@@ -46,6 +46,11 @@ public class LoginViewSmokeTest extends ApplicationTest {
         stage.show();
     }
 
+    @Override
+    public void stop() throws Exception {
+        org.testfx.api.FxToolkit.hideStage();
+    }
+
     @Test
     public void loginFormRendersAllRequiredControls() {
         TextField emailField = lookup("#emailField").query();

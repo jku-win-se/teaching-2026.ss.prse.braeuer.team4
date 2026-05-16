@@ -4,6 +4,7 @@ import at.jku.se.smarthome.service.real.log.JdbcLogService;
 import at.jku.se.smarthome.service.real.notification.JdbcNotificationService;
 import at.jku.se.smarthome.service.real.room.JdbcRoomService;
 import at.jku.se.smarthome.service.real.rule.JdbcRuleService;
+import at.jku.se.smarthome.service.real.scene.JdbcSceneService;
 import at.jku.se.smarthome.service.real.schedule.JdbcScheduleService;
 
 /**
@@ -26,6 +27,8 @@ public final class ServiceRegistry {
     private static RuleService testRuleServiceOverride;
     /** Override for notification service used in tests. */
     private static NotificationService testNotificationServiceOverride;
+    /** Override for scene service used in tests. */
+    private static SceneService testSceneServiceOverride;
 
     /** Private constructor prevents instantiation. */
     private ServiceRegistry() {
@@ -199,12 +202,41 @@ public final class ServiceRegistry {
     }
 
     /**
+     * Returns the active scene service instance.
+     *
+     * @return lazily initialized scene service
+     */
+    public static SceneService getSceneService() {
+        return testSceneServiceOverride != null ? testSceneServiceOverride : SceneServiceHolder.INSTANCE;
+    }
+
+    /**
+     * Holder for lazy initialization of scene service.
+     */
+    private static final class SceneServiceHolder {
+        /** Singleton scene service instance. */
+        private static final SceneService INSTANCE = JdbcSceneService.getInstance();
+    }
+
+    /**
+     * Overrides the scene service for tests or alternate runtime wiring.
+     *
+     * @param svc replacement scene service instance
+     */
+    public static void setSceneServiceForTesting(SceneService svc) {
+        synchronized (OVERRIDE_LOCK) {
+            testSceneServiceOverride = svc;
+        }
+    }
+
+    /**
      * Clears the cached schedule service so it is re-created on next access.
      */
     @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (OVERRIDE_LOCK) {
             testScheduleServiceOverride = null;
+            testSceneServiceOverride = null;
         }
     }
 

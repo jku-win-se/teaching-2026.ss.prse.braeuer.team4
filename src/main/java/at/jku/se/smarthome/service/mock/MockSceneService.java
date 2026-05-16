@@ -6,7 +6,10 @@ import java.util.Locale;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Scene;
+import at.jku.se.smarthome.service.api.LogService;
 import at.jku.se.smarthome.service.api.NotificationService;
+import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.SceneService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,7 +17,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Scene Service providing smart scene management functionality.
  */
-public final class MockSceneService {
+public final class MockSceneService implements SceneService {
 
     /** Expected parts count when parsing a "device:state" scene definition. */
     private static final int DEVICE_STATE_PART_COUNT = 2;
@@ -26,9 +29,9 @@ public final class MockSceneService {
      */
     private final ObservableList<Scene> scenes;
     /** Room service reference for device lookups. */
-    private final MockRoomService roomService = MockRoomService.getInstance();
+    private final RoomService roomService = ServiceRegistry.getRoomService();
     /** Log service for activity tracking. */
-    private final MockLogService logService = MockLogService.getInstance();
+    private final LogService logService = ServiceRegistry.getLogService();
     /** Notification service for scene events. */
     private final NotificationService notificationService = ServiceRegistry.getNotificationService();
     

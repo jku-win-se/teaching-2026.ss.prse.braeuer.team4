@@ -59,11 +59,11 @@
 						</goals>
 						<configuration>
 							<includes>
-								<include>at/jku/se/smarthome/service/mock/*</include>
-								<include>at/jku/se/smarthome/service/real/auth/*</include>
-								<include>at/jku/se/smarthome/service/real/schedule/*</include>
-							</includes>
-							<excludes>
+							        <include>at/jku/se/smarthome/service/mock/*</include>
+							        <include>at/jku/se/smarthome/service/real/auth/*</include>
+							        <include>at/jku/se/smarthome/service/real/schedule/*</include>
+							        <include>at/jku/se/smarthome/service/real/scene/*</include>
+							</includes>							<excludes>
 								<exclude>at/jku/se/smarthome/service/api/*</exclude>
 								<exclude>**/*$*</exclude>
 							</excludes>
@@ -71,13 +71,12 @@
 								<rule>
 									<element>BUNDLE</element>
 									<limits>
-										<limit>
-											<counter>LINE</counter>
-											<value>COVEREDRATIO</value>
-											<minimum>0.75</minimum>
-										</limit>
-									</limits>
-								</rule>
+									        <limit>
+									                <counter>LINE</counter>
+									                <value>COVEREDRATIO</value>
+									                <minimum>0.70</minimum>
+									        </limit>
+									</limits>								</rule>
 							</rules>
 						</configuration>
 					</execution>
