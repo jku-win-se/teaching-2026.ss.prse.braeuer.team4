@@ -5,10 +5,11 @@ import java.util.Optional;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.model.Rule;
-import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.api.RoomService;
+import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.UserService;
+import at.jku.se.smarthome.service.rule.RuleValidator;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -118,14 +119,19 @@ public class RulesController {
             return;
         }
         Optional<RuleInput> result = showRuleDialog(null);
-        result.ifPresent(input -> ruleService.addRule(
-                input.name(),
-                input.triggerType(),
-                input.sourceDevice(),
-                input.condition(),
-                input.action(),
-                input.targetDevice()
-        ));
+        result.ifPresent(input -> {
+            Rule created = ruleService.addRule(
+                    input.name(),
+                    input.triggerType(),
+                    input.sourceDevice(),
+                    input.condition(),
+                    input.action(),
+                    input.targetDevice()
+            );
+            if (created == null) {
+                showRuleValidationError(input.triggerType(), input.condition(), input.sourceDevice());
+            }
+        });
     }
 
     /**
@@ -139,7 +145,7 @@ public class RulesController {
         }
         Optional<RuleInput> result = showRuleDialog(rule);
         result.ifPresent(input -> {
-            ruleService.updateRule(
+            boolean success = ruleService.updateRule(
                     rule.getId(),
                     input.name(),
                     input.triggerType(),
@@ -148,7 +154,11 @@ public class RulesController {
                     input.action(),
                     input.targetDevice()
             );
-            rulesTable.refresh();
+            if (success) {
+                rulesTable.refresh();
+            } else {
+                showRuleValidationError(input.triggerType(), input.condition(), input.sourceDevice());
+            }
         });
     }
 
@@ -165,12 +175,25 @@ public class RulesController {
     }
 
     /**
-     * Handles run rule action, executing rule immediately.
+     * Handles run rule action, executing rule immediately without checking condition.
      *
      * @param rule rule to execute
      */
     private void handleRunRule(Rule rule) {
-        ruleService.executeRule(rule.getId());
+        ruleService.executeRule(rule.getId(), true);
+    }
+
+    private void showRuleValidationError(String triggerType, String condition,
+                                         String sourceDevice) {
+        RuleValidator.Result result =
+                RuleValidator.validate(triggerType, condition, sourceDevice, roomService);
+        String detail = result.reason() != null ? result.reason() : "Invalid rule configuration.";
+        javafx.scene.control.Alert alert =
+                new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+        alert.setTitle("Rule not saved");
+        alert.setHeaderText("The rule could not be created");
+        alert.setContentText(detail);
+        alert.showAndWait();
     }
 
     /**

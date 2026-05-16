@@ -71,10 +71,33 @@ public interface RuleService {
     boolean executeRule(String ruleId);
 
     /**
+     * Executes a rule in the engine and emits in-app notifications.
+     * When executed manually, the rule's condition is not evaluated and the action is performed directly.
+     *
+     * @param ruleId identifier of the rule to execute
+     * @param isManual true to skip condition evaluation, false to evaluate condition normally
+     * @return true when execution succeeded, otherwise false
+     */
+    boolean executeRule(String ruleId, boolean isManual);
+
+    /**
      * Detects conflicts between rules.
      *
      * @param ruleId identifier of the rule being validated
      * @return true when a conflict exists, otherwise false
      */
     boolean hasConflicts(String ruleId);
+
+    /**
+     * Starts background polling that evaluates all enabled rules on a fixed
+     * interval and executes them when their condition is met.
+     * Must be idempotent — calling it a second time is a no-op.
+     */
+    void startRecurringExecution();
+
+    /**
+     * Stops background polling started by {@link #startRecurringExecution()}.
+     * Must be idempotent — safe to call even if not started.
+     */
+    void stopRecurringExecution();
 }

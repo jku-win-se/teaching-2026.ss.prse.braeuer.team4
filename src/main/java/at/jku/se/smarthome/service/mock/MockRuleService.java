@@ -14,7 +14,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Rule Service providing rule management functionality.
  */
-@SuppressWarnings("PMD.UseObjectForClearerAPI")
+@SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.TooManyMethods"})
 public final class MockRuleService implements RuleService {
     
     /** Singleton instance of the mock rule service. */
@@ -186,6 +186,11 @@ public final class MockRuleService implements RuleService {
         * @return true when execution succeeded, otherwise false
      */
     public boolean executeRule(String ruleId) {
+        return executeRule(ruleId, false);
+    }
+
+    @Override
+    public boolean executeRule(String ruleId, boolean isManual) {
         boolean executed = false;
         Rule rule = rules.stream()
                 .filter(r -> r.getId().equals(ruleId))
@@ -196,7 +201,8 @@ public final class MockRuleService implements RuleService {
             notificationService.addNotification("Rule execution failed: rule not found", NotificationType.FAILURE);
         } else if (rule.isEnabled()) {
             Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
-            if (new RuleEvaluator().evaluate(rule, sourceDevice)) {
+            boolean conditionMet = isManual || new RuleEvaluator().evaluate(rule, sourceDevice);
+            if (conditionMet) {
                 Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
                 if (targetDevice != null && applyAction(targetDevice, rule.getAction())) {
                     logService.addLogEntry(targetDevice.getName(), targetDevice.getRoom(), rule.getAction(), "Rule: " + rule.getName());
@@ -273,5 +279,15 @@ public final class MockRuleService implements RuleService {
      */
     public boolean hasConflicts(String ruleId) {
         return false; // Simplified mock
+    }
+
+    @Override
+    public void startRecurringExecution() {
+        // no-op for mock — rules execute on explicit call only
+    }
+
+    @Override
+    public void stopRecurringExecution() {
+        // no-op for mock
     }
 }

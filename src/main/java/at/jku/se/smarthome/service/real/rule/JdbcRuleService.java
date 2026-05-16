@@ -11,6 +11,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import at.jku.se.smarthome.config.DatabaseConfig;
@@ -25,6 +29,7 @@ import at.jku.se.smarthome.service.api.RuleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.rule.RuleEvaluator;
 import at.jku.se.smarthome.service.rule.RuleValidator;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -39,7 +44,8 @@ import javafx.collections.ObservableList;
  */
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.TooManyMethods",
         "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports",
-        "PMD.GodClass", "PMD.AvoidDeeplyNestedIfStmts"})
+        "PMD.GodClass", "PMD.AvoidDeeplyNestedIfStmts",
+        "PMD.CyclomaticComplexity", "PMD.DoNotUseThreads"})
 public final class JdbcRuleService implements RuleService {
 
     /** Path to rule schema initialization script in classpath. */
@@ -53,6 +59,9 @@ public final class JdbcRuleService implements RuleService {
     private final ObservableList<Rule> rules = FXCollections.observableArrayList();
     /** Flag indicating database schema is initialized. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
+
+    /** Scheduler for background rule evaluation. */
+    private ScheduledExecutorService ruleScheduler;
 
     private JdbcRuleService() {
         refreshRules();
@@ -79,6 +88,9 @@ public final class JdbcRuleService implements RuleService {
     @SuppressWarnings("PMD.NullAssignment")
     public static void resetForTesting() {
         synchronized (INSTANCE_LOCK) {
+            if (instance != null) {
+                instance.stopRecurringExecution();
+            }
             instance = null;
         }
     }
@@ -206,6 +218,11 @@ public final class JdbcRuleService implements RuleService {
 
     @Override
     public boolean executeRule(String ruleId) {
+        return executeRule(ruleId, false);
+    }
+
+    @Override
+    public boolean executeRule(String ruleId, boolean isManual) {
         boolean executed = false;
         Rule rule = findRule(ruleId);
         NotificationService notificationService = ServiceRegistry.getNotificationService();
@@ -213,7 +230,7 @@ public final class JdbcRuleService implements RuleService {
             notificationService.addNotification(
                     "Rule execution failed: rule not found", NotificationType.FAILURE);
         } else if (rule.isEnabled()) {
-            executed = executeEnabledRule(rule);
+            executed = executeEnabledRule(rule, isManual);
         } else {
             notificationService.addNotification(
                     "Rule execution failed: " + rule.getName() + " is inactive",
@@ -227,13 +244,51 @@ public final class JdbcRuleService implements RuleService {
         return false;
     }
 
-    private boolean executeEnabledRule(Rule rule) {
+    @Override
+    public void startRecurringExecution() {
+        synchronized (INSTANCE_LOCK) {
+            if (ruleScheduler != null && !ruleScheduler.isShutdown()) {
+                return;
+            }
+            ThreadFactory threadFactory = runnable -> {
+                Thread thread = new Thread(runnable, "jdbc-rule-dispatcher");
+                thread.setDaemon(true);
+                return thread;
+            };
+            ruleScheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
+            ruleScheduler.scheduleAtFixedRate(
+                    () -> Platform.runLater(this::processDueRules),
+                    0, 30, TimeUnit.SECONDS);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("PMD.NullAssignment")
+    public void stopRecurringExecution() {
+        synchronized (INSTANCE_LOCK) {
+            if (ruleScheduler != null) {
+                ruleScheduler.shutdownNow();
+                ruleScheduler = null;
+            }
+        }
+    }
+
+    private void processDueRules() {
+        for (Rule rule : rules) {
+            if (rule.isEnabled()) {
+                executeEnabledRule(rule, false);
+            }
+        }
+    }
+
+    private boolean executeEnabledRule(Rule rule, boolean isManual) {
         boolean executed = false;
         RoomService roomService = ServiceRegistry.getRoomService();
         NotificationService notificationService = ServiceRegistry.getNotificationService();
         LogService logService = ServiceRegistry.getLogService();
         Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
-        if (new RuleEvaluator().evaluate(rule, sourceDevice)) {
+        boolean conditionMet = isManual || new RuleEvaluator().evaluate(rule, sourceDevice);
+        if (conditionMet) {
             Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
             if (targetDevice == null) {
                 notificationService.addNotification(

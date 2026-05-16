@@ -64,6 +64,7 @@ public class SmartHomeApp extends Application {
 
         // Start recurring schedule processing after the JavaFX toolkit is fully available.
         ServiceRegistry.getScheduleService().startRecurringExecution();
+        ServiceRegistry.getRuleService().startRecurringExecution();
         
         // Show login scene first
         primaryStage.setScene(loginScene);
@@ -179,5 +180,6 @@ public class SmartHomeApp extends Application {
     @Override
     public void stop() {
         ServiceRegistry.getScheduleService().stopRecurringExecution();
+        ServiceRegistry.getRuleService().stopRecurringExecution();
     }
 }

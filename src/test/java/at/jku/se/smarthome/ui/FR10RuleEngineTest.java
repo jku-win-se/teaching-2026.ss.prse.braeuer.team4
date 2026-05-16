@@ -109,7 +109,11 @@ public class FR10RuleEngineTest extends ApplicationTest {
         Device mainLight = roomService.getDeviceByName("Main Light");
         assertFalse("Pre-condition: Main Light must start OFF", mainLight.getState());
 
-        clickRunFor("Motion → Light");
+        at.jku.se.smarthome.model.Rule rule = MockRuleService.getInstance().getRules().stream()
+                .filter(r -> "Motion → Light".equals(r.getName()))
+                .findFirst()
+                .orElseThrow();
+        interact(() -> MockRuleService.getInstance().executeRule(rule.getId(), false));
 
         assertFalse("Main Light must remain OFF — condition was not met, action was blocked",
                 mainLight.getState());
