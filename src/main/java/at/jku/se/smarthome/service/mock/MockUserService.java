@@ -425,14 +425,14 @@ public class MockUserService extends UserService {
         return restored;
     }
 
-    @SuppressWarnings("PMD.AvoidCatchingGenericException")
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     private void tryLog(String target, String action, String actor) {
         try {
             LogService log = ServiceRegistry.getLogService();
             if (log != null) {
                 log.addLogEntry(target, action, actor);
             }
-        } catch (Exception exception) {
+        } catch (Throwable exception) {
             System.getLogger(MockUserService.class.getName()).log(
                     System.Logger.Level.WARNING, "Failed to log user management action.", exception);
         }

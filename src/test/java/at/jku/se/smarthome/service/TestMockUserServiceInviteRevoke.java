@@ -6,11 +6,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mindrot.jbcrypt.BCrypt;
 
 import at.jku.se.smarthome.model.User;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.UserService.LoginStatus;
+import at.jku.se.smarthome.service.mock.MockLogService;
 import at.jku.se.smarthome.service.mock.MockUserService;
 import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 
@@ -19,6 +23,23 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
  */
 @SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockUserServiceInviteRevoke {
+
+    /**
+     * Wires in a MockLogService before each test so tryLog does not hit the real JDBC log service.
+     */
+    @Before
+    public void setUp() {
+        MockLogService.resetForTesting();
+        ServiceRegistry.setLogServiceForTesting(MockLogService.getInstance());
+    }
+
+    /**
+     * Tears down the MockLogService override after each test.
+     */
+    @After
+    public void tearDown() {
+        ServiceRegistry.setLogServiceForTesting(null);
+    }
 
     /**
      * Test: inviteUser with null email returns false.
