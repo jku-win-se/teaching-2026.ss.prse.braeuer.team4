@@ -24,6 +24,16 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CouplingBetweenObjects", "PMD.AtLeastOneConstructor", "PMD.AvoidDuplicateLiterals"})
 public class TestJdbcSceneService {
 
+    /** JDBC URL property. */
+    private static final String URL_PROPERTY = "smarthome.db.url";
+    /** JDBC user property. */
+    private static final String USER_PROPERTY = "smarthome.db.user";
+    /** JDBC password property. */
+    private static final String PASSWORD_PROPERTY = "smarthome.db.password";
+
+    /** JDBC URL for in-memory test database. */
+    private String jdbcUrl;
+
     private JdbcSceneService sceneService;
     private MockRoomService roomService;
     private MockNotificationService notificationService;
@@ -34,6 +44,12 @@ public class TestJdbcSceneService {
      */
     @Before
     public void setUp() {
+        jdbcUrl = "jdbc:h2:mem:scenes_" + System.nanoTime()
+                + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1";
+        System.setProperty(URL_PROPERTY, jdbcUrl);
+        System.setProperty(USER_PROPERTY, "sa");
+        System.setProperty(PASSWORD_PROPERTY, "");
+
         MockRoomService.resetForTesting();
         MockNotificationService.resetForTesting();
         MockLogService.resetForTesting();
@@ -68,6 +84,10 @@ public class TestJdbcSceneService {
         ServiceRegistry.setRoomServiceForTesting(null);
         ServiceRegistry.setNotificationServiceForTesting(null);
         ServiceRegistry.setLogServiceForTesting(null);
+
+        System.clearProperty(URL_PROPERTY);
+        System.clearProperty(USER_PROPERTY);
+        System.clearProperty(PASSWORD_PROPERTY);
     }
 
     @Test

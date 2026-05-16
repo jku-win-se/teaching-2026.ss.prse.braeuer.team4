@@ -203,4 +203,58 @@ public class TestMockSceneService {
     public void deleteNonExistentSceneReturnsFalse() {
         assertFalse(service.deleteScene("does-not-exist"));
     }
+
+    /**
+     * Test: getScenes returns non-empty list.
+     */
+    @Test
+    public void getScenesReturnsNonEmpty() {
+        assertFalse(service.getScenes().isEmpty());
+    }
+
+    /**
+     * Test: update scene without device states returns true.
+     */
+    @Test
+    public void updateSceneWithoutDeviceStates() {
+        Scene scene = service.addScene("Test", "Desc");
+        assertTrue(service.updateScene(scene.getId(), "Test2", "Desc2"));
+        assertEquals("Test2", scene.getName());
+    }
+
+    /**
+     * Test: applyStateToDevice parses temperature correctly.
+     */
+    @Test
+    public void applyStateToDeviceParsesTemperature() {
+        Scene scene = service.addScene("Temp Test", "Sets temp", List.of("Temperature Control: 24°c"));
+        service.activateScene(scene.getId());
+        Device tempDevice = roomService.getDeviceByName("Temperature Control");
+        assertEquals(24.0, tempDevice.getTemperature(), 0.01);
+    }
+
+    /**
+     * Test: applyStateToDevice handles on and off.
+     */
+    @Test
+    public void applyStateToDeviceHandlesOnOff() {
+        Scene scene = service.addScene("Switch Test", "Switches", List.of("Main Light: on", "Ceiling Light: off"));
+        service.activateScene(scene.getId());
+        assertTrue(roomService.getDeviceByName("Main Light").getState());
+        assertFalse(roomService.getDeviceByName("Ceiling Light").getState());
+    }
+
+    /**
+     * Test: applyStateToDevice handles open and close.
+     */
+    @Test
+    public void applyStateToDeviceHandlesOpenClose() {
+        Scene scene = service.addScene("Window Test", "Windows", List.of("Hallway Blind: open"));
+        service.activateScene(scene.getId());
+        assertTrue(roomService.getDeviceByName("Hallway Blind").getState());
+
+        Scene scene2 = service.addScene("Window Test 2", "Windows", List.of("Hallway Blind: close"));
+        service.activateScene(scene2.getId());
+        assertFalse(roomService.getDeviceByName("Hallway Blind").getState());
+    }
 }
