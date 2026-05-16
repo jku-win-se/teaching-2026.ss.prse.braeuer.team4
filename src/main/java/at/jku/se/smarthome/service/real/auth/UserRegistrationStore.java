@@ -48,6 +48,15 @@ public interface UserRegistrationStore {
     void updateLastLogin(String normalizedEmail) throws StoreException;
 
     /**
+     * Updates the account status of an existing user.
+     *
+     * @param normalizedEmail the email of the user
+     * @param newStatus the new status value
+     * @throws StoreException if database access fails
+     */
+    void updateStatus(String normalizedEmail, String newStatus) throws StoreException;
+
+    /**
      * Persisted user record with authentication and role information.
      *
      * @param email user email address

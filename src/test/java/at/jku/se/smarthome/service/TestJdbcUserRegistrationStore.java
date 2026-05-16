@@ -185,4 +185,50 @@ public class TestJdbcUserRegistrationStore {
             assertTrue(resultSet.getTimestamp(1) != null);
         }
     }
+
+    /**
+     * Test: updateStatus persists new status to database.
+     */
+    @Test
+    public void updateStatusPersistsNewStatus() throws Exception {
+        UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
+                "member@example.com",
+                "member",
+                "hash",
+                "Member",
+                "Active"
+        );
+        store.save(user);
+
+        store.updateStatus("member@example.com", "Revoked");
+
+        assertEquals("Revoked", store.findByEmail("member@example.com").orElseThrow().status());
+    }
+
+    /**
+     * Test: updateStatus on revoked user can be restored to Active.
+     */
+    @Test
+    public void updateStatusCanRestoreRevokedUser() throws Exception {
+        UserRegistrationStore.PersistedUser user = new UserRegistrationStore.PersistedUser(
+                "member@example.com",
+                "member",
+                "hash",
+                "Member",
+                "Revoked"
+        );
+        store.save(user);
+
+        store.updateStatus("member@example.com", "Active");
+
+        assertEquals("Active", store.findByEmail("member@example.com").orElseThrow().status());
+    }
+
+    /**
+     * Test: updateStatus for unknown email does not throw.
+     */
+    @Test
+    public void updateStatusUnknownEmailDoesNotThrow() throws Exception {
+        store.updateStatus("nobody@example.com", "Revoked");
+    }
 }

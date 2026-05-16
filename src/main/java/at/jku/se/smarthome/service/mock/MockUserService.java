@@ -5,6 +5,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import at.jku.se.smarthome.service.api.LogService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+
 import org.mindrot.jbcrypt.BCrypt;
 
 import at.jku.se.smarthome.model.User;
@@ -359,15 +362,21 @@ public class MockUserService extends UserService {
      */
     @Override
     public boolean inviteUser(String email, String role) {
+        if (email == null || email.isBlank() || !email.contains("@")) {
+            return false;
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         boolean invited = false;
-        if (!users.stream().anyMatch(u -> u.getEmail().equals(email))) {
-            User newUser = new User(email, email.split("@")[0], "temporary", role, "Pending");
+        if (users.stream().noneMatch(u -> u.getEmail().equals(normalizedEmail))) {
+            String username = normalizedEmail.split("@")[0];
+            User newUser = new User(normalizedEmail, username, "temporary", role, "Pending");
             users.add(newUser);
+            tryLog(normalizedEmail, "Invited", "Owner");
             invited = true;
         }
         return invited;
     }
-    
+
     /**
         * Revokes access for a user.
         *
@@ -387,6 +396,7 @@ public class MockUserService extends UserService {
             if (email.equals(currentUserEmail)) {
                 logout();
             }
+            tryLog(email, "Access revoked", "Owner");
             revoked = true;
         }
         return revoked;
@@ -408,9 +418,22 @@ public class MockUserService extends UserService {
 
         if (user != null && !"Owner".equalsIgnoreCase(user.getRole())) {
             user.setStatus("Active");
+            tryLog(email, "Access restored", "Owner");
             restored = true;
         }
         return restored;
+    }
+
+    private void tryLog(String target, String action, String actor) {
+        try {
+            LogService log = ServiceRegistry.getLogService();
+            if (log != null) {
+                log.addLogEntry(target, action, actor);
+            }
+        } catch (Exception exception) {
+            System.getLogger(MockUserService.class.getName()).log(
+                    System.Logger.Level.WARNING, "Failed to log user management action.", exception);
+        }
     }
     
     /**

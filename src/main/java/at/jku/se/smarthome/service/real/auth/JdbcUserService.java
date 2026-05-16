@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.mindrot.jbcrypt.BCrypt;
 
 import at.jku.se.smarthome.model.User;
+import at.jku.se.smarthome.service.api.LogService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.api.UserService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -247,13 +249,28 @@ public final class JdbcUserService extends UserService {
 
     @Override
     public boolean inviteUser(String email, String role) {
-        boolean invited = false;
-        if (!users.stream().anyMatch(u -> u.getEmail().equals(email))) {
-            User newUser = new User(email, email.contains("@") ? email.split("@")[0] : email, "temporary", role, "Pending");
-            users.add(newUser);
-            invited = true;
+        if (email == null || email.isBlank() || !email.contains("@")) {
+            return false;
         }
-        return invited;
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail == null) {
+            return false;
+        }
+        if (users.stream().anyMatch(u -> u.getEmail().equals(normalizedEmail))) {
+            return false;
+        }
+        try {
+            String username = normalizedEmail.split("@")[0];
+            registrationStore.save(new UserRegistrationStore.PersistedUser(
+                    normalizedEmail, username, "*INVITED*", role, "Pending"));
+            users.add(new User(normalizedEmail, username, "*INVITED*", role, "Pending"));
+            tryLog(normalizedEmail, "Invited", "Owner");
+            return true;
+        } catch (UserRegistrationStore.StoreException exception) {
+            System.getLogger(JdbcUserService.class.getName()).log(
+                    System.Logger.Level.WARNING, "Failed to persist invited user.", exception);
+            return false;
+        }
     }
 
     @Override
@@ -270,6 +287,13 @@ public final class JdbcUserService extends UserService {
                 logout();
             }
             revoked = true;
+            try {
+                registrationStore.updateStatus(email, "Revoked");
+                tryLog(email, "Access revoked", "Owner");
+            } catch (UserRegistrationStore.StoreException exception) {
+                System.getLogger(JdbcUserService.class.getName()).log(
+                        System.Logger.Level.WARNING, "Failed to persist revoke for user.", exception);
+            }
         }
         return revoked;
     }
@@ -285,8 +309,27 @@ public final class JdbcUserService extends UserService {
         if (user != null && !"Owner".equalsIgnoreCase(user.getRole())) {
             user.setStatus("Active");
             restored = true;
+            try {
+                registrationStore.updateStatus(email, "Active");
+                tryLog(email, "Access restored", "Owner");
+            } catch (UserRegistrationStore.StoreException exception) {
+                System.getLogger(JdbcUserService.class.getName()).log(
+                        System.Logger.Level.WARNING, "Failed to persist restore for user.", exception);
+            }
         }
         return restored;
+    }
+
+    private void tryLog(String target, String action, String actor) {
+        try {
+            LogService log = ServiceRegistry.getLogService();
+            if (log != null) {
+                log.addLogEntry(target, action, actor);
+            }
+        } catch (Exception exception) {
+            System.getLogger(JdbcUserService.class.getName()).log(
+                    System.Logger.Level.WARNING, "Failed to log user management action.", exception);
+        }
     }
 
     @Override
