@@ -20,7 +20,7 @@ import at.jku.se.smarthome.service.mock.MockSceneService;
 /**
  * Unit tests for MockSceneService.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods", "PMD.UnitTestContainsTooManyAsserts"})
 public class TestMockSceneService {
 
 
@@ -208,7 +208,7 @@ public class TestMockSceneService {
      * Test: getScenes returns non-empty list.
      */
     @Test
-    public void getScenesReturnsNonEmpty() {
+    public void verifyGetScenesReturnsNonEmpty() {
         assertFalse(service.getScenes().isEmpty());
     }
 

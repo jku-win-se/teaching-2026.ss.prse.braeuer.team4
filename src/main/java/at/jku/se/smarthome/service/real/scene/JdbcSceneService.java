@@ -33,7 +33,8 @@ import javafx.collections.ObservableList;
  */
 @SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.TooManyMethods",
         "PMD.CouplingBetweenObjects", "PMD.ExcessiveImports",
-        "PMD.AvoidDeeplyNestedIfStmts"})
+        "PMD.AvoidDeeplyNestedIfStmts", "PMD.GodClass",
+        "PMD.AvoidInstantiatingObjectsInLoops"})
 public final class JdbcSceneService implements SceneService {
 
     /** Expected parts count when parsing a "device:state" scene definition. */
@@ -92,44 +93,42 @@ public final class JdbcSceneService implements SceneService {
 
     @Override
     public Scene addScene(String name, String description, List<String> deviceStates) {
-        if (name == null || name.isBlank()) {
-            return null;
-        }
-        
-        ensureSchema();
-        String sceneId = "scene-" + java.util.UUID.randomUUID().toString();
         Scene created = null;
+        if (name != null && !name.isBlank()) {
+            ensureSchema();
+            String generatedId = "scene-" + java.util.UUID.randomUUID().toString();
 
-        try (Connection conn = openConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                String sql = "INSERT INTO scenes (id, name, description) VALUES (?, ?, ?)";
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, sceneId);
-                    stmt.setString(2, name);
-                    stmt.setString(3, description);
-                    stmt.executeUpdate();
+            try (Connection conn = openConnection()) {
+                conn.setAutoCommit(false);
+                try {
+                    String sql = "INSERT INTO scenes (id, name, description) VALUES (?, ?, ?)";
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setString(1, generatedId);
+                        stmt.setString(2, name);
+                        stmt.setString(3, description);
+                        stmt.executeUpdate();
+                    }
+
+                    insertDeviceStates(conn, generatedId, deviceStates);
+                    conn.commit();
+
+                    created = new Scene(generatedId, name, description);
+                    created.setDeviceStates(deviceStates);
+                    scenes.add(created);
+                } catch (SQLException e) {
+                    conn.rollback();
+                    System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Failed to add scene", e);
                 }
-
-                insertDeviceStates(conn, sceneId, deviceStates);
-                conn.commit();
-
-                created = new Scene(sceneId, name, description);
-                created.setDeviceStates(deviceStates);
-                scenes.add(created);
             } catch (SQLException e) {
-                conn.rollback();
-                throw e; // Handled in outer catch
+                System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Database connection error", e);
             }
-        } catch (SQLException e) {
-            // Error handling ignored for brevity, mimicking other Jdbc services
         }
         return created;
     }
 
     @Override
     public boolean updateScene(String sceneId, String name, String description) {
-        return updateScene(sceneId, name, description, List.of()); // Simplified, but we should fetch existing if missing
+        return updateScene(sceneId, name, description, List.of());
     }
 
     @Override
@@ -170,10 +169,10 @@ public final class JdbcSceneService implements SceneService {
                 }
             } catch (SQLException e) {
                 conn.rollback();
-                throw e;
+                System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Failed to update scene", e);
             }
         } catch (SQLException e) {
-            // Error handling ignored for brevity
+            System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Database connection error", e);
         }
         return success;
     }
@@ -190,7 +189,7 @@ public final class JdbcSceneService implements SceneService {
                 success = true;
             }
         } catch (SQLException e) {
-            // Error handling ignored
+            System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Failed to delete scene", e);
         }
         return success;
     }
@@ -198,19 +197,19 @@ public final class JdbcSceneService implements SceneService {
     @Override
     public boolean activateScene(String sceneId) {
         boolean activated = false;
-        Scene scene = scenes.stream()
+        Scene sceneToActivate = scenes.stream()
                 .filter(s -> s.getId().equals(sceneId))
                 .findFirst()
                 .orElse(null);
         
-        if (scene != null) {
+        if (sceneToActivate != null) {
             int appliedStates = 0;
             int skippedStates = 0;
             LogService logService = ServiceRegistry.getLogService();
             NotificationService notificationService = ServiceRegistry.getNotificationService();
 
-            for (String deviceState : scene.getDeviceStates()) {
-                if (applyDeviceState(scene.getName(), deviceState, logService)) {
+            for (String deviceState : sceneToActivate.getDeviceStates()) {
+                if (applyDeviceState(sceneToActivate.getName(), deviceState, logService)) {
                     appliedStates++;
                 } else {
                     skippedStates++;
@@ -218,7 +217,7 @@ public final class JdbcSceneService implements SceneService {
             }
 
             logService.addLogEntry(
-                    "Scene: " + scene.getName(),
+                    "Scene: " + sceneToActivate.getName(),
                     "Overall",
                     "Activated with " + appliedStates + " applied state" + (appliedStates == 1 ? "" : "s")
                             + (skippedStates > 0 ? " and " + skippedStates + " skipped" : ""),
@@ -226,10 +225,10 @@ public final class JdbcSceneService implements SceneService {
             );
 
             if (skippedStates == 0) {
-                notificationService.addNotification("Scene '" + scene.getName() + "' activated successfully", NotificationType.SUCCESS);
+                notificationService.addNotification("Scene '" + sceneToActivate.getName() + "' activated successfully", NotificationType.SUCCESS);
             } else {
                 notificationService.addNotification(
-                        "Scene '" + scene.getName() + "' activated with " + skippedStates + " skipped device state(s)",
+                        "Scene '" + sceneToActivate.getName() + "' activated with " + skippedStates + " skipped device state(s)",
                         NotificationType.INFO
                 );
             }
@@ -258,19 +257,19 @@ public final class JdbcSceneService implements SceneService {
         scenes.clear();
         try (Connection conn = openConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT id, name, description FROM scenes ORDER BY created_at, id")) {
+             ResultSet resultSet = stmt.executeQuery("SELECT id, name, description FROM scenes ORDER BY created_at, id")) {
 
-            while (rs.next()) {
-                String id = rs.getString("id");
-                String name = rs.getString("name");
-                String description = rs.getString("description");
+            while (resultSet.next()) {
+                String sceneId = resultSet.getString("id");
+                String sceneName = resultSet.getString("name");
+                String sceneDescription = resultSet.getString("description");
                 
-                Scene scene = new Scene(id, name, description);
-                scene.setDeviceStates(loadDeviceStates(conn, id));
-                scenes.add(scene);
+                Scene loadedScene = new Scene(sceneId, sceneName, sceneDescription);
+                loadedScene.setDeviceStates(loadDeviceStates(conn, sceneId));
+                scenes.add(loadedScene);
             }
         } catch (SQLException e) {
-            // Error handling ignored
+            System.getLogger(JdbcSceneService.class.getName()).log(System.Logger.Level.ERROR, "Failed to refresh scenes", e);
         }
     }
 
@@ -279,9 +278,9 @@ public final class JdbcSceneService implements SceneService {
         String sql = "SELECT device_state FROM scene_device_states WHERE scene_id = ? ORDER BY sort_order, id";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, sceneId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    states.add(rs.getString("device_state"));
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                while (resultSet.next()) {
+                    states.add(resultSet.getString("device_state"));
                 }
             }
         }
@@ -392,7 +391,7 @@ public final class JdbcSceneService implements SceneService {
                          Statement stmt = conn.createStatement()) {
                         String script = loadInitScript();
                         for (String statement : script.split(";")) {
-                            if (!statement.trim().isEmpty()) {
+                            if (!statement.isBlank()) {
                                 stmt.execute(statement.trim());
                             }
                         }
