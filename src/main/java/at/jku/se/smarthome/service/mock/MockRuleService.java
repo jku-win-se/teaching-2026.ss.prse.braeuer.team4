@@ -14,7 +14,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Rule Service providing rule management functionality.
  */
-@SuppressWarnings("PMD.UseObjectForClearerAPI")
+@SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.TooManyMethods"})
 public final class MockRuleService implements RuleService {
     
     /** Singleton instance of the mock rule service. */
@@ -279,5 +279,15 @@ public final class MockRuleService implements RuleService {
      */
     public boolean hasConflicts(String ruleId) {
         return false; // Simplified mock
+    }
+
+    @Override
+    public void startRecurringExecution() {
+        // no-op for mock — rules execute on explicit call only
+    }
+
+    @Override
+    public void stopRecurringExecution() {
+        // no-op for mock
     }
 }

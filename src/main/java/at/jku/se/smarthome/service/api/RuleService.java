@@ -87,4 +87,17 @@ public interface RuleService {
      * @return true when a conflict exists, otherwise false
      */
     boolean hasConflicts(String ruleId);
+
+    /**
+     * Starts background polling that evaluates all enabled rules on a fixed
+     * interval and executes them when their condition is met.
+     * Must be idempotent — calling it a second time is a no-op.
+     */
+    void startRecurringExecution();
+
+    /**
+     * Stops background polling started by {@link #startRecurringExecution()}.
+     * Must be idempotent — safe to call even if not started.
+     */
+    void stopRecurringExecution();
 }
