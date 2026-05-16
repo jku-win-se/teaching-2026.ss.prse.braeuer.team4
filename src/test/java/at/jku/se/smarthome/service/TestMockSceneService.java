@@ -47,6 +47,8 @@ public class TestMockSceneService {
         logService = MockLogService.getInstance();
         notificationService = MockNotificationService.getInstance();
         ServiceRegistry.setNotificationServiceForTesting(notificationService);
+        ServiceRegistry.setRoomServiceForTesting(roomService);
+        ServiceRegistry.setLogServiceForTesting(logService);
         service = MockSceneService.getInstance();
     }
 
@@ -56,6 +58,8 @@ public class TestMockSceneService {
     @org.junit.After
     public void tearDown() {
         ServiceRegistry.setNotificationServiceForTesting(null);
+        ServiceRegistry.setRoomServiceForTesting(null);
+        ServiceRegistry.setLogServiceForTesting(null);
     }
 
     /**
