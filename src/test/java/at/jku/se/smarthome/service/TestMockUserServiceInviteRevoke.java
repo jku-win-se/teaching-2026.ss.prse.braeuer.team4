@@ -142,6 +142,7 @@ public class TestMockUserServiceInviteRevoke {
     /**
      * Test: revokeUser on the current logged-in user clears the session.
      */
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
     @Test
     public void revokeUserCurrentUserClearsSession() {
         StubStore store = new StubStore();
@@ -240,8 +241,6 @@ public class TestMockUserServiceInviteRevoke {
 
         /** Persisted user (optional). */
         private PersistedUser persistedUser;
-        /** Last status update recorded. */
-        private String lastUpdatedStatus;
 
         @Override
         public boolean emailExists(String normalizedEmail) {
@@ -274,7 +273,6 @@ public class TestMockUserServiceInviteRevoke {
 
         @Override
         public void updateStatus(String normalizedEmail, String newStatus) {
-            lastUpdatedStatus = newStatus;
             if (persistedUser != null && persistedUser.email().equals(normalizedEmail)) {
                 persistedUser = new PersistedUser(
                         persistedUser.email(), persistedUser.username(),

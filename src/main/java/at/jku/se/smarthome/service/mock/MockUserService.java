@@ -361,6 +361,7 @@ public class MockUserService extends UserService {
         * @return true when the invite was created, otherwise false
      */
     @Override
+    @SuppressWarnings("PMD.OnlyOneReturn")
     public boolean inviteUser(String email, String role) {
         if (email == null || email.isBlank() || !email.contains("@")) {
             return false;
@@ -424,6 +425,7 @@ public class MockUserService extends UserService {
         return restored;
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private void tryLog(String target, String action, String actor) {
         try {
             LogService log = ServiceRegistry.getLogService();
@@ -435,7 +437,7 @@ public class MockUserService extends UserService {
                     System.Logger.Level.WARNING, "Failed to log user management action.", exception);
         }
     }
-    
+
     /**
         * Logs out the current user.
      */

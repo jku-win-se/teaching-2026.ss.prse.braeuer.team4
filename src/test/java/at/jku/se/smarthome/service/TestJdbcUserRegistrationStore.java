@@ -18,7 +18,7 @@ import at.jku.se.smarthome.service.real.auth.UserRegistrationStore;
 /**
  * Unit tests for JdbcUserRegistrationStore.
  */
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestJdbcUserRegistrationStore {
 
 
@@ -225,10 +225,11 @@ public class TestJdbcUserRegistrationStore {
     }
 
     /**
-     * Test: updateStatus for unknown email does not throw.
+     * Test: updateStatus for unknown email does not throw and leaves store intact.
      */
     @Test
     public void updateStatusUnknownEmailDoesNotThrow() throws Exception {
         store.updateStatus("nobody@example.com", "Revoked");
+        assertFalse(store.emailExists("nobody@example.com"));
     }
 }

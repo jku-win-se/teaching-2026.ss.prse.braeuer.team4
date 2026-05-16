@@ -248,6 +248,7 @@ public final class JdbcUserService extends UserService {
     }
 
     @Override
+    @SuppressWarnings("PMD.OnlyOneReturn")
     public boolean inviteUser(String email, String role) {
         if (email == null || email.isBlank() || !email.contains("@")) {
             return false;
@@ -320,6 +321,7 @@ public final class JdbcUserService extends UserService {
         return restored;
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private void tryLog(String target, String action, String actor) {
         try {
             LogService log = ServiceRegistry.getLogService();
