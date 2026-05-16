@@ -424,5 +424,15 @@ public class TestMockUserServiceLoginLogout {
         public void updateLastLogin(String normalizedEmail) {
             this.lastLoginUpdatedEmail = normalizedEmail;
         }
+
+        /**
+         * Updates user status.
+         */
+        @Override
+        public void updateStatus(String normalizedEmail, String newStatus) {
+            if (persistedUser != null && persistedUser.email().equals(normalizedEmail)) {
+                persistedUser = new PersistedUser(persistedUser.email(), persistedUser.username(), persistedUser.passwordHash(), persistedUser.role(), newStatus);
+            }
+        }
     }
 }

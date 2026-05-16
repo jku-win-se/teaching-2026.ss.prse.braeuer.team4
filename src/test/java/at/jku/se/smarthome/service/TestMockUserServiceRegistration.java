@@ -275,5 +275,18 @@ public class TestMockUserServiceRegistration {
                 throw new StoreConfigurationException("Missing DB configuration");
             }
         }
+
+        /**
+         * Updates user status.
+         */
+        @Override
+        public void updateStatus(String normalizedEmail, String newStatus) throws StoreException {
+            if (configurationFailure) {
+                throw new StoreConfigurationException("Missing DB configuration");
+            }
+            if (savedUser != null && savedUser.email().equals(normalizedEmail)) {
+                savedUser = new PersistedUser(savedUser.email(), savedUser.username(), savedUser.passwordHash(), savedUser.role(), newStatus);
+            }
+        }
     }
 }

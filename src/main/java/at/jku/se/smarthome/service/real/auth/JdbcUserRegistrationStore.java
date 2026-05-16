@@ -133,6 +133,21 @@ public class JdbcUserRegistrationStore implements UserRegistrationStore {
         }
     }
 
+    @Override
+    public void updateStatus(String normalizedEmail, String newStatus) throws StoreException {
+        try (Connection connection = openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE users SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?")) {
+                statement.setString(1, newStatus);
+                statement.setString(2, normalizedEmail);
+                statement.executeUpdate();
+            }
+        } catch (SQLException exception) {
+            throw new StoreException("Failed to update user status.", exception);
+        }
+    }
+
     private Connection openConnection() throws StoreException, SQLException {
         DatabaseSettings settings = loadSettings();
         return DriverManager.getConnection(settings.jdbcUrl(), settings.username(), settings.password());
