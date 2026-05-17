@@ -181,4 +181,66 @@ public class TestMockIoTIntegrationService {
     public void refreshDevicesWithoutConnectionFails() {
         assertFalse(service.refreshDevices());
     }
+
+    /**
+     * Test: refresh devices with connection succeeds and seeds devices.
+     */
+    @Test
+    public void refreshDevicesWhenConnectedSucceeds() {
+        service.saveConfiguration(true, "broker.local", 1883, "owner", "secret");
+        service.connect();
+        assertTrue(service.refreshDevices());
+    }
+
+    /**
+     * Test: refresh devices when connected seeds devices.
+     */
+    @Test
+    public void refreshDevicesWhenConnectedSeedsDevices() {
+        service.saveConfiguration(true, "broker.local", 1883, "owner", "secret");
+        service.connect();
+        service.refreshDevices();
+        assertEquals(4, service.getDiscoveredDevices().size());
+    }
+
+    /**
+     * Test: disconnect clears connection state.
+     */
+    @Test
+    public void disconnectClearsConnectionState() {
+        service.saveConfiguration(true, "broker.local", 1883, "owner", "secret");
+        service.connect();
+        service.disconnect();
+        assertFalse(service.isConnected());
+    }
+
+    /**
+     * Test: getLastSync returns Never before connect.
+     */
+    @Test
+    public void getLastSyncReturnsNeverBeforeConnect() {
+        assertEquals("Never", service.getLastSync());
+    }
+
+    /**
+     * Test: getDiscoveredDevices returns empty list initially.
+     */
+    @Test
+    public void getDiscoveredDevicesReturnsEmptyInitially() {
+        assertEquals(0, service.getDiscoveredDevices().size());
+    }
+
+    /**
+     * Test: getConfiguration reflects saved settings.
+     */
+    @Test
+    public void getConfigurationReflectsSavedSettings() {
+        service.saveConfiguration(true, "custom.broker", 8883, "admin", "pass");
+        MockIoTIntegrationService.IoTConfiguration config = service.getConfiguration();
+        assertTrue(config.enabled());
+        assertEquals("custom.broker", config.broker());
+        assertEquals(8883, config.port());
+        assertEquals("admin", config.username());
+        assertEquals("pass", config.password());
+    }
 }

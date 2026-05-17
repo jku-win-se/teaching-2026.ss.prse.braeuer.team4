@@ -2,6 +2,7 @@ package at.jku.se.smarthome.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
@@ -285,5 +286,70 @@ public class TestMockSmartHomeService {
     @Test
     public void testInjectSensorValueUnknownIdReturnsFalse() {
         assertFalse(service.injectSensorValue("does-not-exist", 42.0));
+    }
+
+    // -----------------------------------------------------------------------
+    // authenticate / getCurrentUser / logout
+    // -----------------------------------------------------------------------
+
+    /** authenticate with valid credentials returns true. */
+    @Test
+    public void testAuthenticateValidCredentialsReturnsTrue() {
+        assertTrue(service.authenticate("user@example.com", "password123"));
+    }
+
+    /** authenticate with null email returns false. */
+    @Test
+    public void testAuthenticateNullEmailReturnsFalse() {
+        assertFalse(service.authenticate(null, "password123"));
+    }
+
+    /** authenticate with empty email returns false. */
+    @Test
+    public void testAuthenticateEmptyEmailReturnsFalse() {
+        assertFalse(service.authenticate("", "password123"));
+    }
+
+    /** authenticate with null password returns false. */
+    @Test
+    public void testAuthenticateNullPasswordReturnsFalse() {
+        assertFalse(service.authenticate("user@example.com", null));
+    }
+
+    /** authenticate with empty password returns false. */
+    @Test
+    public void testAuthenticateEmptyPasswordReturnsFalse() {
+        assertFalse(service.authenticate("user@example.com", ""));
+    }
+
+    /** getCurrentUser returns username from email after authenticate. */
+    @Test
+    public void testGetCurrentUserAfterAuthenticate() {
+        service.authenticate("john@example.com", "secret");
+        assertEquals("john", service.getCurrentUser());
+    }
+
+    /** logout resets current user to default. */
+    @Test
+    public void testLogoutResetsCurrentUser() {
+        service.authenticate("john@example.com", "secret");
+        service.logout();
+        assertEquals("User", service.getCurrentUser());
+    }
+
+    // -----------------------------------------------------------------------
+    // getDeviceById
+    // -----------------------------------------------------------------------
+
+    /** getDeviceById returns null for unknown device ID. */
+    @Test
+    public void testGetDeviceByIdUnknownReturnsNull() {
+        assertNull(service.getDeviceById("does-not-exist"));
+    }
+
+    /** getDeviceById returns correct device for known ID. */
+    @Test
+    public void testGetDeviceByIdKnownReturnsDevice() {
+        assertEquals("Living Room Light", service.getDeviceById("dev-001").getName());
     }
 }

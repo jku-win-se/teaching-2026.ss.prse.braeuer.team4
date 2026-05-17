@@ -210,6 +210,22 @@ public class TestMockSimulationService {
     }
 
     /**
+     * Test: parse start time rejects null input.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void parseStartTimeRejectsNullInput() {
+        service.parseStartTime(null);
+    }
+
+    /**
+     * Test: parse start time rejects blank input.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void parseStartTimeRejectsBlankInput() {
+        service.parseStartTime("   ");
+    }
+
+    /**
      * Test: build plan creates events for mapped actions.
      */
     @Test

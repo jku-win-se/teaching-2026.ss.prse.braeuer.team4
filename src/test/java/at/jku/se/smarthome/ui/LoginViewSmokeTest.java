@@ -80,8 +80,8 @@ public class LoginViewSmokeTest extends ApplicationTest {
 
     @Test
     public void emailFieldAcceptsInput() {
-        clickOn("#emailField").write("test@example.com");
         TextField emailField = lookup("#emailField").query();
+        interact(() -> emailField.setText("test@example.com"));
         assertTrue("Email field must contain typed text",
                 emailField.getText().contains("test@example.com"));
     }

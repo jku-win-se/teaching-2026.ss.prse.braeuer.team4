@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.List;
 
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
@@ -231,5 +232,76 @@ public class TestJdbcUserRegistrationStore {
     public void updateStatusUnknownEmailDoesNotThrow() throws Exception {
         store.updateStatus("nobody@example.com", "Revoked");
         assertFalse(store.emailExists("nobody@example.com"));
+    }
+
+    /**
+     * Test: emailExists returns false when store is empty.
+     */
+    @Test
+    public void emailExistsReturnsFalseWhenStoreEmpty() throws Exception {
+        assertFalse(store.emailExists("nonexistent@example.com"));
+    }
+
+    /**
+     * Test: findAllUsers returns empty list when store is empty.
+     */
+    @Test
+    public void findAllUsersReturnsEmptyListWhenStoreEmpty() throws Exception {
+        assertTrue(store.findAllUsers().isEmpty());
+    }
+
+    /**
+     * Test: findAllUsers returns correct count with multiple users.
+     */
+    @Test
+    public void findAllUsersReturnsCorrectCount() throws Exception {
+        store.save(new UserRegistrationStore.PersistedUser("a@example.com", "a", "h1", "Owner", "Active"));
+        store.save(new UserRegistrationStore.PersistedUser("b@example.com", "b", "h2", "Member", "Active"));
+        List<UserRegistrationStore.PersistedUser> users = store.findAllUsers();
+        assertEquals(2, users.size());
+    }
+
+    /**
+     * Test: findAllUsers maps all fields correctly.
+     */
+    @Test
+    public void findAllUsersMapsAllFields() throws Exception {
+        store.save(new UserRegistrationStore.PersistedUser("test@example.com", "tester", "hash123", "Member", "Active"));
+        UserRegistrationStore.PersistedUser user = store.findAllUsers().get(0);
+        assertEquals("test@example.com", user.email());
+        assertEquals("tester", user.username());
+        assertEquals("hash123", user.passwordHash());
+        assertEquals("Member", user.role());
+        assertEquals("Active", user.status());
+    }
+
+    /**
+     * Test: save throws StoreConfigurationException when DB is not configured.
+     */
+    @Test(expected = UserRegistrationStore.StoreConfigurationException.class)
+    public void saveThrowsStoreConfigurationExceptionWhenDbNotConfigured() throws Exception {
+        System.clearProperty(URL_PROPERTY);
+        JdbcUserRegistrationStore unconfiguredStore = new JdbcUserRegistrationStore();
+        unconfiguredStore.save(new UserRegistrationStore.PersistedUser("x@example.com", "x", "h", "Owner", "Active"));
+    }
+
+    /**
+     * Test: findByEmail throws StoreConfigurationException when DB is not configured.
+     */
+    @Test(expected = UserRegistrationStore.StoreConfigurationException.class)
+    public void findByEmailThrowsStoreConfigurationExceptionWhenDbNotConfigured() throws Exception {
+        System.clearProperty(URL_PROPERTY);
+        JdbcUserRegistrationStore unconfiguredStore = new JdbcUserRegistrationStore();
+        unconfiguredStore.findByEmail("x@example.com");
+    }
+
+    /**
+     * Test: emailExists throws StoreConfigurationException when DB is not configured.
+     */
+    @Test(expected = UserRegistrationStore.StoreConfigurationException.class)
+    public void emailExistsThrowsStoreConfigurationExceptionWhenDbNotConfigured() throws Exception {
+        System.clearProperty(URL_PROPERTY);
+        JdbcUserRegistrationStore unconfiguredStore = new JdbcUserRegistrationStore();
+        unconfiguredStore.emailExists("x@example.com");
     }
 }
