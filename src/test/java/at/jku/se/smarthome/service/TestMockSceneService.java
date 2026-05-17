@@ -234,6 +234,14 @@ public class TestMockSceneService {
     }
 
     /**
+     * Test: activate scene with unknown id returns false.
+     */
+    @Test
+    public void activateSceneUnknownIdReturnsFalse() {
+        assertFalse(service.activateScene("does-not-exist"));
+    }
+
+    /**
      * Test: applyStateToDevice handles on and off.
      */
     @Test

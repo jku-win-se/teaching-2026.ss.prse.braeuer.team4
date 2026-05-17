@@ -162,6 +162,24 @@ public class TestJdbcScheduleService {
     }
 
     /**
+     * Test: delete schedule with unknown id does not throw and leaves list unchanged.
+     */
+    @Test
+    public void deleteScheduleUnknownIdDoesNotThrow() throws Exception {
+        service.addSchedule("Morning", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
+        service.deleteSchedule("does-not-exist");
+        assertEquals(1, service.getSchedules().size());
+    }
+
+    /**
+     * Test: getSchedules on empty store returns empty list.
+     */
+    @Test
+    public void verifySchedulesEmptyStoreReturnsEmptyList() throws Exception {
+        assertEquals(0, service.getSchedules().size());
+    }
+
+    /**
      * Test: add daily schedule returns non-null.
      */
     @Test
