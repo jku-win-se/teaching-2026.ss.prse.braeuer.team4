@@ -175,7 +175,7 @@ public class TestJdbcScheduleService {
      * Test: getSchedules on empty store returns empty list.
      */
     @Test
-    public void getSchedulesOnEmptyStoreReturnsEmptyList() throws Exception {
+    public void verifySchedulesEmptyStoreReturnsEmptyList() throws Exception {
         assertEquals(0, service.getSchedules().size());
     }
 

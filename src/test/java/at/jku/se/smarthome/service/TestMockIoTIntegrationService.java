@@ -218,7 +218,7 @@ public class TestMockIoTIntegrationService {
      * Test: getLastSync returns Never before connect.
      */
     @Test
-    public void getLastSyncReturnsNeverBeforeConnect() {
+    public void verifyLastSyncReturnsNeverBeforeConnect() {
         assertEquals("Never", service.getLastSync());
     }
 
@@ -226,7 +226,7 @@ public class TestMockIoTIntegrationService {
      * Test: getDiscoveredDevices returns empty list initially.
      */
     @Test
-    public void getDiscoveredDevicesReturnsEmptyInitially() {
+    public void verifyDiscoveredDevicesReturnsEmptyInitially() {
         assertEquals(0, service.getDiscoveredDevices().size());
     }
 
@@ -234,7 +234,8 @@ public class TestMockIoTIntegrationService {
      * Test: getConfiguration reflects saved settings.
      */
     @Test
-    public void getConfigurationReflectsSavedSettings() {
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
+    public void verifyConfigurationReflectsSavedSettings() {
         service.saveConfiguration(true, "custom.broker", 8883, "admin", "pass");
         MockIoTIntegrationService.IoTConfiguration config = service.getConfiguration();
         assertTrue(config.enabled());

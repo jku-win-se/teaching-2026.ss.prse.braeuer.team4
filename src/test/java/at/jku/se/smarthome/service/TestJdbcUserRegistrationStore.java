@@ -265,6 +265,7 @@ public class TestJdbcUserRegistrationStore {
      * Test: findAllUsers maps all fields correctly.
      */
     @Test
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
     public void findAllUsersMapsAllFields() throws Exception {
         store.save(new UserRegistrationStore.PersistedUser("test@example.com", "tester", "hash123", "Member", "Active"));
         UserRegistrationStore.PersistedUser user = store.findAllUsers().get(0);

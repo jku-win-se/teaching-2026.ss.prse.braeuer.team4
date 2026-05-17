@@ -9,10 +9,17 @@ import java.time.LocalDate;
 
 import org.junit.Test;
 
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+/**
+ * Unit tests for {@link VacationModeConfig} model class.
+ */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestVacationModeConfig {
 
+    /**
+     * Test: constructor sets all fields correctly.
+     */
     @Test
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
     public void testConstructorSetsAllFields() {
         LocalDate start = LocalDate.of(2026, 6, 1);
         LocalDate end = LocalDate.of(2026, 6, 15);
@@ -24,6 +31,9 @@ public class TestVacationModeConfig {
         assertEquals("sched-1", config.getScheduleId());
     }
 
+    /**
+     * Test: setEnabled toggles enabled state.
+     */
     @Test
     public void testSetEnabled() {
         VacationModeConfig config = new VacationModeConfig(false, null, null, null);
@@ -31,6 +41,9 @@ public class TestVacationModeConfig {
         assertTrue(config.isEnabled());
     }
 
+    /**
+     * Test: setStartDate updates start date.
+     */
     @Test
     public void testSetStartDate() {
         VacationModeConfig config = new VacationModeConfig(false, null, null, null);
@@ -39,6 +52,9 @@ public class TestVacationModeConfig {
         assertEquals(date, config.getStartDate());
     }
 
+    /**
+     * Test: setEndDate updates end date.
+     */
     @Test
     public void testSetEndDate() {
         VacationModeConfig config = new VacationModeConfig(false, null, null, null);
@@ -47,6 +63,9 @@ public class TestVacationModeConfig {
         assertEquals(date, config.getEndDate());
     }
 
+    /**
+     * Test: setScheduleId updates schedule ID.
+     */
     @Test
     public void testSetScheduleId() {
         VacationModeConfig config = new VacationModeConfig(false, null, null, null);
@@ -54,6 +73,9 @@ public class TestVacationModeConfig {
         assertEquals("new-sched", config.getScheduleId());
     }
 
+    /**
+     * Test: isConfigured returns true when all fields set.
+     */
     @Test
     public void testIsConfiguredReturnsTrueWhenComplete() {
         VacationModeConfig config = new VacationModeConfig(
@@ -65,6 +87,9 @@ public class TestVacationModeConfig {
         assertTrue(config.isConfigured());
     }
 
+    /**
+     * Test: isConfigured returns false when start date is null.
+     */
     @Test
     public void testIsConfiguredReturnsFalseWhenStartDateMissing() {
         VacationModeConfig config = new VacationModeConfig(
@@ -72,6 +97,9 @@ public class TestVacationModeConfig {
         assertFalse(config.isConfigured());
     }
 
+    /**
+     * Test: isConfigured returns false when end date is null.
+     */
     @Test
     public void testIsConfiguredReturnsFalseWhenEndDateMissing() {
         VacationModeConfig config = new VacationModeConfig(
@@ -79,6 +107,9 @@ public class TestVacationModeConfig {
         assertFalse(config.isConfigured());
     }
 
+    /**
+     * Test: isConfigured returns false when schedule ID is null.
+     */
     @Test
     public void testIsConfiguredReturnsFalseWhenScheduleIdMissing() {
         VacationModeConfig config = new VacationModeConfig(
@@ -86,6 +117,9 @@ public class TestVacationModeConfig {
         assertFalse(config.isConfigured());
     }
 
+    /**
+     * Test: isConfigured returns false when schedule ID is blank.
+     */
     @Test
     public void testIsConfiguredReturnsFalseWhenScheduleIdBlank() {
         VacationModeConfig config = new VacationModeConfig(
@@ -93,7 +127,11 @@ public class TestVacationModeConfig {
         assertFalse(config.isConfigured());
     }
 
+    /**
+     * Test: constructor allows null fields and sets enabled to false.
+     */
     @Test
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
     public void testConstructorAllowsNullFields() {
         VacationModeConfig config = new VacationModeConfig(false, null, null, null);
         assertNotNull(config);
