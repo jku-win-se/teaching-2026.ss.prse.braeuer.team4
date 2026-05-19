@@ -245,20 +245,19 @@ public final class MockScheduleService implements ScheduleService {
         * @return true when the schedule existed and was removed, otherwise false
      */
     public boolean deleteSchedule(String schedId) {
+        boolean deleted = false;
         MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
-        if (vacationModeService.isSelectedScheduleLocked(schedId)) {
-            return false;
+        if (!vacationModeService.isSelectedScheduleLocked(schedId)) {
+            deleted = schedules.removeIf(s -> s.getId().equals(schedId));
+            if (deleted) {
+                lastProcessedMinuteByScheduleId.remove(schedId);
+                vacationModeService.clearIfUsingSchedule(
+                        schedId,
+                        "Selected vacation schedule was deleted"
+                );
+            }
         }
-
-        boolean removed = schedules.removeIf(s -> s.getId().equals(schedId));
-        if (removed) {
-            lastProcessedMinuteByScheduleId.remove(schedId);
-            vacationModeService.clearIfUsingSchedule(
-                    schedId,
-                    "Selected vacation schedule was deleted"
-            );
-        }
-        return removed;
+        return deleted;
     }
     
     /**

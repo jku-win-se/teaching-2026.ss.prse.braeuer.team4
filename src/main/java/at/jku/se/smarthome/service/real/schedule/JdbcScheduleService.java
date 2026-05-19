@@ -215,32 +215,30 @@ public final class JdbcScheduleService implements ScheduleService {
     @Override
     public boolean deleteSchedule(String scheduleId) {
         synchronized (this) {
-            MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
-            if (vacationModeService.isSelectedScheduleLocked(scheduleId)) {
-                return false;
-            }
-
             boolean deleted = false;
-            try (Connection connection = openConnection()) {
-                ensureSchema(connection);
-                try (PreparedStatement statement = connection.prepareStatement(
-                        "DELETE FROM scheduled_actions WHERE id = ?")) {
-                    statement.setString(1, scheduleId);
-                    if (statement.executeUpdate() > 0) {
-                        deleted = true;
+            MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
+            if (!vacationModeService.isSelectedScheduleLocked(scheduleId)) {
+                try (Connection connection = openConnection()) {
+                    ensureSchema(connection);
+                    try (PreparedStatement statement = connection.prepareStatement(
+                            "DELETE FROM scheduled_actions WHERE id = ?")) {
+                        statement.setString(1, scheduleId);
+                        if (statement.executeUpdate() > 0) {
+                            deleted = true;
+                        }
                     }
+                } catch (SQLException exception) {
+                    throw new IllegalStateException("Failed to delete the schedule.", exception);
                 }
-            } catch (SQLException exception) {
-                throw new IllegalStateException("Failed to delete the schedule.", exception);
-            }
 
-            if (deleted) {
-                schedules.removeIf(schedule -> schedule.getId().equals(scheduleId));
-                lastProcessedMinuteByScheduleId.remove(scheduleId);
-                vacationModeService.clearIfUsingSchedule(
-                        scheduleId,
-                        "Selected vacation schedule was deleted"
-                );
+                if (deleted) {
+                    schedules.removeIf(schedule -> schedule.getId().equals(scheduleId));
+                    lastProcessedMinuteByScheduleId.remove(scheduleId);
+                    vacationModeService.clearIfUsingSchedule(
+                            scheduleId,
+                            "Selected vacation schedule was deleted"
+                    );
+                }
             }
             return deleted;
         }
@@ -564,3 +562,4 @@ public final class JdbcScheduleService implements ScheduleService {
         }
     }
 }
+

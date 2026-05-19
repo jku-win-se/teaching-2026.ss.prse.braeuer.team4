@@ -157,30 +157,27 @@ public class SchedulesController {
     }
 
     private void handleDeleteSchedule(Schedule schedule) {
-        if (!userService.canManageSystem()) {
-            return;
-        }
+        if (userService.canManageSystem()) {
+            if (vacationModeService.isSelectedScheduleLocked(schedule.getId())) {
+                Alert blocked = new Alert(Alert.AlertType.WARNING);
+                blocked.setTitle("Delete Schedule");
+                blocked.setHeaderText("Deletion blocked by vacation mode");
+                blocked.setContentText(vacationModeService.getLockedScheduleDeletionMessage(schedule.getName()));
+                blocked.showAndWait();
+            } else {
+                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmation.setTitle("Delete Schedule");
+                confirmation.setHeaderText("Delete schedule: " + schedule.getName());
+                confirmation.setContentText("This removes the recurring time-based action from the prototype.");
 
-        if (vacationModeService.isSelectedScheduleLocked(schedule.getId())) {
-            Alert blocked = new Alert(Alert.AlertType.WARNING);
-            blocked.setTitle("Delete Schedule");
-            blocked.setHeaderText("Deletion blocked by vacation mode");
-            blocked.setContentText(vacationModeService.getLockedScheduleDeletionMessage(schedule.getName()));
-            blocked.showAndWait();
-            return;
-        }
-
-        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmation.setTitle("Delete Schedule");
-        confirmation.setHeaderText("Delete schedule: " + schedule.getName());
-        confirmation.setContentText("This removes the recurring time-based action from the prototype.");
-
-        confirmation.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                scheduleService.deleteSchedule(schedule.getId());
-                updateConflictWarning();
+                confirmation.showAndWait().ifPresent(response -> {
+                    if (response == ButtonType.OK) {
+                        scheduleService.deleteSchedule(schedule.getId());
+                        updateConflictWarning();
+                    }
+                });
             }
-        });
+        }
     }
 
     private Optional<ScheduleInput> showScheduleDialog(Schedule schedule) {
