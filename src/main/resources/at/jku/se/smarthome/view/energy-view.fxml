@@ -10,6 +10,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
@@ -18,6 +19,10 @@
             stylesheets="@styles.css"
             fitToWidth="true"
             hbarPolicy="NEVER">
+    
+    <fx:define>
+        <ToggleGroup fx:id="aggregationToggleGroup"/>
+    </fx:define>
     
     <VBox spacing="20" style="-fx-padding: 20;">
         
@@ -65,8 +70,16 @@
         <VBox spacing="10" style="-fx-padding: 10;">
             <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label fx:id="timelineTitleLabel" text="Daily Consumption Profile" style="-fx-font-size: 14; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
-                <ToggleButton fx:id="dayToggle" text="Day" onAction="#handleDayToggle" selected="true"/>
-                <ToggleButton fx:id="weekToggle" text="Week" onAction="#handleWeekToggle"/>
+                <ToggleButton fx:id="dayToggle" text="Day" onAction="#handleDayToggle" selected="true">
+                    <toggleGroup>
+                        <fx:reference source="aggregationToggleGroup"/>
+                    </toggleGroup>
+                </ToggleButton>
+                <ToggleButton fx:id="weekToggle" text="Week" onAction="#handleWeekToggle">
+                    <toggleGroup>
+                        <fx:reference source="aggregationToggleGroup"/>
+                    </toggleGroup>
+                </ToggleButton>
             </HBox>
             <LineChart fx:id="timelineChart" prefHeight="300">
                 <xAxis><CategoryAxis/></xAxis>
