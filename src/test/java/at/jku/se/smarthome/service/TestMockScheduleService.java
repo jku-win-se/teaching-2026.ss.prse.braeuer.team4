@@ -38,8 +38,6 @@ public class TestMockScheduleService {
     private MockRoomService roomService;
     /** Log service for activity verification. */
     private MockLogService logService;
-    /** Notification service for avoiding JDBC dependency in tests. */
-    private MockNotificationService notificationService;
 
     /**
      * Sets up test fixtures before each test.
@@ -56,8 +54,7 @@ public class TestMockScheduleService {
         ServiceRegistry.setScheduleServiceForTesting(scheduleService);
         roomService = MockRoomService.getInstance();
         logService = MockLogService.getInstance();
-        notificationService = MockNotificationService.getInstance();
-        ServiceRegistry.setNotificationServiceForTesting(notificationService);
+        ServiceRegistry.setNotificationServiceForTesting(MockNotificationService.getInstance());
     }
 
     /**
