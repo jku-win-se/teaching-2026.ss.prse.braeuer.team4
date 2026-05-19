@@ -65,7 +65,7 @@
         <HBox spacing="10" alignment="CENTER_LEFT">
             <Button fx:id="startBtn" text="Start Simulation" styleClass="btn-primary" onAction="#handleStart" prefWidth="150"/>
             <Button fx:id="pauseBtn" text="Pause" styleClass="btn-secondary" onAction="#handlePause" prefWidth="150" disable="true"/>
-            <Button fx:id="resetBtn" text="Reset" styleClass="btn-secondary" onAction="#handleReset" prefWidth="150"/>
+            <Button fx:id="resetBtn" text="Restart Simulation" styleClass="btn-secondary" onAction="#handleReset" prefWidth="150"/>
         </HBox>
         
         <!-- Progress -->

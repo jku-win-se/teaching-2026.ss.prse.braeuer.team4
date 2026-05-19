@@ -1,7 +1,7 @@
 package at.jku.se.smarthome.controller;
 
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,10 +34,39 @@ import javafx.util.Duration;
 /**
  * Controller for the simulation view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.TooManyFields"})
+@SuppressWarnings({
+        "PMD.AtLeastOneConstructor",
+        "PMD.UnusedPrivateMethod",
+        "PMD.TooManyMethods",
+        "PMD.TooManyFields",
+        "PMD.GodClass",
+        "PMD.CouplingBetweenObjects"
+})
 public class SimulationController {
 
-    
+    /** Default simulation start time shown in the UI. */
+    private static final String DEFAULT_START_TIME = "06:00:00";
+    /** Default temperature shown in the UI. */
+    private static final String DEFAULT_TEMPERATURE = "20";
+    /** Default humidity shown in the UI. */
+    private static final String DEFAULT_HUMIDITY = "50";
+    /** Default replay speed preset shown in the UI. */
+    private static final String DEFAULT_SPEED = "x10";
+    /** Replay speed preset for three seconds per simulated hour. */
+    private static final String SPEED_X100 = "x100";
+    /** Replay speed preset for one second per simulated hour. */
+    private static final String SPEED_X300 = "x300";
+    /** End label shown after the replay reaches the next day. */
+    private static final String END_OF_DAY_LABEL = "00:00 (next day)";
+    /** Trigger source label used for the synthetic day-end marker event. */
+    private static final String SIMULATION_DAY_END_SOURCE = "Simulation Day End";
+    /** UI timer interval for smooth replay updates. */
+    private static final int PLAYBACK_TICK_MILLIS = 100;
+    /** Number of simulated seconds in one replay day. */
+    private static final double DAY_SECONDS = 24d * 60d * 60d;
+    /** Time formatter for the live replay clock. */
+    private static final DateTimeFormatter CLOCK_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+
     /** Text field for entering simulation start time. */
     @FXML
     private TextField startTimeSpinner;
@@ -127,14 +156,16 @@ public class SimulationController {
     private int currentEventIndex;
     /** Flag indicating if simulation is currently running. */
     private boolean isRunning;
+    /** Elapsed simulated seconds since the configured start time. */
+    private double elapsedSimulatedSeconds;
     
     @FXML
     private void initialize() {
-        speedCombo.getItems().addAll("1x (Real-time)", "10x", "100x");
-        speedCombo.setValue("10x");
-        startTimeSpinner.setText("06:00:00");
-        temperatureField.setText("20");
-        humidityField.setText("50");
+        speedCombo.getItems().addAll(DEFAULT_SPEED, SPEED_X100, SPEED_X300);
+        speedCombo.setValue(DEFAULT_SPEED);
+        startTimeSpinner.setText(DEFAULT_START_TIME);
+        temperatureField.setText(DEFAULT_TEMPERATURE);
+        humidityField.setText(DEFAULT_HUMIDITY);
         progressSlider.setDisable(true);
 
         simDeviceColumn.setCellValueFactory(new PropertyValueFactory<>("deviceName"));
@@ -176,12 +207,15 @@ public class SimulationController {
 
             boolean canStart = shouldPrepare || currentPlan != null;
             if (canStart && playbackTimeline != null) {
+                processDueSimulationEvents();
                 playbackTimeline.play();
             }
             if (canStart) {
                 isRunning = true;
                 startBtn.setDisable(true);
                 pauseBtn.setDisable(false);
+                resetBtn.setDisable(false);
+                setConfigurationLocked(true);
                 summaryLabel.setText("Running a full-day replay in accelerated time. Live devices remain unchanged.");
                 logOutput.appendText("[SIM] Simulation started\n");
             }
@@ -197,6 +231,8 @@ public class SimulationController {
             isRunning = false;
             startBtn.setDisable(false);
             pauseBtn.setDisable(true);
+            resetBtn.setDisable(false);
+            setConfigurationLocked(true);
             logOutput.appendText("[SIM] Simulation paused\n");
         }
     }
@@ -210,14 +246,22 @@ public class SimulationController {
         isRunning = false;
         currentPlan = null;
         currentEventIndex = 0;
+        elapsedSimulatedSeconds = 0;
         startBtn.setDisable(false);
         pauseBtn.setDisable(true);
+        resetBtn.setDisable(false);
         progressSlider.setValue(0);
-        progressLabel.setText("00:00:00");
-        summaryLabel.setText("Simulation reset. Configure a new day replay without affecting the live system.");
+        progressLabel.setText(DEFAULT_START_TIME);
+        summaryLabel.setText("Simulation restarted. Configure a new day replay without affecting the live system.");
+        startTimeSpinner.setText(DEFAULT_START_TIME);
+        speedCombo.setValue(DEFAULT_SPEED);
+        temperatureField.setText(DEFAULT_TEMPERATURE);
+        humidityField.setText(DEFAULT_HUMIDITY);
+        populateRuleSelection();
+        setConfigurationLocked(false);
         simulatedDeviceStates.clear();
         logOutput.clear();
-        logOutput.appendText("[SIM] Simulation reset\n");
+        logOutput.appendText("[SIM] Simulation restarted\n");
     }
 
     private void prepareSimulation() {
@@ -231,13 +275,14 @@ public class SimulationController {
                 initialTemperature,
                 initialHumidity,
                 selectedRules,
-                resolveSpeedMultiplier()
+                1
         ));
 
         simulatedDeviceStates.setAll(currentPlan.simulatedDeviceStates());
         currentEventIndex = 0;
+        elapsedSimulatedSeconds = 0;
         progressSlider.setValue(0);
-        progressLabel.setText(configuredStartTime.toString());
+        progressLabel.setText(configuredStartTime.format(CLOCK_FORMATTER));
         logOutput.clear();
         logOutput.appendText("[SIM] Prepared replay for " + selectedRules.size() + " active rule(s)\n");
         logOutput.appendText("[SIM] Start time " + configuredStartTime + ", temperature " + initialTemperature + "°C, humidity " + initialHumidity + "%\n");
@@ -249,26 +294,50 @@ public class SimulationController {
             summaryLabel.setText("Prepared " + currentPlan.events().size() + " simulated device state change(s) for the accelerated replay.");
         }
 
-        playbackTimeline = new Timeline(new KeyFrame(Duration.millis(resolvePlaybackMillis()), event -> playNextSimulationEvent()));
+        playbackTimeline = new Timeline(new KeyFrame(Duration.millis(PLAYBACK_TICK_MILLIS), event -> advanceSimulationClock()));
         playbackTimeline.setCycleCount(Timeline.INDEFINITE);
     }
 
-    private void playNextSimulationEvent() {
-        if (currentPlan != null && currentEventIndex < currentPlan.events().size()) {
+    private void advanceSimulationClock() {
+        if (currentPlan == null) {
+            finishSimulation();
+            return;
+        }
+
+        elapsedSimulatedSeconds = Math.min(DAY_SECONDS, elapsedSimulatedSeconds + resolveSimulatedSecondsPerTick());
+        updateReplayClock();
+        processDueSimulationEvents();
+
+        if (elapsedSimulatedSeconds >= DAY_SECONDS || currentEventIndex >= currentPlan.events().size()) {
+            finishSimulation();
+        }
+    }
+
+    private void processDueSimulationEvents() {
+        while (currentPlan != null && currentEventIndex < currentPlan.events().size()) {
             SimulationEvent event = currentPlan.events().get(currentEventIndex);
-            simulationService.applyEvent(simulatedDeviceStates, event);
-            progressLabel.setText(event.simulatedTime().toString());
-            progressSlider.setValue(resolveProgress(event.simulatedTime()));
-            logOutput.appendText(String.format("[SIM %s] %s -> %s (%s)\n",
-                    event.simulatedTime(),
-                    event.deviceName(),
-                    event.resultingState(),
-                    event.triggerSource()));
+            if (resolveEventElapsedSeconds(event) > elapsedSimulatedSeconds) {
+                break;
+            }
+            if (!SIMULATION_DAY_END_SOURCE.equals(event.triggerSource())) {
+                simulationService.applyEvent(simulatedDeviceStates, event);
+                logOutput.appendText(String.format("[SIM %s] %s -> %s (%s)\n",
+                        event.simulatedTime(),
+                        event.deviceName(),
+                        event.resultingState(),
+                        event.triggerSource()));
+            }
             currentEventIndex++;
         }
-        
-        if (currentPlan == null || currentEventIndex >= currentPlan.events().size()) {
-            finishSimulation();
+    }
+
+    private void updateReplayClock() {
+        progressSlider.setValue(Math.min(100.0, elapsedSimulatedSeconds / DAY_SECONDS * 100.0));
+        if (elapsedSimulatedSeconds >= DAY_SECONDS) {
+            progressLabel.setText(END_OF_DAY_LABEL);
+        } else {
+            LocalTime replayTime = configuredStartTime.plusSeconds((long) elapsedSimulatedSeconds);
+            progressLabel.setText(replayTime.format(CLOCK_FORMATTER));
         }
     }
 
@@ -277,12 +346,26 @@ public class SimulationController {
             playbackTimeline.stop();
         }
         isRunning = false;
-        startBtn.setDisable(false);
+        startBtn.setDisable(true);
         pauseBtn.setDisable(true);
+        resetBtn.setDisable(false);
         progressSlider.setValue(100);
-        progressLabel.setText(configuredStartTime.plusHours(23).plusMinutes(59).truncatedTo(ChronoUnit.SECONDS).toString());
-        summaryLabel.setText("Simulation complete. Replay finished without changing the live system.");
-        logOutput.appendText("[SIM] Simulation finished\n");
+        progressLabel.setText(END_OF_DAY_LABEL);
+        summaryLabel.setText("Simulation complete. Day replay is frozen for review. Use Restart Simulation for a new run.");
+        setConfigurationLocked(true);
+        if (!logOutput.getText().endsWith("[SIM] Simulation finished\n")) {
+            logOutput.appendText("[SIM] Simulation finished\n");
+        }
+    }
+
+    private void setConfigurationLocked(boolean locked) {
+        startTimeSpinner.setDisable(locked);
+        speedCombo.setDisable(false);
+        temperatureField.setDisable(locked);
+        humidityField.setDisable(locked);
+        for (javafx.scene.Node child : rulesCheckBox.getChildren()) {
+            child.setDisable(locked);
+        }
     }
 
     private List<Rule> getSelectedRules() {
@@ -303,26 +386,36 @@ public class SimulationController {
         }
     }
 
-    private int resolveSpeedMultiplier() {
+    private double resolveSimulatedSecondsPerTick() {
+        return 3600.0 * PLAYBACK_TICK_MILLIS / (resolveSecondsPerSimulatedHour() * 1000.0);
+    }
+
+    private int resolveSecondsPerSimulatedHour() {
         String selected = speedCombo.getValue();
-        return (selected != null && selected.startsWith("100x")) ? 100 : 
-               (selected != null && selected.startsWith("10x")) ? 10 : 1;
+        int secondsPerHour = 10;
+        if (selected == null) {
+            secondsPerHour = 10;
+        } else if (SPEED_X100.equals(selected)) {
+            secondsPerHour = 3;
+        } else if (SPEED_X300.equals(selected)) {
+            secondsPerHour = 1;
+        }
+        return secondsPerHour;
     }
 
-    private double resolvePlaybackMillis() {
-        return switch (resolveSpeedMultiplier()) {
-            case 100 -> 90;
-            case 10 -> 300;
-            default -> 900;
-        };
-    }
-
-    private double resolveProgress(LocalTime eventTime) {
+    private long resolveElapsedSeconds(LocalTime eventTime) {
         long startSecond = configuredStartTime.toSecondOfDay();
         long eventSecond = eventTime.toSecondOfDay();
-        long elapsed = eventSecond >= startSecond
+        return eventSecond >= startSecond
                 ? eventSecond - startSecond
-            : 24 * 60 * 60L - startSecond + eventSecond;
-        return Math.min(100.0, elapsed / (24d * 60d * 60d) * 100d);
+                : 24 * 60 * 60L - startSecond + eventSecond;
+    }
+
+    private long resolveEventElapsedSeconds(SimulationEvent event) {
+        long elapsedSeconds = resolveElapsedSeconds(event.simulatedTime());
+        if (SIMULATION_DAY_END_SOURCE.equals(event.triggerSource())) {
+            elapsedSeconds = (long) DAY_SECONDS;
+        }
+        return elapsedSeconds;
     }
 }

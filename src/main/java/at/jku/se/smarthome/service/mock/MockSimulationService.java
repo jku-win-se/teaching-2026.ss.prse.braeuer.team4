@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Rule;
+import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.model.SimulationDeviceState;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,11 +23,16 @@ import javafx.collections.ObservableList;
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
 public final class MockSimulationService {
 
+    /** Trigger source label used for the synthetic day-end marker event. */
+    private static final String SIMULATION_DAY_END_SOURCE = "Simulation Day End";
+
     /** Singleton instance of the mock simulation service. */
     private static MockSimulationService instance;
 
     /** Room service for room and device data. */
     private final MockRoomService roomService = MockRoomService.getInstance();
+    /** Schedule service for simulation schedule playback. */
+    private final MockScheduleService scheduleService = MockScheduleService.getInstance();
     /** Date/time formatter for parsing simulation times. */
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
     /** Pattern for numeric conditions in rules. */
@@ -83,15 +89,41 @@ public final class MockSimulationService {
      */
     public SimulationPlan buildPlan(SimulationConfiguration configuration) {
         ObservableList<SimulationDeviceState> simulatedDeviceStates = createSimulationSnapshot(configuration.startTime());
-        List<SimulationEvent> events = new ArrayList<>();
+        List<PlannedEvent> plannedEvents = new ArrayList<>();
         int offsetMinutes = 30;
+        long sequence = 0;
+
+        for (Schedule schedule : scheduleService.getSchedules()) {
+            if (!schedule.isActive()) {
+                continue;
+            }
+            Device targetDevice = resolveTargetDevice(schedule.getDevice(), null);
+            if (targetDevice == null) {
+                continue;
+            }
+            LocalTime scheduleTime = parseRuleTime(schedule.getTime(), configuration.startTime().plusMinutes(offsetMinutes));
+            long scheduleSequence = sequence;
+            sequence++;
+            plannedEvents.add(new PlannedEvent(
+                    new SimulationEvent(
+                            scheduleTime,
+                            targetDevice.getName(),
+                            targetDevice.getRoom(),
+                            toSimulationState(schedule.getAction()),
+                            "Schedule: " + schedule.getName()
+                    ),
+                    0,
+                    scheduleSequence
+            ));
+            offsetMinutes += 20;
+        }
 
         for (Rule rule : configuration.activeRules()) {
             if (!rule.isEnabled()) {
                 continue;
             }
 
-            Device targetDevice = roomService.getDeviceByName(rule.getTargetDevice());
+            Device targetDevice = resolveTargetDevice(rule.getTargetDevice(), rule.getSourceDevice());
             if (targetDevice == null) {
                 continue;
             }
@@ -102,17 +134,35 @@ public final class MockSimulationService {
                 continue;
             }
 
-            events.add(new SimulationEvent(
-                    triggerTime,
-                    targetDevice.getName(),
-                    targetDevice.getRoom(),
-                    toSimulationState(rule.getAction()),
-                    "Rule: " + rule.getName()
+            long ruleSequence = sequence;
+            sequence++;
+            plannedEvents.add(new PlannedEvent(
+                    new SimulationEvent(
+                            triggerTime,
+                            targetDevice.getName(),
+                            targetDevice.getRoom(),
+                            toSimulationState(rule.getAction()),
+                            "Rule: " + rule.getName()
+                    ),
+                    1,
+                    ruleSequence
             ));
             offsetMinutes += 45;
         }
 
-        events.sort(Comparator.comparing(SimulationEvent::simulatedTime));
+        LocalTime dayEnd = LocalTime.MIDNIGHT;
+        plannedEvents.add(new PlannedEvent(
+                new SimulationEvent(dayEnd, "-", "-", "END_OF_DAY", SIMULATION_DAY_END_SOURCE),
+                Integer.MAX_VALUE,
+                Long.MAX_VALUE
+        ));
+
+        plannedEvents.sort(Comparator
+                .<PlannedEvent>comparingLong(event -> elapsedSecondsFromStart(configuration.startTime(), event.event()))
+                .thenComparingInt(event -> event.priority())
+                .thenComparingLong(event -> event.sequence()));
+
+        List<SimulationEvent> events = plannedEvents.stream().map(PlannedEvent::event).toList();
         return new SimulationPlan(simulatedDeviceStates, events);
     }
 
@@ -155,6 +205,9 @@ public final class MockSimulationService {
             throw new IllegalArgumentException("Use HH:mm or HH:mm:ss for the start time");
         }
         return result;
+    }
+
+    private record PlannedEvent(SimulationEvent event, int priority, long sequence) {
     }
 
     @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
@@ -201,6 +254,14 @@ public final class MockSimulationService {
             }
         }
         return result;
+    }
+
+    private Device resolveTargetDevice(String targetDeviceName, String sourceDeviceName) {
+        Device target = roomService.getDeviceByName(targetDeviceName);
+        if (target == null) {
+            target = roomService.getDeviceByName(sourceDeviceName);
+        }
+        return target;
     }
 
     private LocalTime parseRuleTime(String condition, LocalTime fallback) {
@@ -264,5 +325,16 @@ public final class MockSimulationService {
             };
         }
         return result;
+    }
+
+    private long elapsedSecondsFromStart(LocalTime startTime, SimulationEvent event) {
+        long elapsed = 24 * 60 * 60L;
+        if (!SIMULATION_DAY_END_SOURCE.equals(event.triggerSource())) {
+            LocalTime eventTime = event.simulatedTime();
+            long start = startTime.toSecondOfDay();
+            long eventSecond = eventTime.toSecondOfDay();
+            elapsed = eventSecond >= start ? eventSecond - start : 24 * 60 * 60L - start + eventSecond;
+        }
+        return elapsed;
     }
 }
