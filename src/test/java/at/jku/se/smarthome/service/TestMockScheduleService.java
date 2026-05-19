@@ -17,6 +17,7 @@ import at.jku.se.smarthome.service.mock.MockLogService;
 import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.mock.MockScheduleService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
+import at.jku.se.smarthome.service.mock.MockNotificationService;
 
 /**
  * Tests for {@link MockScheduleService#executeSchedule} covering automated logging (FR-08).
@@ -37,6 +38,8 @@ public class TestMockScheduleService {
     private MockRoomService roomService;
     /** Log service for activity verification. */
     private MockLogService logService;
+    /** Notification service for avoiding JDBC dependency in tests. */
+    private MockNotificationService notificationService;
 
     /**
      * Sets up test fixtures before each test.
@@ -48,10 +51,13 @@ public class TestMockScheduleService {
         MockRoomService.resetForTesting();
         MockLogService.resetForTesting();
         MockVacationModeService.resetForTesting();
+        MockNotificationService.resetForTesting();
         scheduleService = MockScheduleService.getInstance();
         ServiceRegistry.setScheduleServiceForTesting(scheduleService);
         roomService = MockRoomService.getInstance();
         logService = MockLogService.getInstance();
+        notificationService = MockNotificationService.getInstance();
+        ServiceRegistry.setNotificationServiceForTesting(notificationService);
     }
 
     /**
