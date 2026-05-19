@@ -10,7 +10,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -216,6 +215,11 @@ public final class JdbcScheduleService implements ScheduleService {
     @Override
     public boolean deleteSchedule(String scheduleId) {
         synchronized (this) {
+            MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
+            if (vacationModeService.isSelectedScheduleLocked(scheduleId)) {
+                return false;
+            }
+
             boolean deleted = false;
             try (Connection connection = openConnection()) {
                 ensureSchema(connection);
@@ -233,7 +237,7 @@ public final class JdbcScheduleService implements ScheduleService {
             if (deleted) {
                 schedules.removeIf(schedule -> schedule.getId().equals(scheduleId));
                 lastProcessedMinuteByScheduleId.remove(scheduleId);
-                MockVacationModeService.getInstance().clearIfUsingSchedule(
+                vacationModeService.clearIfUsingSchedule(
                         scheduleId,
                         "Selected vacation schedule was deleted"
                 );
@@ -246,7 +250,8 @@ public final class JdbcScheduleService implements ScheduleService {
     public boolean executeSchedule(String scheduleId) {
         boolean executed = false;
         Schedule schedule = getScheduleById(scheduleId);
-        if (schedule != null && schedule.isActive()) {
+        if (schedule != null && schedule.isActive()
+                && MockVacationModeService.getInstance().canExecuteSchedule(scheduleId, LocalDateTime.now())) {
             Device device = resolveDevice(schedule);
             if (device != null && applyScheduleAction(device, schedule.getAction())) {
                 ServiceRegistry.getLogService().addLogEntry(device.getName(), device.getRoom(), schedule.getAction(), "Schedule: " + schedule.getName());
@@ -328,7 +333,7 @@ public final class JdbcScheduleService implements ScheduleService {
         if (now != null) {
             LocalDateTime minute = now.truncatedTo(ChronoUnit.MINUTES);
 
-            for (Schedule schedule : getEffectiveSchedules(minute.toLocalDate())) {
+            for (Schedule schedule : getEffectiveSchedules(minute)) {
                 if (!isScheduleDue(schedule, minute)) {
                     continue;
                 }
@@ -345,7 +350,7 @@ public final class JdbcScheduleService implements ScheduleService {
         return executedCount;
     }
 
-    private List<Schedule> getEffectiveSchedules(LocalDate date) {
+    private List<Schedule> getEffectiveSchedules(LocalDateTime dateTime) {
         MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
 
         List<Schedule> activeSchedules = schedules.stream()
@@ -353,7 +358,7 @@ public final class JdbcScheduleService implements ScheduleService {
                 .toList();
 
         List<Schedule> effectiveSchedules = activeSchedules;
-        if (vacationModeService.isActiveOn(date)) {
+        if (vacationModeService.isActiveOn(dateTime)) {
             Schedule selectedVacationSchedule = vacationModeService.getSelectedSchedule();
             if (selectedVacationSchedule != null && selectedVacationSchedule.isActive()) {
                 effectiveSchedules = List.of(selectedVacationSchedule);

@@ -1,6 +1,7 @@
 package at.jku.se.smarthome.controller;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Schedule;
@@ -16,20 +17,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 /**
  * Controller for the vacation mode view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "unused"})
 public class VacationModeController {
 
-    
-    /** Toggle button to activate/deactivate vacation mode. */
-    @FXML
-    private ToggleButton vacationToggle;
     
     /** Date picker for vacation start date. */
     @FXML
@@ -42,6 +38,14 @@ public class VacationModeController {
     /** Combo box for selecting vacation schedule. */
     @FXML
     private ComboBox<Schedule> scheduleCombo;
+
+    /** Combo box for selecting vacation start hour. */
+    @FXML
+    private ComboBox<String> startTimeCombo;
+
+    /** Combo box for selecting vacation end hour. */
+    @FXML
+    private ComboBox<String> endTimeCombo;
     
     /** VBox container displaying affected devices. */
     @FXML
@@ -94,24 +98,17 @@ public class VacationModeController {
         scheduleCombo.valueProperty().addListener((obs, oldValue, newValue) -> refreshDerivedState());
         startDatePicker.valueProperty().addListener((obs, oldValue, newValue) -> updateActionButtons());
         endDatePicker.valueProperty().addListener((obs, oldValue, newValue) -> updateActionButtons());
+        startTimeCombo.valueProperty().addListener((obs, oldValue, newValue) -> updateActionButtons());
+        endTimeCombo.valueProperty().addListener((obs, oldValue, newValue) -> updateActionButtons());
+
+        initializeHourOptions();
 
         refreshFromConfiguration();
     }
     
     @FXML
-    private void handleToggleVacation() {
-        vacationToggle.setText(vacationToggle.isSelected() ? "ON" : "OFF");
-        updateActionButtons();
-    }
-    
-    @FXML
     @SuppressWarnings("PMD.OnlyOneReturn")
     private void handleActivate() {
-        if (!vacationToggle.isSelected()) {
-            showValidationError("Enable the vacation mode toggle before applying the override.");
-            return;
-        }
-        
         Schedule selectedSchedule = scheduleCombo.getValue();
         if (selectedSchedule == null) {
             showValidationError("Select the named schedule that should be applied during vacation mode.");
@@ -129,8 +126,20 @@ public class VacationModeController {
             showValidationError("The end date must be on or after the start date.");
             return;
         }
+
+        LocalTime startTime = parseTime(startTimeCombo.getValue());
+        LocalTime endTime = parseTime(endTimeCombo.getValue());
+        if (startTime == null || endTime == null) {
+            showValidationError("Select a valid start and end hour for vacation mode.");
+            return;
+        }
+
+        if (endDate.equals(startDate) && endTime.isBefore(startTime)) {
+            showValidationError("On the same day, the end hour must be after the start hour.");
+            return;
+        }
         
-        vacationModeService.activateVacationMode(startDate, endDate, selectedSchedule, resolveActor());
+        vacationModeService.activateVacationMode(startDate, endDate, startTime, endTime, selectedSchedule, resolveActor());
         refreshFromConfiguration();
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -156,10 +165,10 @@ public class VacationModeController {
         VacationModeConfig config = vacationModeService.getConfiguration();
         Schedule selectedSchedule = vacationModeService.getSelectedSchedule();
 
-        vacationToggle.setSelected(vacationModeService.isEnabled());
-        vacationToggle.setText(vacationToggle.isSelected() ? "ON" : "OFF");
         startDatePicker.setValue(config.getStartDate());
         endDatePicker.setValue(config.getEndDate());
+        startTimeCombo.setValue(formatTime(config.getStartTime()));
+        endTimeCombo.setValue(formatTime(config.getEndTime()));
         scheduleCombo.setValue(selectedSchedule);
 
         refreshDerivedState();
@@ -216,12 +225,35 @@ public class VacationModeController {
     }
 
     private void updateActionButtons() {
-        boolean canActivate = vacationToggle.isSelected()
-                && scheduleCombo.getValue() != null
+        boolean canActivate = scheduleCombo.getValue() != null
                 && startDatePicker.getValue() != null
-                && endDatePicker.getValue() != null;
+                && endDatePicker.getValue() != null
+                && startTimeCombo.getValue() != null
+                && endTimeCombo.getValue() != null;
         activateBtn.setDisable(!canActivate);
         deactivateBtn.setDisable(!vacationModeService.isEnabled());
+    }
+
+    private void initializeHourOptions() {
+        for (int hour = 0; hour < 24; hour++) {
+            for (int minute = 0; minute < 60; minute += 30) {
+                String value = String.format("%02d:%02d", hour, minute);
+                startTimeCombo.getItems().add(value);
+                endTimeCombo.getItems().add(value);
+            }
+        }
+    }
+
+    private LocalTime parseTime(String value) {
+        LocalTime result = null;
+        if (value != null && !value.isBlank()) {
+            result = LocalTime.parse(value);
+        }
+        return result;
+    }
+
+    private String formatTime(LocalTime value) {
+        return value != null ? value.toString() : null;
     }
 
     private String resolveActor() {

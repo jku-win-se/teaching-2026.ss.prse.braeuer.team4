@@ -1,5 +1,6 @@
 package at.jku.se.smarthome.service;
 
+import java.time.LocalDate;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -14,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import at.jku.se.smarthome.model.Schedule;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockLogService;
 import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockRoomService;
@@ -44,6 +46,7 @@ public class TestJdbcScheduleService {
      */
     @Before
     public void setUp() {
+        ServiceRegistry.resetForTesting();
         jdbcUrl = "jdbc:h2:mem:schedule_" + System.nanoTime() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1";
         System.setProperty(URL_PROPERTY, jdbcUrl);
         System.setProperty(USER_PROPERTY, "sa");
@@ -55,10 +58,11 @@ public class TestJdbcScheduleService {
         MockVacationModeService.resetForTesting();
         JdbcScheduleService.resetForTesting();
 
-        MockRoomService.getInstance();
-        MockLogService.getInstance();
-        MockNotificationService.getInstance();
+        ServiceRegistry.setRoomServiceForTesting(MockRoomService.getInstance());
+        ServiceRegistry.setLogServiceForTesting(MockLogService.getInstance());
+        ServiceRegistry.setNotificationServiceForTesting(MockNotificationService.getInstance());
         service = JdbcScheduleService.getInstance();
+        ServiceRegistry.setScheduleServiceForTesting(service);
         
         // Mock devices are already initialized in MockRoomService.initializeMockRooms()
         // No additional initialization needed for schedule execution tests
@@ -70,9 +74,63 @@ public class TestJdbcScheduleService {
     @After
     public void tearDown() {
         JdbcScheduleService.resetForTesting();
+        ServiceRegistry.resetForTesting();
         System.clearProperty(URL_PROPERTY);
         System.clearProperty(USER_PROPERTY);
         System.clearProperty(PASSWORD_PROPERTY);
+    }
+
+    /**
+     * Test: vacation mode blocks execution of non-selected schedules on active dates.
+     */
+    @Test
+    public void executeScheduleVacationModeBlocksNonSelectedSchedule() throws Exception {
+        Schedule vacationSchedule = service.addSchedule("Vacation Primary", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
+        Schedule regularSchedule = service.addSchedule("Regular", "dev-003", "Bed Light", "Turn On", "07:00 AM", "Daily", true);
+
+        MockVacationModeService.getInstance().activateVacationMode(
+                LocalDate.now().minusDays(1),
+                LocalDate.now().plusDays(1),
+                vacationSchedule,
+                "Owner"
+        );
+
+        assertFalse(service.executeSchedule(regularSchedule.getId()));
+    }
+
+    /**
+     * Test: vacation mode allows execution of the selected schedule on active dates.
+     */
+    @Test
+    public void executeScheduleVacationModeAllowsSelectedSchedule() throws Exception {
+        Schedule vacationSchedule = service.addSchedule("Vacation Primary", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
+
+        MockVacationModeService.getInstance().activateVacationMode(
+                LocalDate.now().minusDays(1),
+                LocalDate.now().plusDays(1),
+                vacationSchedule,
+                "Owner"
+        );
+
+        assertTrue(service.executeSchedule(vacationSchedule.getId()));
+    }
+
+    /**
+     * Test: deleting selected vacation schedule is blocked while vacation mode is enabled.
+     */
+    @Test
+    public void deleteScheduleSelectedVacationScheduleReturnsFalse() throws Exception {
+        Schedule vacationSchedule = service.addSchedule("Vacation Primary", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
+
+        MockVacationModeService.getInstance().activateVacationMode(
+                LocalDate.now(),
+                LocalDate.now().plusDays(3),
+                vacationSchedule,
+                "Owner"
+        );
+
+        assertFalse(service.deleteSchedule(vacationSchedule.getId()));
+        assertNotNull(service.getScheduleById(vacationSchedule.getId()));
     }
 
     /**

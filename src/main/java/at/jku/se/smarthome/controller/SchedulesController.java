@@ -32,7 +32,7 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the schedules view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.CouplingBetweenObjects", "unused"})
 public class SchedulesController {
 
     
@@ -108,6 +108,7 @@ public class SchedulesController {
 
         schedulesTable.setItems(scheduleService.getSchedules());
         updateConflictWarning();
+        showVacationModeAlertIfNeeded();
 
         if (!userService.canManageSystem()) {
             addScheduleBtn.setDisable(true);
@@ -159,6 +160,16 @@ public class SchedulesController {
         if (!userService.canManageSystem()) {
             return;
         }
+
+        if (vacationModeService.isSelectedScheduleLocked(schedule.getId())) {
+            Alert blocked = new Alert(Alert.AlertType.WARNING);
+            blocked.setTitle("Delete Schedule");
+            blocked.setHeaderText("Deletion blocked by vacation mode");
+            blocked.setContentText(vacationModeService.getLockedScheduleDeletionMessage(schedule.getName()));
+            blocked.showAndWait();
+            return;
+        }
+
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
         confirmation.setTitle("Delete Schedule");
         confirmation.setHeaderText("Delete schedule: " + schedule.getName());
@@ -233,7 +244,7 @@ public class SchedulesController {
             activeCheckBox.setSelected(schedule.isActive());
         } else {
             if (!deviceCombo.getItems().isEmpty()) {
-                deviceCombo.setValue(deviceCombo.getItems().get(0));
+                deviceCombo.setValue(deviceCombo.getItems().getFirst());
                 updateActionOptions(deviceCombo, actionCombo, null);
             }
             recurrenceCombo.setValue("Daily");
@@ -318,7 +329,7 @@ public class SchedulesController {
         if (preferredAction != null && actionCombo.getItems().contains(preferredAction)) {
             actionCombo.setValue(preferredAction);
         } else if (!actionCombo.getItems().isEmpty()) {
-            actionCombo.setValue(actionCombo.getItems().get(0));
+            actionCombo.setValue(actionCombo.getItems().getFirst());
         }
     }
 
@@ -350,8 +361,20 @@ public class SchedulesController {
             return;
         }
 
-        conflictWarning.setStyle("-fx-text-fill: #3498db; -fx-font-size: 12; -fx-font-weight: bold;");
-        conflictWarning.setText(vacationModeService.getOverrideSummary());
+        conflictWarning.setStyle("-fx-text-fill: #e67e22; -fx-font-size: 12; -fx-font-weight: bold;");
+        conflictWarning.setText("Warning: Vacation mode is ON. Normal schedules are overwritten.");
+    }
+
+    private void showVacationModeAlertIfNeeded() {
+        if (!vacationModeService.isEnabled()) {
+            return;
+        }
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Vacation Mode");
+        alert.setHeaderText("Vacation mode is active");
+        alert.setContentText("Normal schedules are currently overwritten by vacation mode.");
+        alert.showAndWait();
     }
 
     private record ScheduleInput(
