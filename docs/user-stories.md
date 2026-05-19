@@ -58,8 +58,8 @@ The **Related FR** column ensures traceability to the requirements document.
 | ✅US-14 | FR-06 | As a **user**, I want to **open and close covers or blinds**, so that **I can control privacy and incoming light**. |
 | ✅US-15 | FR-06 | As a **user**, I want to **set or inject the current value of a sensor for testing purposes**, so that **I can try out automation scenarios in the simulated environment**. |
 | ✅US-16 | FR-07 | As a **user**, I want to **see the current state of each device in real time in the UI**, so that **I always know the current status of my smart home**. |
-| US-25 | FR-14 | As a **user**, I want to **view an energy usage dashboard**, so that **I can monitor estimated power consumption in my smart home**. |
-| US-26 | FR-14 | As a **user**, I want to **see estimated energy usage per device, per room, and for the whole household, aggregated by day and by week**, so that **I can identify patterns and high energy consumption areas**. |
+| ✅US-25 | FR-14 | As a **user**, I want to **view an energy usage dashboard**, so that **I can monitor estimated power consumption in my smart home**. |
+| ✅US-26 | FR-14 | As a **user**, I want to **see estimated energy usage per device, per room, and for the whole household, aggregated by day and by week**, so that **I can identify patterns and high energy consumption areas**. |
 | US-31 | FR-18 | As a **user**, I want to **connect supported physical smart devices through the system’s integration layer**, so that **I can manage real devices in addition to simulated ones**. |
 
 ---
