@@ -27,14 +27,17 @@
     <VBox spacing="20" style="-fx-padding: 20;">
         
         <HBox spacing="20" alignment="CENTER_LEFT">
-            <VBox spacing="4">
-                <Label text="Energy Dashboard" style="-fx-font-size: 24; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
-                <Label fx:id="aggregationHintLabel" text="Aggregation: Day" style="-fx-font-size: 12; -fx-text-fill: #7f8c8d;"/>
-            </VBox>
+            <Label text="Energy Dashboard" style="-fx-font-size: 24; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
             <HBox HBox.hgrow="ALWAYS"/>
-            <Button fx:id="exportBtn" text="Export CSV" styleClass="btn-secondary" onAction="#handleExport"/>
+            <Button fx:id="exportBtn" text="Export CSV" styleClass="btn-secondary" onAction="#handleExport">
+                <HBox.margin>
+                    <Insets top="3.0"/>
+                </HBox.margin>
+            </Button>
         </HBox>
-        
+
+        <Label fx:id="aggregationHintLabel" text="Aggregation: Day" style="-fx-font-size: 12; -fx-text-fill: #7f8c8d;"/>
+
         <!-- Summary Cards -->
         <HBox spacing="20">
             <VBox style="-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-background-color: #ffffff; -fx-padding: 15;" prefWidth="150">

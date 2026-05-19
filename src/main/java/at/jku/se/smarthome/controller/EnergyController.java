@@ -1,12 +1,18 @@
 package at.jku.se.smarthome.controller;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
+import java.util.Locale;
 import java.util.Map;
 
 import at.jku.se.smarthome.service.api.EnergyService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.api.UserService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -19,6 +25,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
+import javafx.stage.FileChooser;
 
 /**
  * Controller for the energy dashboard view with time-based navigation.
@@ -91,6 +98,9 @@ public class EnergyController {
     
     /** Energy service for consumption data (injected from ServiceRegistry). */
     private EnergyService energyService;
+
+    /** User service for role-based visibility checks. */
+    private final UserService userService = ServiceRegistry.getUserService();
     
     /** Current aggregation period: true=daily, false=weekly. */
     private boolean isDaily = true;
@@ -107,7 +117,7 @@ public class EnergyController {
         try {
             // Inject energy service from ServiceRegistry
             energyService = ServiceRegistry.getEnergyService();
-            
+
             // Disable chart animations for performance (if charts are bound)
             if (roomChart != null) {
                 roomChart.setAnimated(false);
@@ -118,12 +128,19 @@ public class EnergyController {
             if (timelineChart != null) {
                 timelineChart.setAnimated(false);
             }
-            
+
             // Register reactive update listener on LogService
             registerActivityLogListener();
-            
+
             // Initial dashboard refresh
             refreshDashboard();
+
+            // FR-16: only owners can see export button
+            if (exportBtn != null) {
+                boolean owner = userService.isOwner();
+                exportBtn.setVisible(owner);
+                exportBtn.setManaged(owner);
+            }
         } catch (NullPointerException | IllegalStateException e) {
             // Don't let initialization errors prevent FXML from loading
             // Gracefully degrade: proceed without some services
@@ -457,18 +474,68 @@ public class EnergyController {
             refreshDashboard();
         }
     }
-    
+
     @FXML
     private void handleExport() {
-        String period = isDaily 
-            ? currentDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            : String.format("Week %d of %d", currentWeekYear % 100, currentWeekYear / 100);
-        
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Export Energy Report");
-        alert.setHeaderText("Export complete");
-        alert.setContentText("The energy report for " + period + " was exported as CSV.");
-        alert.showAndWait();
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Energy Summary");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("CSV Files (*.csv)", "*.csv"));
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        fileChooser.setInitialFileName("energy-summary_" + today + ".csv");
+
+        File file = fileChooser.showSaveDialog(exportBtn.getScene().getWindow());
+        if (file == null) {
+            return;
+        }
+
+        String csv = buildCsvForCurrentSelection();
+        try (PrintWriter writer = new PrintWriter(file, StandardCharsets.UTF_8)) {
+            writer.print(csv);
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Export Failed");
+            alert.setHeaderText("Could not write CSV file");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        }
+    }
+
+    /**
+     * Builds CSV for the currently selected energy period (day or week).
+     *
+     * @return CSV content with room rows and total row
+     */
+    private String buildCsvForCurrentSelection() {
+        String periodLabel;
+        Map<String, Double> roomConsumption;
+        double householdTotal;
+
+        if (isDaily) {
+            periodLabel = "Day";
+            roomConsumption = energyService.getDailyByRoom(currentDate);
+            householdTotal = energyService.getHouseholdDaily(currentDate);
+        } else {
+            periodLabel = "Week";
+            int year = currentWeekYear / 100;
+            int week = currentWeekYear % 100;
+            roomConsumption = energyService.getWeeklyByRoom(week, year);
+            householdTotal = energyService.getHouseholdWeekly(week, year);
+        }
+
+        StringBuilder csv = new StringBuilder(256);
+        csv.append("Period;Room;ConsumptionKwh\n");
+        roomConsumption.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> csv.append(String.format(Locale.US, "\"%s\";\"%s\";\"%.1f\"\n",
+                        periodLabel,
+                        entry.getKey(),
+                        entry.getValue() / 1000.0)));
+        csv.append(String.format(Locale.US, "\"%s\";\"%s\";\"%.1f\"\n",
+                periodLabel,
+                "Total",
+                householdTotal / 1000.0));
+        return csv.toString();
     }
 
     /**
