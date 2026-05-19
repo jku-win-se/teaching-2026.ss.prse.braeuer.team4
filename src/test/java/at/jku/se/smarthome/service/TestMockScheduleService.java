@@ -1,6 +1,7 @@
 package at.jku.se.smarthome.service;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -10,19 +11,22 @@ import org.junit.Test;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.LogEntry;
+import at.jku.se.smarthome.model.Schedule;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockLogService;
 import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.mock.MockScheduleService;
+import at.jku.se.smarthome.service.mock.MockVacationModeService;
+import at.jku.se.smarthome.service.mock.MockNotificationService;
 
 /**
  * Tests for {@link MockScheduleService#executeSchedule} covering automated logging (FR-08).
  * Also covers FR-09 recurring time-based execution through {@link MockScheduleService#processDueSchedules(LocalDateTime)}.
- *
  * Device names used in tests must match MockRoomService seed data:
- *   "Main Light"        – Switch, Living Room, starts ON
- *   "Bed Light"         – Switch, Bedroom, starts OFF
- *   "Dimmer Light"      – Dimmer, Living Room, starts ON
- *   "Temperature Control" – Thermostat, Bedroom, starts ON
+ *   "Main Light"        - Switch, Living Room, starts ON
+ *   "Bed Light"         - Switch, Bedroom, starts OFF
+ *   "Dimmer Light"      - Dimmer, Living Room, starts ON
+ *   "Temperature Control" - Thermostat, Bedroom, starts ON
  */
 @SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockScheduleService {
@@ -40,12 +44,55 @@ public class TestMockScheduleService {
      */
     @Before
     public void setUp() {
+        ServiceRegistry.resetForTesting();
         MockScheduleService.resetForTesting();
         MockRoomService.resetForTesting();
         MockLogService.resetForTesting();
+        MockVacationModeService.resetForTesting();
+        MockNotificationService.resetForTesting();
         scheduleService = MockScheduleService.getInstance();
+        ServiceRegistry.setScheduleServiceForTesting(scheduleService);
         roomService = MockRoomService.getInstance();
         logService = MockLogService.getInstance();
+        ServiceRegistry.setNotificationServiceForTesting(MockNotificationService.getInstance());
+    }
+
+    /**
+     * Test: vacation mode blocks non-selected schedule execution on active dates.
+     */
+    @Test
+    public void executeScheduleVacationModeBlocksNonSelectedSchedule() {
+        MockVacationModeService vacationService = MockVacationModeService.getInstance();
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        vacationService.activateVacationMode(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1), selectedSchedule, "Owner");
+
+        assertFalse(scheduleService.executeSchedule("sched-002"));
+    }
+
+    /**
+     * Test: vacation mode allows selected schedule execution on active dates.
+     */
+    @Test
+    public void executeScheduleVacationModeAllowsSelectedSchedule() {
+        MockVacationModeService vacationService = MockVacationModeService.getInstance();
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        vacationService.activateVacationMode(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1), selectedSchedule, "Owner");
+
+        assertTrue(scheduleService.executeSchedule("sched-001"));
+    }
+
+    /**
+     * Test: deleting selected vacation schedule is blocked while vacation mode is enabled.
+     */
+    @Test
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
+    public void deleteScheduleSelectedVacationScheduleReturnsFalse() {
+        MockVacationModeService vacationService = MockVacationModeService.getInstance();
+        Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");
+        vacationService.activateVacationMode(LocalDate.now(), LocalDate.now().plusDays(2), selectedSchedule, "Owner");
+
+        assertFalse(scheduleService.deleteSchedule("sched-001"));
+        assertEquals(3, scheduleService.getSchedules().size());
     }
 
     // -----------------------------------------------------------------------
@@ -360,7 +407,7 @@ public class TestMockScheduleService {
         String schedId = scheduleService.getScheduleByName("Log Test").getId();
 
         scheduleService.executeSchedule(schedId);
-        LogEntry entry = logService.getLogs().get(0); // newest first
+        LogEntry entry = logService.getLogs().getFirst(); // newest first
         assertEquals("Main Light", entry.getDevice());
     }
 
@@ -373,7 +420,7 @@ public class TestMockScheduleService {
         String schedId = scheduleService.getScheduleByName("Log Test").getId();
 
         scheduleService.executeSchedule(schedId);
-        LogEntry entry = logService.getLogs().get(0); // newest first
+        LogEntry entry = logService.getLogs().getFirst(); // newest first
         assertEquals("Turn On", entry.getAction());
     }
 
@@ -386,7 +433,7 @@ public class TestMockScheduleService {
         String schedId = scheduleService.getScheduleByName("Log Test").getId();
 
         scheduleService.executeSchedule(schedId);
-        LogEntry entry = logService.getLogs().get(0); // newest first
+        LogEntry entry = logService.getLogs().getFirst(); // newest first
         assertEquals("Schedule: Log Test", entry.getActor());
     }
 
@@ -399,7 +446,7 @@ public class TestMockScheduleService {
         String schedId = scheduleService.getScheduleByName("Room Test").getId();
 
         scheduleService.executeSchedule(schedId);
-        LogEntry entry = logService.getLogs().get(0);
+        LogEntry entry = logService.getLogs().getFirst();
         assertEquals("Living Room", entry.getRoom());
     }
 

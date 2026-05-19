@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 import org.junit.Test;
 
@@ -28,6 +29,8 @@ public class TestVacationModeConfig {
         assertTrue(config.isEnabled());
         assertEquals(start, config.getStartDate());
         assertEquals(end, config.getEndDate());
+        assertEquals(LocalTime.MIN, config.getStartTime());
+        assertEquals(LocalTime.of(23, 59), config.getEndTime());
         assertEquals("sched-1", config.getScheduleId());
     }
 
@@ -71,6 +74,28 @@ public class TestVacationModeConfig {
         VacationModeConfig config = new VacationModeConfig(false, null, null, null);
         config.setScheduleId("new-sched");
         assertEquals("new-sched", config.getScheduleId());
+    }
+
+    /**
+     * Test: setStartTime updates start time.
+     */
+    @Test
+    public void testSetStartTime() {
+        VacationModeConfig config = new VacationModeConfig(false, null, null, null);
+        LocalTime time = LocalTime.of(8, 0);
+        config.setStartTime(time);
+        assertEquals(time, config.getStartTime());
+    }
+
+    /**
+     * Test: setEndTime updates end time.
+     */
+    @Test
+    public void testSetEndTime() {
+        VacationModeConfig config = new VacationModeConfig(false, null, null, null);
+        LocalTime time = LocalTime.of(20, 0);
+        config.setEndTime(time);
+        assertEquals(time, config.getEndTime());
     }
 
     /**

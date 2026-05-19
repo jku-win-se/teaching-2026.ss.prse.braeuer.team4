@@ -1,7 +1,6 @@
 package at.jku.se.smarthome.service.mock;
 
 import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -187,12 +186,11 @@ public final class MockScheduleService implements ScheduleService {
      * @param time schedule time pattern
      * @param recurrence recurrence mode
      * @param active whether the schedule starts active
-     * @return created schedule instance
      */
-    public Schedule addSchedule(String name, String deviceName, String action,
+    public void addSchedule(String name, String deviceName, String action,
                                 String time, String recurrence, boolean active) {
         String deviceId = resolveDeviceId(deviceName);
-        return addSchedule(name, deviceId, deviceName, action, time, recurrence, active);
+        addSchedule(name, deviceId, deviceName, action, time, recurrence, active);
     }
     
     /**
@@ -221,25 +219,6 @@ public final class MockScheduleService implements ScheduleService {
     }
 
     /**
-     * Updates a schedule by resolving the device identifier from the device name.
-     *
-     * @param schedId identifier of the schedule to update
-     * @param name updated schedule name
-     * @param deviceName updated target device name
-     * @param action updated action text
-     * @param time updated schedule time pattern
-     * @param recurrence updated recurrence mode
-     * @return true when the schedule exists and was updated, otherwise false
-     */
-    public boolean updateSchedule(String schedId, String name, String deviceName,
-                                  String action, String time, String recurrence) {
-        String deviceId = resolveDeviceId(deviceName);
-        Schedule schedule = getScheduleById(schedId);
-        boolean active = schedule != null && schedule.isActive();
-        return updateSchedule(schedId, name, deviceId, deviceName, action, time, recurrence, active);
-    }
-    
-    /**
      * Toggles a schedule's active state.
         *
         * @param schedId identifier of the schedule to toggle
@@ -266,15 +245,19 @@ public final class MockScheduleService implements ScheduleService {
         * @return true when the schedule existed and was removed, otherwise false
      */
     public boolean deleteSchedule(String schedId) {
-        boolean removed = schedules.removeIf(s -> s.getId().equals(schedId));
-        if (removed) {
-            lastProcessedMinuteByScheduleId.remove(schedId);
-            MockVacationModeService.getInstance().clearIfUsingSchedule(
-                    schedId,
-                    "Selected vacation schedule was deleted"
-            );
+        boolean deleted = false;
+        MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
+        if (!vacationModeService.isSelectedScheduleLocked(schedId)) {
+            deleted = schedules.removeIf(s -> s.getId().equals(schedId));
+            if (deleted) {
+                lastProcessedMinuteByScheduleId.remove(schedId);
+                vacationModeService.clearIfUsingSchedule(
+                        schedId,
+                        "Selected vacation schedule was deleted"
+                );
+            }
         }
-        return removed;
+        return deleted;
     }
     
     /**
@@ -288,7 +271,8 @@ public final class MockScheduleService implements ScheduleService {
     public boolean executeSchedule(String scheduleId) {
         boolean executed = false;
         Schedule schedule = getScheduleById(scheduleId);
-        if (schedule != null && schedule.isActive()) {
+        if (schedule != null && schedule.isActive()
+                && MockVacationModeService.getInstance().canExecuteSchedule(scheduleId, LocalDateTime.now())) {
             at.jku.se.smarthome.model.Device device = roomService.getDeviceById(schedule.getDeviceId());
             if (device == null) {
                 device = roomService.getDeviceByName(schedule.getDevice());
@@ -315,7 +299,7 @@ public final class MockScheduleService implements ScheduleService {
         if (now != null) {
             LocalDateTime minute = now.truncatedTo(ChronoUnit.MINUTES);
 
-            for (Schedule schedule : getEffectiveSchedules(minute.toLocalDate())) {
+            for (Schedule schedule : getEffectiveSchedules(minute)) {
                 if (!isScheduleDue(schedule, minute)) {
                     continue;
                 }
@@ -337,15 +321,14 @@ public final class MockScheduleService implements ScheduleService {
         return device != null ? device.getId() : deviceName;
     }
 
-    private List<Schedule> getEffectiveSchedules(LocalDate date) {
+    private List<Schedule> getEffectiveSchedules(LocalDateTime dateTime) {
         MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
 
-        List<Schedule> activeSchedules = schedules.stream()
+        List<Schedule> effectiveSchedules = schedules.stream()
                 .filter(Schedule::isActive)
                 .toList();
 
-        List<Schedule> effectiveSchedules = activeSchedules;
-        if (vacationModeService.isActiveOn(date)) {
+        if (vacationModeService.isActiveOn(dateTime)) {
             Schedule selectedVacationSchedule = vacationModeService.getSelectedSchedule();
             if (selectedVacationSchedule != null && selectedVacationSchedule.isActive()) {
                 effectiveSchedules = new ArrayList<>();

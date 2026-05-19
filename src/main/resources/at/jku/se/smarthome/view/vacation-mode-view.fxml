@@ -6,7 +6,6 @@
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
@@ -22,11 +21,6 @@
         
         <!-- Toggle and Dates -->
         <VBox spacing="15" style="-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 20; -fx-background-color: #ffffff;">
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Vacation Mode:" style="-fx-font-size: 14; -fx-text-fill: #34495e;"/>
-                <ToggleButton fx:id="vacationToggle" text="OFF" onAction="#handleToggleVacation" style="-fx-padding: 8 20;"/>
-            </HBox>
-            
             <VBox spacing="15">
                 <Label text="Select Dates" style="-fx-font-size: 12; -fx-text-fill: #7f8c8d; -fx-font-weight: bold;"/>
                 
@@ -39,6 +33,18 @@
                     <VBox spacing="5" prefWidth="200">
                         <Label text="End Date" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
                         <DatePicker fx:id="endDatePicker" style="-fx-padding: 8;"/>
+                    </VBox>
+                </HBox>
+
+                <HBox spacing="15">
+                    <VBox spacing="5" prefWidth="200">
+                        <Label text="Start Hour" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
+                        <ComboBox fx:id="startTimeCombo" promptText="08:00" prefWidth="200"/>
+                    </VBox>
+
+                    <VBox spacing="5" prefWidth="200">
+                        <Label text="End Hour" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
+                        <ComboBox fx:id="endTimeCombo" promptText="18:00" prefWidth="200"/>
                     </VBox>
                 </HBox>
             </VBox>
@@ -61,7 +67,7 @@
             <Label text="Current Vacation Override" style="-fx-font-size: 14; -fx-text-fill: #2c3e50; -fx-font-weight: bold;"/>
             <Label fx:id="currentStatusLabel" text="Vacation mode is currently disabled." wrapText="true" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
             <Label fx:id="selectedScheduleLabel" text="No schedule selected yet." wrapText="true" style="-fx-font-size: 12; -fx-text-fill: #34495e;"/>
-            <Label fx:id="overrideSummaryLabel" text="When enabled, the chosen schedule becomes the effective schedule for the selected date range." wrapText="true" style="-fx-font-size: 12; -fx-text-fill: #5d6d7e;"/>
+            <Label fx:id="overrideSummaryLabel" text="Vacation mode is off. Normal schedules are active." wrapText="true" style="-fx-font-size: 12; -fx-text-fill: #5d6d7e;"/>
         </VBox>
         
         <!-- Affected Devices -->
