@@ -15,7 +15,6 @@ import at.jku.se.smarthome.service.mock.MockEnergyService.EnergySnapshot;
 @SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
 public class TestMockEnergyService {
 
-
     /** Energy service under test. */
     private MockEnergyService service;
 
@@ -144,4 +143,109 @@ public class TestMockEnergyService {
         EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.WEEK);
         assertTrue(snapshot.householdTotal() > 150.0);
     }
+
+    // -----------------------------------------------------------------------
+    // exportToCSV
+    // -----------------------------------------------------------------------
+
+    /**
+     * Test: export day CSV starts with correct header.
+     */
+    @Test
+    public void exportToCSVDayContainsHeader() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.startsWith("Period;Room;ConsumptionKwh"));
+    }
+
+    /**
+     * Test: export day CSV contains period label Day.
+     */
+    @Test
+    public void exportToCSVDayContainsPeriodLabel() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.contains("\"Day\""));
+    }
+
+    /**
+     * Test: export day CSV contains Living Room row.
+     */
+    @Test
+    public void exportToCSVDayContainsLivingRoom() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.contains("Living Room"));
+    }
+
+    /**
+     * Test: export day CSV contains Kitchen row.
+     */
+    @Test
+    public void exportToCSVDayContainsKitchen() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.contains("Kitchen"));
+    }
+
+    /**
+     * Test: export day CSV contains Total row.
+     */
+    @Test
+    public void exportToCSVDayContainsTotalRow() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.contains("\"Total\""));
+    }
+
+    /**
+     * Test: export day CSV uses semicolon as delimiter.
+     */
+    @Test
+    public void exportToCSVDayUsesSemicolonDelimiter() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.contains(";"));
+    }
+
+    /**
+     * Test: export day CSV total value matches household total.
+     */
+    @Test
+    public void exportToCSVDayTotalValueIsCorrect() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.contains("\"28.2\""));
+    }
+
+    /**
+     * Test: export week CSV contains period label Week.
+     */
+    @Test
+    public void exportToCSVWeekContainsPeriodLabel() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.WEEK);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.contains("\"Week\""));
+    }
+
+    /**
+     * Test: export week CSV contains Bathroom row.
+     */
+    @Test
+    public void exportToCSVWeekContainsBathroom() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.WEEK);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.contains("Bathroom"));
+    }
+
+    /**
+     * Test: export day CSV rooms are sorted alphabetically.
+     */
+    @Test
+    public void exportToCSVDayRoomsAreSortedAlpha() {
+        EnergySnapshot snapshot = service.getSnapshot(AggregationPeriod.DAY);
+        String csv = service.exportToCSV(snapshot);
+        assertTrue(csv.indexOf("Bathroom") < csv.indexOf("Living Room"));
+    }
 }
+

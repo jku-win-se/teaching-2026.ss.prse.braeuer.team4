@@ -1,6 +1,7 @@
 package at.jku.se.smarthome.service.mock;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javafx.scene.chart.XYChart;
@@ -17,21 +18,46 @@ public final class MockEnergyService {
 
     /** Enumeration of energy aggregation periods. */
     public enum AggregationPeriod {
+        /** Daily aggregation. */
         DAY("Day"),
+        /** Weekly aggregation. */
         WEEK("Week");
 
         /** Display name for the aggregation period. */
         private final String displayName;
 
-        AggregationPeriod(String displayName) {
+        /**
+         * Constructs an AggregationPeriod with the given display name.
+         *
+         * @param displayName human-readable display name
+         */
+        AggregationPeriod(final String displayName) {
             this.displayName = displayName;
         }
 
+        /**
+         * Returns the human-readable display name.
+         *
+         * @return display name string
+         */
         public String getDisplayName() {
             return displayName;
         }
     }
 
+    /**
+     * Immutable snapshot of energy consumption metrics for a given aggregation period.
+     *
+     * @param period               the aggregation period this snapshot covers
+     * @param householdTotal       total household consumption in kWh
+     * @param topDeviceName        name of the highest-consuming device
+     * @param topDeviceConsumption consumption of the top device in kWh
+     * @param topRoomName          name of the highest-consuming room
+     * @param topRoomConsumption   consumption of the top room in kWh
+     * @param consumptionByRoom    map of room name to consumption in kWh
+     * @param consumptionByDevice  map of device name to consumption in kWh
+     * @param timelineSeries       chart series for consumption over time
+     */
     public record EnergySnapshot(
             AggregationPeriod period,
             double householdTotal,
@@ -77,7 +103,7 @@ public final class MockEnergyService {
      * @param period the aggregation period for consumption data
      * @return energy snapshot with consumption metrics
      */
-    public EnergySnapshot getSnapshot(AggregationPeriod period) {
+    public EnergySnapshot getSnapshot(final AggregationPeriod period) {
         Map<String, Double> deviceData = getConsumptionByDevice(period);
         Map<String, Double> roomData = getConsumptionByRoom(period, deviceData);
         double householdTotal = deviceData.values().stream().mapToDouble(Double::doubleValue).sum();
@@ -104,12 +130,36 @@ public final class MockEnergyService {
     }
 
     /**
+     * Exports the given energy snapshot as a semicolon-delimited CSV string.
+     * Each room appears on its own row sorted alphabetically, followed by a totals row.
+     * Fields are double-quoted; numbers use dot decimal notation with one decimal place.
+     *
+     * @param snapshot the energy snapshot to export
+     * @return CSV-formatted string with header row
+     */
+    public String exportToCSV(final EnergySnapshot snapshot) {
+        StringBuilder csv = new StringBuilder(256);
+        csv.append("Period;Room;ConsumptionKwh\n");
+        snapshot.consumptionByRoom().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> csv.append(String.format(Locale.US, "\"%s\";\"%s\";\"%.1f\"\n",
+                        snapshot.period().getDisplayName(),
+                        entry.getKey(),
+                        entry.getValue())));
+        csv.append(String.format(Locale.US, "\"%s\";\"%s\";\"%.1f\"\n",
+                snapshot.period().getDisplayName(),
+                "Total",
+                snapshot.householdTotal()));
+        return csv.toString();
+    }
+
+    /**
      * Helper: gets energy consumption by device for the aggregation period.
      *
      * @param period aggregation period (DAY or WEEK)
      * @return map of device name to consumption in kWh
      */
-    private Map<String, Double> getConsumptionByDevice(AggregationPeriod period) {
+    private Map<String, Double> getConsumptionByDevice(final AggregationPeriod period) {
         @SuppressWarnings("PMD.UseConcurrentHashMap")
         Map<String, Double> data = new LinkedHashMap<>();
         if (period == AggregationPeriod.DAY) {
@@ -133,11 +183,12 @@ public final class MockEnergyService {
     /**
      * Helper: aggregates device consumption by room for the aggregation period.
      *
-     * @param period aggregation period (DAY or WEEK)
+     * @param period     aggregation period (DAY or WEEK)
      * @param deviceData device consumption map
      * @return map of room name to consumption in kWh
      */
-    private Map<String, Double> getConsumptionByRoom(AggregationPeriod period, Map<String, Double> deviceData) {
+    private Map<String, Double> getConsumptionByRoom(final AggregationPeriod period,
+                                                      final Map<String, Double> deviceData) {
         @SuppressWarnings("PMD.UseConcurrentHashMap")
         Map<String, Double> roomData = new LinkedHashMap<>();
         roomData.put("Living Room", deviceData.get("Living Room Light") + deviceData.get("Living Room Thermostat"));
@@ -160,7 +211,7 @@ public final class MockEnergyService {
      * @param period aggregation period (DAY or WEEK)
      * @return XYChart series with consumption data points
      */
-    private XYChart.Series<String, Number> getConsumptionOverTime(AggregationPeriod period) {
+    private XYChart.Series<String, Number> getConsumptionOverTime(final AggregationPeriod period) {
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName(period == AggregationPeriod.DAY ? "Hourly Usage (kWh)" : "Daily Usage (kWh)");
 
@@ -189,10 +240,11 @@ public final class MockEnergyService {
      * Helper: adds a data point to timeline series.
      *
      * @param series timeline series to add point to
-     * @param label time/day label
-     * @param value consumption value in kWh
+     * @param label  time/day label
+     * @param value  consumption value in kWh
      */
-    private void addTimelinePoint(XYChart.Series<String, Number> series, String label, double value) {
+    private void addTimelinePoint(final XYChart.Series<String, Number> series,
+                                  final String label, final double value) {
         series.getData().add(new XYChart.Data<>(label, value));
     }
 }
