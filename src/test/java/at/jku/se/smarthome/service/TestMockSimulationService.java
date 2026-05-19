@@ -1,6 +1,7 @@
 package at.jku.se.smarthome.service;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -93,7 +94,7 @@ public class TestMockSimulationService {
 
         SimulationPlan plan = service.buildPlan(configuration);
 
-        assertEquals(1, plan.events().size());
+        assertTrue(plan.events().stream().anyMatch(event -> event.triggerSource().equals("Rule: Morning Routine")));
     }
 
     /**
@@ -113,7 +114,7 @@ public class TestMockSimulationService {
 
         SimulationPlan plan = service.buildPlan(configuration);
 
-        assertTrue(plan.events().get(0).simulatedTime().compareTo(plan.events().get(1).simulatedTime()) <= 0);
+        assertTrue(!plan.events().get(0).simulatedTime().isAfter(plan.events().get(1).simulatedTime()));
     }
 
     /**
@@ -132,7 +133,7 @@ public class TestMockSimulationService {
 
         SimulationPlan plan = service.buildPlan(configuration);
 
-        assertEquals("Rule: Morning Routine", plan.events().get(0).triggerSource());
+        assertTrue(plan.events().stream().anyMatch(event -> event.triggerSource().equals("Rule: Morning Routine")));
     }
 
     /**
@@ -229,6 +230,7 @@ public class TestMockSimulationService {
      * Test: build plan creates events for mapped actions.
      */
     @Test
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
     public void buildPlanMapsActionTypesToEvents() {
         Rule notifyRule = new Rule("rule-103", "Notify", "Device State", "Bed Light", "State = Active", "Notify User", "Main Light", true, "Active");
         Rule blindRule = new Rule("rule-104", "Open Blind", "Device State", "Bed Light", "State = Active", "Open", "Hallway Blind", true, "Active");
@@ -241,7 +243,8 @@ public class TestMockSimulationService {
                 1
         ));
 
-        assertEquals(2, plan.events().size());
+        assertTrue(plan.events().stream().anyMatch(event -> event.triggerSource().equals("Rule: Notify")));
+        assertTrue(plan.events().stream().anyMatch(event -> event.triggerSource().equals("Rule: Open Blind")));
     }
 
     /**
@@ -297,5 +300,58 @@ public class TestMockSimulationService {
         ));
 
         assertFalse(plan.events().stream().anyMatch(event -> event.resultingState().equals("UNCHANGED")));
+    }
+
+    /**
+     * Test: deterministic planning returns equal event timeline for same input.
+     */
+    @Test
+    public void buildPlanDeterministicForSameConfig() {
+        Rule timeRule = new Rule("rule-200", "Deterministic Time", "Time", "Clock", "06:00 AM", "Turn On", "Main Light", true, "Active");
+        Rule thresholdRule = new Rule("rule-201", "Deterministic Threshold", "Sensor Threshold", "Temperature Sensor", "Value > 19", "Turn Off", "Bed Light", true, "Active");
+        SimulationConfiguration config = new SimulationConfiguration(
+                LocalTime.of(6, 0),
+                20.0,
+                45.0,
+                List.of(timeRule, thresholdRule),
+                600
+        );
+
+        List<SimulationEvent> firstRun = new ArrayList<>(service.buildPlan(config).events());
+        List<SimulationEvent> secondRun = new ArrayList<>(service.buildPlan(config).events());
+
+        assertEquals(firstRun, secondRun);
+    }
+
+    /**
+     * Test: schedule event is ordered before rule event on same simulated time.
+     */
+    @Test
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
+    public void buildPlanOrdersScheduleBeforeRuleAtSameTime() {
+        Rule sameTimeRule = new Rule("rule-300", "Same Time Rule", "Time", "Clock", "06:00 AM", "Turn On", "Main Light", true, "Active");
+        SimulationPlan plan = service.buildPlan(new SimulationConfiguration(
+                LocalTime.of(5, 0),
+                20.0,
+                40.0,
+                List.of(sameTimeRule),
+                600
+        ));
+
+        int scheduleIndex = -1;
+        int ruleIndex = -1;
+        for (int index = 0; index < plan.events().size(); index++) {
+            SimulationEvent event = plan.events().get(index);
+            if (event.simulatedTime().equals(LocalTime.of(6, 0)) && event.triggerSource().startsWith("Schedule:")) {
+                scheduleIndex = index;
+            }
+            if (event.simulatedTime().equals(LocalTime.of(6, 0)) && event.triggerSource().equals("Rule: Same Time Rule")) {
+                ruleIndex = index;
+            }
+        }
+
+        assertTrue(scheduleIndex >= 0);
+        assertTrue(ruleIndex >= 0);
+        assertTrue(scheduleIndex < ruleIndex);
     }
 }
