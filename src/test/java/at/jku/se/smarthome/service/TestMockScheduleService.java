@@ -88,6 +88,7 @@ public class TestMockScheduleService {
      * Test: deleting selected vacation schedule is blocked while vacation mode is enabled.
      */
     @Test
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
     public void deleteScheduleSelectedVacationScheduleReturnsFalse() {
         MockVacationModeService vacationService = MockVacationModeService.getInstance();
         Schedule selectedSchedule = scheduleService.getScheduleById("sched-001");

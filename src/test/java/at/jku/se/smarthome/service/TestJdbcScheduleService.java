@@ -119,6 +119,7 @@ public class TestJdbcScheduleService {
      * Test: deleting selected vacation schedule is blocked while vacation mode is enabled.
      */
     @Test
+    @SuppressWarnings("PMD.UnitTestContainsTooManyAsserts")
     public void deleteScheduleSelectedVacationScheduleReturnsFalse() throws Exception {
         Schedule vacationSchedule = service.addSchedule("Vacation Primary", "dev-001", "Main Light", "Turn Off", "07:00 AM", "Daily", true);
 
@@ -282,3 +283,4 @@ public class TestJdbcScheduleService {
         }
     }
 }
+
