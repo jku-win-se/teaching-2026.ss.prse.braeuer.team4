@@ -84,6 +84,10 @@ public class EnergyController {
     /** Button to navigate to last week's data. */
     @FXML
     private Button lastWeekButton;
+
+    /** Button to export energy data to CSV. */
+    @FXML
+    private Button exportBtn;
     
     /** Energy service for consumption data (injected from ServiceRegistry). */
     private EnergyService energyService;
@@ -187,9 +191,9 @@ public class EnergyController {
         int year = currentWeekYear / 100;
         int week = currentWeekYear % 100;
         
-        Map<String, Double> deviceConsumption = energyService.getWeeklyByDevice(year, week);
-        Map<String, Double> roomConsumption = energyService.getWeeklyByRoom(year, week);
-        double householdTotal = energyService.getHouseholdWeekly(year, week);
+        Map<String, Double> deviceConsumption = energyService.getWeeklyByDevice(week, year);
+        Map<String, Double> roomConsumption = energyService.getWeeklyByRoom(week, year);
+        double householdTotal = energyService.getHouseholdWeekly(week, year);
         
         loadSummaryData(deviceConsumption, roomConsumption, householdTotal);
         loadRoomChart(roomConsumption);
@@ -346,9 +350,9 @@ public class EnergyController {
     private void updateNavigationButtons() {
         boolean isDay = isDaily;
         
-        // Update toggle buttons
-        setButtonState(dayToggle, isDay, !isDay);
-        setButtonState(weekToggle, !isDay, isDay);
+        // Update toggle buttons (keep both always enabled; ToggleGroup handles mutual exclusivity)
+        setButtonState(dayToggle, isDay, false);
+        setButtonState(weekToggle, !isDay, false);
         
         // Update navigation buttons based on view type
         if (isDay) {
