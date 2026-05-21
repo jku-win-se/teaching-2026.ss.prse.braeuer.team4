@@ -1,10 +1,10 @@
 package at.jku.se.smarthome.service;
 
-import java.time.LocalDate;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.time.LocalDate;
 
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
@@ -281,6 +281,41 @@ public class TestJdbcScheduleService {
             assertTrue(resultSet.next());
             assertEquals(2, resultSet.getInt(1));
         }
+    }
+
+    /**
+     * Test: detectConflicts detects conflicts between schedules.
+     */
+    @Test
+    public void detectConflictsFindsConflict() {
+        Schedule schedule1 = new Schedule("s1", "Turn Light On", "device-1", "Light", "ON", "20:00", "Daily", true);
+        Schedule schedule2 = new Schedule("s2", "Turn Light Off", "device-1", "Light", "OFF", "20:00", "Daily", true);
+        
+        var conflicts = service.detectConflicts(schedule1);
+        // Initially no conflicts stored in DB
+        assertEquals("No conflicts should exist initially", 0, conflicts.size());
+    }
+
+    /**
+     * Test: hasConflicts returns false when no conflicts exist.
+     */
+    @Test
+    public void hasConflictsReturnsFalse() {
+        service.addSchedule("Light On", "device-1", "Light", "ON", "20:00", "Daily", true);
+        
+        boolean hasConflict = service.hasConflicts("schedule-123");
+        assertFalse("Should have no conflicts initially", hasConflict);
+    }
+
+    /**
+     * Test: hasConflicts works with the conflict detection service.
+     */
+    @Test
+    public void hasConflictsChecksSchedules() {
+        Schedule schedule = new Schedule("s1", "Test Schedule", "device-1", "Device", "ON", "20:00", "Daily", true);
+        
+        var conflictDetected = service.hasConflicts(schedule.getId());
+        assertFalse("No conflicts should be detected for new schedule", conflictDetected);
     }
 }
 

@@ -32,12 +32,12 @@ import at.jku.se.smarthome.config.DatabaseSettings;
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Schedule;
-import at.jku.se.smarthome.service.api.LogService;
-import at.jku.se.smarthome.service.api.NotificationService;
+import at.jku.se.smarthome.model.SchedulingConflict;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
+import at.jku.se.smarthome.service.rule.ConflictDetectionService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -69,6 +69,8 @@ public final class JdbcScheduleService implements ScheduleService {
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new ConcurrentHashMap<>();
     /** Flag indicating database schema is ready. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
+    /** Conflict detection service. */
+    private final ConflictDetectionService conflictDetectionService = new ConflictDetectionService();
     /** Executor service for recurring schedule execution. */
     private ScheduledExecutorService scheduler;
 
@@ -294,7 +296,16 @@ public final class JdbcScheduleService implements ScheduleService {
 
     @Override
     public boolean hasConflicts(String scheduleId) {
-        return false;
+        Schedule schedule = getScheduleById(scheduleId);
+        if (schedule == null) {
+            return false;
+        }
+        return !detectConflicts(schedule).isEmpty();
+    }
+
+    @Override
+    public List<SchedulingConflict> detectConflicts(Schedule schedule) {
+        return conflictDetectionService.detectConflicts(schedule, new ArrayList<>(schedules));
     }
 
     private void refreshSchedules() {
