@@ -1,7 +1,7 @@
 # Einleitung
 
 [![Continuous Integration](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml/badge.svg)](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml)
-[![Coverage](https://img.shields.io/badge/coverage-38%25-red)](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml)
+[![Coverage](https://img.shields.io/badge/coverage-71%25-yellow)](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml)
 
 Überblick über das Projekt.
 
