@@ -296,11 +296,12 @@ public final class JdbcScheduleService implements ScheduleService {
 
     @Override
     public boolean hasConflicts(String scheduleId) {
+        boolean hasConflict = false;
         Schedule schedule = getScheduleById(scheduleId);
-        if (schedule == null) {
-            return false;
+        if (schedule != null) {
+            hasConflict = !detectConflicts(schedule).isEmpty();
         }
-        return !detectConflicts(schedule).isEmpty();
+        return hasConflict;
     }
 
     @Override

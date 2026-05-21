@@ -289,7 +289,6 @@ public class TestJdbcScheduleService {
     @Test
     public void detectConflictsFindsConflict() {
         Schedule schedule1 = new Schedule("s1", "Turn Light On", "device-1", "Light", "ON", "20:00", "Daily", true);
-        Schedule schedule2 = new Schedule("s2", "Turn Light Off", "device-1", "Light", "OFF", "20:00", "Daily", true);
         
         var conflicts = service.detectConflicts(schedule1);
         // Initially no conflicts stored in DB

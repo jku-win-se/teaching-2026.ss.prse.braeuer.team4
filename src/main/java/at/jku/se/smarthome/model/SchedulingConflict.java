@@ -5,10 +5,11 @@ package at.jku.se.smarthome.model;
  * A conflict exists when two enabled automations target the same device
  * with incompatible target values that overlap in time.
  */
+@SuppressWarnings({"PMD.DataClass", "PMD.ExcessiveParameterList"})
 public final class SchedulingConflict {
 
     /** Unique conflict identifier. */
-    private final String id;
+    private final String conflictId;
     
     /** The candidate rule or schedule being validated. */
     private final String candidateId;
@@ -46,7 +47,7 @@ public final class SchedulingConflict {
     /**
      * Creates a scheduling conflict record.
      *
-     * @param id unique conflict identifier
+     * @param conflictId unique conflict identifier
      * @param candidateId ID of the candidate rule/schedule
      * @param conflictingId ID of the conflicting rule/schedule
      * @param candidateName name of the candidate
@@ -59,13 +60,13 @@ public final class SchedulingConflict {
      * @param conflictingTime trigger time of the conflicting automation
      * @param description human-readable conflict description
      */
-    public SchedulingConflict(String id, String candidateId, String conflictingId,
+    public SchedulingConflict(String conflictId, String candidateId, String conflictingId,
                               String candidateName, String conflictingName,
                               String deviceId, String deviceName,
                               String candidateValue, String conflictingValue,
                               String candidateTime, String conflictingTime,
                               String description) {
-        this.id = id;
+        this.conflictId = conflictId;
         this.candidateId = candidateId;
         this.conflictingId = conflictingId;
         this.candidateName = candidateName;
@@ -84,7 +85,7 @@ public final class SchedulingConflict {
      *
      * @return conflict ID
      */
-    public String getId() { return id; }
+    public String getConflictId() { return conflictId; }
 
     /**
      * Gets the candidate automation ID.
@@ -166,7 +167,7 @@ public final class SchedulingConflict {
     @Override
     public String toString() {
         return "SchedulingConflict{" +
-                "id='" + id + '\'' +
+                "conflictId='" + conflictId + '\'' +
                 ", device='" + deviceName + '\'' +
                 ", candidate='" + candidateName + '\'' +
                 ", conflicting='" + conflictingName + '\'' +

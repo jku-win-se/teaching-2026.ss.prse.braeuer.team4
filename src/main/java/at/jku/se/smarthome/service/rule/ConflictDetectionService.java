@@ -15,11 +15,13 @@ import at.jku.se.smarthome.model.SchedulingConflict;
  * A conflict exists when two enabled automations target the same device
  * with incompatible target values that overlap in time.
  */
+@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.AtLeastOneConstructor"})
 public final class ConflictDetectionService {
 
-    /** Time formatter for parsing time patterns. */
-    private static final DateTimeFormatter TIME_FORMAT_24H = 
-        DateTimeFormatter.ofPattern("HH:mm");
+    /** Literal for 'never' recurrence pattern. */
+    private static final String RECURRENCE_NEVER = "never";
+    /** Literal for 'daily' recurrence pattern. */
+    private static final String RECURRENCE_DAILY = "daily";
 
     /**
      * Detects all conflicts between a candidate schedule and existing schedules.
@@ -71,35 +73,28 @@ public final class ConflictDetectionService {
      * @return true if time windows overlap
      */
     private boolean timeWindowsOverlap(Schedule schedule1, Schedule schedule2) {
+        boolean overlap = false;
         // Parse recurrence patterns
         RecurrencePattern pattern1 = parseRecurrencePattern(schedule1.getRecurrence(), schedule1.getTime());
         RecurrencePattern pattern2 = parseRecurrencePattern(schedule2.getRecurrence(), schedule2.getTime());
 
         // Check if both are "never" — no overlap
-        if (pattern1.isNever() || pattern2.isNever()) {
-            return false;
-        }
-
-        // Daily patterns always overlap
-        if (pattern1.isDaily() && pattern2.isDaily()) {
-            return true;
-        }
-
-        // If one is daily and the other is weekly, check if the weekly day overlaps
-        if (pattern1.isDaily() && pattern2.isWeekly()) {
-            return true;
-        }
-        if (pattern1.isWeekly() && pattern2.isDaily()) {
-            return true;
-        }
-
-        // Both weekly — check if they share a day
-        if (pattern1.isWeekly() && pattern2.isWeekly()) {
-            return pattern1.dayOfWeek() == pattern2.dayOfWeek();
+        if (!pattern1.never() && !pattern2.never()) {
+            // Daily patterns always overlap
+            if (pattern1.daily() && pattern2.daily()) {
+                overlap = true;
+            } else if (pattern1.daily() && pattern2.weekly()) {
+                // If one is daily and the other is weekly, check if the weekly day overlaps
+                overlap = true;
+            } else if (pattern1.weekly() && pattern2.daily()) {
+                overlap = true;
+            } else if (pattern1.weekly() && pattern2.weekly()) {
+                // Both weekly — check if they share a day
+                overlap = pattern1.dayOfWeek() == pattern2.dayOfWeek();
+            }
         }
         
-        // All cases covered above; unreachable but included for completeness
-        return false;
+        return overlap;
     }
 
     /**
@@ -115,42 +110,36 @@ public final class ConflictDetectionService {
      * @return true if values are incompatible
      */
     private boolean valuesAreIncompatible(String value1, String value2) {
+        boolean incompatible = false;
+
         // Normalize to uppercase for comparison
-        String v1 = value1.trim().toUpperCase();
-        String v2 = value2.trim().toUpperCase();
+        String normValue1 = value1.trim().toUpperCase();
+        String normValue2 = value2.trim().toUpperCase();
 
         // Same value is never incompatible
-        if (v1.equals(v2)) {
-            return false;
-        }
-
-        // SwitchDevice: ON vs OFF
-        if (isSwitchValue(v1) && isSwitchValue(v2)) {
-            return !v1.equals(v2);
-        }
-
-        // CoverDevice: OPEN vs CLOSED
-        if (isCoverValue(v1) && isCoverValue(v2)) {
-            return !v1.equals(v2);
-        }
-
-        // DimmerDevice: any different brightness values
-        if (isDimmerValue(v1) && isDimmerValue(v2)) {
-            return !v1.equals(v2);
-        }
-
-        // ThermostatDevice: temperatures differing by more than 0.5°C
-        if (isThermostatValue(v1) && isThermostatValue(v2)) {
-            try {
-                double temp1 = extractTemperatureValue(v1);
-                double temp2 = extractTemperatureValue(v2);
-                return Math.abs(temp1 - temp2) > 0.5;
-            } catch (NumberFormatException e) {
-                return false;
+        if (!normValue1.equals(normValue2)) {
+            // SwitchDevice: ON vs OFF
+            if (isSwitchValue(normValue1) && isSwitchValue(normValue2)) {
+                incompatible = true;
+            } else if (isCoverValue(normValue1) && isCoverValue(normValue2)) {
+                // CoverDevice: OPEN vs CLOSED
+                incompatible = true;
+            } else if (isDimmerValue(normValue1) && isDimmerValue(normValue2)) {
+                // DimmerDevice: any different brightness values
+                incompatible = true;
+            } else if (isThermostatValue(normValue1) && isThermostatValue(normValue2)) {
+                // ThermostatDevice: temperatures differing by more than 0.5°C
+                try {
+                    double temp1 = extractTemperatureValue(normValue1);
+                    double temp2 = extractTemperatureValue(normValue2);
+                    incompatible = Math.abs(temp1 - temp2) > 0.5;
+                } catch (NumberFormatException e) {
+                    incompatible = false;
+                }
             }
         }
 
-        return false;
+        return incompatible;
     }
 
     /**
@@ -247,35 +236,30 @@ public final class ConflictDetectionService {
      * @return parsed recurrence pattern
      */
     private RecurrencePattern parseRecurrencePattern(String recurrence, String timePattern) {
+        RecurrencePattern pattern;
         String rec = recurrence.trim().toLowerCase();
 
-        if ("never".equals(rec)) {
-            return new RecurrencePattern(true, false, false, null);
-        }
+        if (RECURRENCE_NEVER.equals(rec)) {
+            pattern = new RecurrencePattern(true, false, false, null);
+        } else if (RECURRENCE_DAILY.equals(rec)) {
+            pattern = new RecurrencePattern(false, true, false, null);
+        } else {
+            // Try to parse as day of week (e.g., "Mon", "Monday", "Monday 20:00")
+            DayOfWeek day = tryParseDayOfWeek(rec);
+            if (day == null) {
+                // Try to extract day from the full time pattern
+                day = tryParseDayOfWeek(timePattern);
+            }
 
-        if ("daily".equals(rec)) {
-            try {
-                LocalTime time = LocalTime.parse(timePattern.trim(), TIME_FORMAT_24H);
-                return new RecurrencePattern(false, true, false, null);
-            } catch (Exception e) {
-                return new RecurrencePattern(false, true, false, null);
+            if (day != null) {
+                pattern = new RecurrencePattern(false, false, true, day);
+            } else {
+                // Default to never if we can't parse it
+                pattern = new RecurrencePattern(true, false, false, null);
             }
         }
 
-        // Try to parse as day of week (e.g., "Mon", "Monday", "Monday 20:00")
-        DayOfWeek day = tryParseDayOfWeek(rec);
-        if (day != null) {
-            return new RecurrencePattern(false, false, true, day);
-        }
-
-        // Try to extract day from the full time pattern
-        day = tryParseDayOfWeek(timePattern);
-        if (day != null) {
-            return new RecurrencePattern(false, false, true, day);
-        }
-
-        // Default to never if we can't parse it
-        return new RecurrencePattern(true, false, false, null);
+        return pattern;
     }
 
     /**
@@ -285,10 +269,11 @@ public final class ConflictDetectionService {
      * @return DayOfWeek if found, null otherwise
      */
     private DayOfWeek tryParseDayOfWeek(String input) {
+        DayOfWeek result = null;
         String upper = input.trim().toUpperCase();
         
         try {
-            return DayOfWeek.valueOf(upper);
+            result = DayOfWeek.valueOf(upper);
         } catch (IllegalArgumentException e) {
             // Try short form
             String[] days = {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"};
@@ -296,12 +281,12 @@ public final class ConflictDetectionService {
             
             for (int i = 0; i < shortDays.length; i++) {
                 if (upper.startsWith(shortDays[i])) {
-                    return DayOfWeek.valueOf(days[i]);
+                    result = DayOfWeek.valueOf(days[i]);
+                    break;
                 }
             }
-            
-            return null;
         }
+        return result;
     }
 
     /**
@@ -313,8 +298,5 @@ public final class ConflictDetectionService {
         boolean weekly,
         DayOfWeek dayOfWeek
     ) {
-        boolean isNever() { return never; }
-        boolean isDaily() { return daily; }
-        boolean isWeekly() { return weekly; }
     }
 }

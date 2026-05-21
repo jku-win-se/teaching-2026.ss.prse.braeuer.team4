@@ -34,7 +34,7 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the schedules view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.CouplingBetweenObjects", "unused"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.CouplingBetweenObjects", "unused", "PMD.GodClass"})
 public class SchedulesController {
 
     
@@ -363,26 +363,28 @@ public class SchedulesController {
         if (vacationModeService.isEnabled()) {
             conflictWarning.setStyle("-fx-text-fill: #e67e22; -fx-font-size: 12; -fx-font-weight: bold;");
             conflictWarning.setText("Warning: Vacation mode is ON. Normal schedules are overwritten.");
-            return;
-        }
-
-        // Check for scheduling conflicts if a schedule was just modified
-        if (lastModifiedSchedule != null) {
-            List<SchedulingConflict> conflicts = scheduleService.detectConflicts(lastModifiedSchedule);
-            
-            if (!conflicts.isEmpty()) {
-                conflictWarning.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold;");
-                conflictWarning.setText("⚠ Conflict Detected: " + conflicts.size() + " scheduling conflict(s)");
+        } else {
+            boolean conflictShown = false;
+            // Check for scheduling conflicts if a schedule was just modified
+            if (lastModifiedSchedule != null) {
+                List<SchedulingConflict> conflicts = scheduleService.detectConflicts(lastModifiedSchedule);
                 
-                // Show modal with conflict details
-                showConflictModal(conflicts, lastModifiedSchedule);
-                return;
+                if (!conflicts.isEmpty()) {
+                    conflictWarning.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold;");
+                    conflictWarning.setText("⚠ Conflict Detected: " + conflicts.size() + " scheduling conflict(s)");
+                    
+                    // Show modal with conflict details
+                    showConflictModal(conflicts, lastModifiedSchedule);
+                    conflictShown = true;
+                }
+            }
+
+            if (!conflictShown) {
+                // No conflicts
+                conflictWarning.setText("");
+                conflictWarning.setStyle("");
             }
         }
-
-        // No conflicts
-        conflictWarning.setText("");
-        conflictWarning.setStyle("");
     }
 
     /**
@@ -391,23 +393,28 @@ public class SchedulesController {
      * @param conflicts list of detected conflicts
      * @param schedule the schedule that caused the conflicts
      */
+    @SuppressWarnings("PMD.NullAssignment")
     private void showConflictModal(List<SchedulingConflict> conflicts, Schedule schedule) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Scheduling Conflicts Detected");
         dialog.setHeaderText("The schedule \"" + schedule.getName() + "\" creates " + conflicts.size() + " conflict(s)");
         
         // Build conflict details
-        StringBuilder conflictDetails = new StringBuilder();
+        StringBuilder conflictDetails = new StringBuilder(Math.max(128, conflicts.size() * 80));
         for (SchedulingConflict conflict : conflicts) {
             conflictDetails.append("• ")
-                    .append(conflict.getConflictingName())
-                    .append(" on ").append(conflict.getDeviceName()).append("\n")
-                    .append("  Your value: ").append(conflict.getCandidateValue())
-                    .append(", Conflict value: ").append(conflict.getConflictingValue())
-                    .append("\n")
-                    .append("  Your time: ").append(conflict.getCandidateTime())
-                    .append(", Conflict time: ").append(conflict.getConflictingTime())
-                    .append("\n\n");
+                .append(conflict.getConflictingName())
+                .append(" on ")
+                .append(conflict.getDeviceName())
+                .append("\n  Your value: ")
+                .append(conflict.getCandidateValue())
+                .append(", Conflict value: ")
+                .append(conflict.getConflictingValue())
+                .append("\n  Your time: ")
+                .append(conflict.getCandidateTime())
+                .append(", Conflict time: ")
+                .append(conflict.getConflictingTime())
+                .append("\n\n");
         }
         
         Label contentLabel = new Label(conflictDetails.toString());

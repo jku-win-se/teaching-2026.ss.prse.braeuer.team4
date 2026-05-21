@@ -13,20 +13,25 @@ import at.jku.se.smarthome.model.SchedulingConflict;
  * Unit tests for ConflictDetectionService.
  * Tests all device-type conflict matrices, time-window overlaps, and edge cases.
  */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnitTestContainsTooManyAsserts", "PMD.TooManyMethods", "PMD.ExcessivePublicCount"})
 public final class ConflictDetectionServiceTest {
 
+    /** The conflict detection service being tested. */
     private final ConflictDetectionService service = new ConflictDetectionService();
 
     /**
      * Helper to create a test schedule.
      */
-    private Schedule createSchedule(String id, String name, String deviceId, 
+    private Schedule createSchedule(String scheduleId, String name, String deviceId, 
                                     String action, String time, String recurrence, boolean active) {
-        return new Schedule(id, name, deviceId, "Device-" + deviceId, action, time, recurrence, active);
+        return new Schedule(scheduleId, name, deviceId, "Device-" + deviceId, action, time, recurrence, active);
     }
 
     // ==================== Device Type Conflict Tests ====================
 
+    /**
+     * Tests that a conflict is detected when one schedule turns a device ON and another turns it OFF at the same time.
+     */
     @Test
     public void testSwitchDeviceConflictOnVsOff() {
         Schedule schedule1 = createSchedule("s1", "Turn Light On", "device-1", "ON", "20:00", "daily", true);
@@ -39,6 +44,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("OFF", conflicts.get(0).getConflictingValue());
     }
 
+    /**
+     * Tests that no conflict is detected when two schedules set the same value (ON) for a device.
+     */
     @Test
     public void testSwitchDeviceNoConflictSameValue() {
         Schedule schedule1 = createSchedule("s1", "Turn Light On", "device-1", "ON", "20:00", "daily", true);
@@ -49,6 +57,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Same values should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that a conflict is detected when one schedule opens blinds and another closes them at the same time.
+     */
     @Test
     public void testCoverDeviceConflictOpenVsClosed() {
         Schedule schedule1 = createSchedule("s1", "Open Blinds", "device-2", "OPEN", "07:00", "daily", true);
@@ -59,6 +70,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Should detect OPEN vs CLOSED conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that a conflict is detected when two schedules set different brightness levels for a dimmer.
+     */
     @Test
     public void testDimmerDeviceConflictDifferentBrightness() {
         Schedule schedule1 = createSchedule("s1", "Set to 50%", "device-3", "50%", "18:00", "daily", true);
@@ -69,6 +83,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Different brightness values should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that a conflict is detected when two schedules set temperatures with a difference greater than 0.5°C.
+     */
     @Test
     public void testThermostatDeviceConflictTemperatureDifference() {
         Schedule schedule1 = createSchedule("s1", "Set to 22°C", "device-4", "22°C", "20:00", "daily", true);
@@ -79,6 +96,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Temperature difference > 0.5°C should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that no conflict is detected when two schedules set temperatures with a difference of 0.5°C or less.
+     */
     @Test
     public void testThermostatDeviceNoConflictSmallDifference() {
         Schedule schedule1 = createSchedule("s1", "Set to 22°C", "device-4", "22.0°C", "20:00", "daily", true);
@@ -91,6 +111,9 @@ public final class ConflictDetectionServiceTest {
 
     // ==================== Time Window Overlap Tests ====================
 
+    /**
+     * Tests that daily schedules are always considered to overlap in time.
+     */
     @Test
     public void testDailySchedulesAlwaysOverlap() {
         Schedule schedule1 = createSchedule("s1", "Morning Routine", "device-1", "ON", "07:00", "daily", true);
@@ -101,6 +124,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Daily schedules overlap", 1, conflicts.size());
     }
 
+    /**
+     * Tests that schedules on different weekdays do not conflict.
+     */
     @Test
     public void testDisjointWeekdaysNoConflict() {
         Schedule schedule1 = createSchedule("s1", "Monday Activity", "device-1", "ON", "Mon 20:00", "weekly", true);
@@ -111,6 +137,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Different weekdays should not overlap", 0, conflicts.size());
     }
 
+    /**
+     * Tests that schedules on the same weekday are considered to overlap in time.
+     */
     @Test
     public void testSameWeekdayConflict() {
         Schedule schedule1 = createSchedule("s1", "Monday Morning", "device-1", "ON", "Mon 07:00", "weekly", true);
@@ -121,6 +150,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Same weekday should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that a daily schedule overlaps with a weekly schedule.
+     */
     @Test
     public void testDailyAndWeeklyOverlap() {
         Schedule schedule1 = createSchedule("s1", "Every Day", "device-1", "ON", "08:00", "daily", true);
@@ -131,6 +163,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Daily and weekly should overlap", 1, conflicts.size());
     }
 
+    /**
+     * Tests that a schedule with 'never' recurrence does not conflict with any other schedule.
+     */
     @Test
     public void testNeverRecurrenceNoConflict() {
         Schedule schedule1 = createSchedule("s1", "Disabled", "device-1", "ON", "20:00", "never", true);
@@ -143,6 +178,9 @@ public final class ConflictDetectionServiceTest {
 
     // ==================== Disabled Schedules Test ====================
 
+    /**
+     * Tests that a disabled candidate schedule does not report any conflicts.
+     */
     @Test
     public void testDisabledCandidateNoConflict() {
         Schedule schedule1 = createSchedule("s1", "Disabled Light", "device-1", "ON", "20:00", "daily", false);
@@ -153,6 +191,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Disabled candidate should not report conflicts", 0, conflicts.size());
     }
 
+    /**
+     * Tests that a candidate schedule does not conflict with a disabled existing schedule.
+     */
     @Test
     public void testDisabledExistingNoConflict() {
         Schedule schedule1 = createSchedule("s1", "Active Light", "device-1", "ON", "20:00", "daily", true);
@@ -165,6 +206,9 @@ public final class ConflictDetectionServiceTest {
 
     // ==================== Different Devices Test ====================
 
+    /**
+     * Tests that schedules for different devices do not conflict.
+     */
     @Test
     public void testDifferentDevicesNoConflict() {
         Schedule schedule1 = createSchedule("s1", "Turn On Light 1", "device-1", "ON", "20:00", "daily", true);
@@ -177,6 +221,9 @@ public final class ConflictDetectionServiceTest {
 
     // ==================== Multiple Conflicts Test ====================
 
+    /**
+     * Tests that multiple conflicts are detected when a candidate schedule conflicts with multiple existing schedules.
+     */
     @Test
     public void testMultipleConflicts() {
         Schedule candidate = createSchedule("s1", "Turn Light On", "device-1", "ON", "20:00", "daily", true);
@@ -192,6 +239,9 @@ public final class ConflictDetectionServiceTest {
 
     // ==================== Edge Cases ====================
 
+    /**
+     * Tests that comparing a schedule to itself does not result in a conflict.
+     */
     @Test
     public void testSelfComparisonIgnored() {
         Schedule schedule = createSchedule("s1", "Light Control", "device-1", "ON", "20:00", "daily", true);
@@ -201,6 +251,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Self-comparison should be ignored", 0, conflicts.size());
     }
 
+    /**
+     * Tests that conflict detection is case-insensitive for action values.
+     */
     @Test
     public void testCaseInsensitivityOnVsOn() {
         Schedule schedule1 = createSchedule("s1", "Turn Light On", "device-1", "ON", "20:00", "daily", true);
@@ -211,6 +264,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Should handle case variations", 1, conflicts.size());
     }
 
+    /**
+     * Tests that no conflicts are reported when there are no existing schedules.
+     */
     @Test
     public void testEmptyExistingSchedules() {
         Schedule candidate = createSchedule("s1", "Turn Light On", "device-1", "ON", "20:00", "daily", true);
@@ -222,6 +278,9 @@ public final class ConflictDetectionServiceTest {
 
     // ==================== Additional Coverage Tests ====================
 
+    /**
+     * Tests that thermostat schedules with exactly 0.5°C difference do not conflict.
+     */
     @Test
     public void testThermostatVariousFormats225Vs22() {
         Schedule schedule1 = createSchedule("s1", "Set to 22.5°C", "device-4", "22.5°C", "20:00", "daily", true);
@@ -233,6 +292,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Exactly 0.5°C difference should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that thermostat schedules with plain numeric values are correctly compared.
+     */
     @Test
     public void testThermostatPlainNumbers21Vs22() {
         Schedule schedule1 = createSchedule("s1", "Set to 21", "device-4", "21", "20:00", "daily", true);
@@ -243,6 +305,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Should detect temperature difference", 1, conflicts.size());
     }
 
+    /**
+     * Tests that dimmer schedules with different percentage values conflict.
+     */
     @Test
     public void testDimmerPercentageVariations() {
         Schedule schedule1 = createSchedule("s1", "Set to 0%", "device-3", "0%", "18:00", "daily", true);
@@ -253,6 +318,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Different brightness values should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that dimmer schedules without percentage signs are correctly compared.
+     */
     @Test
     public void testDimmerNoPercentageSign() {
         Schedule schedule1 = createSchedule("s1", "Set to 50", "device-3", "50", "18:00", "daily", true);
@@ -263,6 +331,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Different brightness values (no %) should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that weekly schedules with full day names are correctly parsed and compared.
+     */
     @Test
     public void testWeeklyDayParsingFullName() {
         Schedule schedule1 = createSchedule("s1", "Monday Activity", "device-1", "ON", "Monday 20:00", "weekly", true);
@@ -273,6 +344,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Full day name should be parsed correctly", 1, conflicts.size());
     }
 
+    /**
+     * Tests that weekly schedules with short day names are correctly parsed and compared.
+     */
     @Test
     public void testWeeklyDayParsingShortForm() {
         Schedule schedule1 = createSchedule("s1", "Tuesday Activity", "device-1", "ON", "Tue 20:00", "weekly", true);
@@ -283,6 +357,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Short day name should be parsed correctly", 1, conflicts.size());
     }
 
+    /**
+     * Tests that weekly schedules without time are correctly parsed and compared.
+     */
     @Test
     public void testWeeklyOnlyNoTime() {
         Schedule schedule1 = createSchedule("s1", "Wednesday Activity", "device-1", "ON", "Wednesday", "weekly", true);
@@ -293,6 +370,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Day without time should parse correctly", 1, conflicts.size());
     }
 
+    /**
+     * Tests that weekly schedules on different days do not conflict.
+     */
     @Test
     public void testWeeklyDifferentDaysNoConflict2() {
         Schedule schedule1 = createSchedule("s1", "Friday Activity", "device-1", "ON", "Friday 20:00", "weekly", true);
@@ -303,6 +383,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Different days should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that cover values are compared case-insensitively.
+     */
     @Test
     public void testMixedCoverValues() {
         Schedule schedule1 = createSchedule("s1", "Open Blinds", "device-2", "open", "07:00", "daily", true);
@@ -313,6 +396,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Case-insensitive cover values should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that action values with leading/trailing whitespace are correctly compared.
+     */
     @Test
     public void testWhitespaceHandling() {
         Schedule schedule1 = createSchedule("s1", "Turn Light On", "device-1", "  ON  ", "20:00", "daily", true);
@@ -323,6 +409,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Whitespace should be trimmed", 1, conflicts.size());
     }
 
+    /**
+     * Tests that exactly 0.5°C temperature difference is not a conflict.
+     */
     @Test
     public void testThermostatExactBoundary05Difference() {
         Schedule schedule1 = createSchedule("s1", "Set to 20°C", "device-4", "20°C", "20:00", "daily", true);
@@ -334,6 +423,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Exactly 0.5°C difference should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that more than 0.5°C temperature difference results in a conflict.
+     */
     @Test
     public void testThermostatBoundary051Difference() {
         Schedule schedule1 = createSchedule("s1", "Set to 20°C", "device-4", "20°C", "20:00", "daily", true);
@@ -344,6 +436,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("More than 0.5°C difference should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that invalid temperature formats do not result in conflicts.
+     */
     @Test
     public void testInvalidTemperatureFormatNoConflict() {
         Schedule schedule1 = createSchedule("s1", "Set to ABC", "device-4", "ABC", "20:00", "daily", true);
@@ -354,6 +449,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Invalid temperature strings should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that weekly schedules overlap with daily schedules regardless of order.
+     */
     @Test
     public void testDailyWeeklyReverseOverlap() {
         Schedule schedule1 = createSchedule("s1", "Monday Only", "device-1", "ON", "Mon 10:00", "weekly", true);
@@ -364,6 +462,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Weekly then daily should overlap", 1, conflicts.size());
     }
 
+    /**
+     * Tests that Sunday is correctly parsed when using its full name.
+     */
     @Test
     public void testSundayFullName() {
         Schedule schedule1 = createSchedule("s1", "Sunday Activity 1", "device-1", "ON", "Sunday 20:00", "weekly", true);
@@ -374,6 +475,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Sunday should be parsed correctly", 1, conflicts.size());
     }
 
+    /**
+     * Tests that Saturday is correctly parsed when using its short form.
+     */
     @Test
     public void testSaturdayShortForm() {
         Schedule schedule1 = createSchedule("s1", "Saturday Activity 1", "device-1", "ON", "Sat 20:00", "weekly", true);
@@ -384,6 +488,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Saturday should be parsed correctly", 1, conflicts.size());
     }
 
+    /**
+     * Tests that same cover values do not conflict.
+     */
     @Test
     public void testCoverNoConflictSameValue() {
         Schedule schedule1 = createSchedule("s1", "Keep Blinds Open 1", "device-2", "OPEN", "07:00", "daily", true);
@@ -394,6 +501,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Same cover values should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that same dimmer values do not conflict.
+     */
     @Test
     public void testDimmerSameValue() {
         Schedule schedule1 = createSchedule("s1", "Set Brightness 50", "device-3", "50%", "18:00", "daily", true);
@@ -406,6 +516,9 @@ public final class ConflictDetectionServiceTest {
 
     // ==================== Mixed Device Type Tests ====================
 
+    /**
+     * Tests that actions for different device types (switch vs cover) do not conflict.
+     */
     @Test
     public void testMixedTypesSwitchVsCover() {
         Schedule schedule1 = createSchedule("s1", "Turn Light On", "device-1", "ON", "20:00", "daily", true);
@@ -416,6 +529,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Switch and cover values should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that actions for different device types (switch vs dimmer) do not conflict.
+     */
     @Test
     public void testMixedTypesSwitchVsDimmer() {
         Schedule schedule1 = createSchedule("s1", "Turn Light On", "device-1", "ON", "20:00", "daily", true);
@@ -426,6 +542,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Switch and dimmer values should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that actions for different device types (switch vs thermostat) do not conflict.
+     */
     @Test
     public void testMixedTypesSwitchVsThermostat() {
         Schedule schedule1 = createSchedule("s1", "Turn Light On", "device-1", "ON", "20:00", "daily", true);
@@ -436,6 +555,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Switch and thermostat values should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that actions for different device types (cover vs dimmer) do not conflict.
+     */
     @Test
     public void testMixedTypesCoverVsDimmer() {
         Schedule schedule1 = createSchedule("s1", "Open Blinds", "device-2", "OPEN", "07:00", "daily", true);
@@ -446,6 +568,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Cover and dimmer values should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that invalid temperature formats do not result in conflicts even if they look like thermostat values.
+     */
     @Test
     public void testInvalidTemperatureFormatIncompatibleValues() {
         // Test the catch block for NumberFormatException
@@ -459,6 +584,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Invalid temperature strings should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that dimmer values in decimal format are correctly compared.
+     */
     @Test
     public void testDimmerDecimalFormat() {
         Schedule schedule1 = createSchedule("s1", "Set to 0.5", "device-3", "0.5", "18:00", "daily", true);
@@ -469,6 +597,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Different decimal brightness values should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that thermostat values with extra spaces are correctly compared.
+     */
     @Test
     public void testThermostatWithSpaces() {
         Schedule schedule1 = createSchedule("s1", "Set temp with spaces", "device-4", "22 °C", "20:00", "daily", true);
@@ -479,6 +610,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Temperature strings with spaces should be compared", 1, conflicts.size());
     }
 
+    /**
+     * Tests that weekly and 'never' schedules do not conflict.
+     */
     @Test
     public void testWeeklyNotDailyNoConflictCase() {
         Schedule schedule1 = createSchedule("s1", "Monday Activity", "device-1", "ON", "20:00", "weekly", true);
@@ -489,6 +623,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Weekly and never should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that unknown recurrence patterns do not result in conflicts.
+     */
     @Test
     public void testUnparseableRecurrence() {
         Schedule schedule1 = createSchedule("s1", "Unknown pattern", "device-1", "ON", "20:00", "unknown", true);
@@ -500,6 +637,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Unknown recurrence should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that daily schedules overlap even if the time string format is invalid.
+     */
     @Test
     public void testDailyWithInvalidTimePattern() {
         // This should trigger the catch block in parseRecurrencePattern for "daily" 
@@ -512,6 +652,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Daily schedules (despite invalid time) should overlap", 1, conflicts.size());
     }
 
+    /**
+     * Tests that when the recurrence field itself contains a day abbreviation, it is correctly parsed.
+     */
     @Test
     public void testRecurrenceAsDirectDayOfWeek() {
         // When recurrence field is directly a day of week abbreviation
@@ -523,6 +666,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Same weekday in recurrence field should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that when the recurrence field itself contains a full day name, it is correctly parsed.
+     */
     @Test
     public void testRecurrenceAsFullDayName() {
         // When recurrence field is a full day name
@@ -534,6 +680,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Full day name in recurrence field should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that different temperature string formats are correctly compared.
+     */
     @Test
     public void testTemperatureParsingWithBothFormats() {
         // Test both temperature regex patterns
@@ -545,6 +694,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Different temperature formats should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that unparseable temperature strings (but matching the regex) do not result in conflicts.
+     */
     @Test
     public void testNumberFormatExceptionInTemperatureExtraction() {
         // Both values match thermostat pattern but have content that can't be parsed as double
@@ -558,19 +710,25 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Unparseable temperatures should return no conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests conflict detection for every day of the week.
+     */
     @Test
     public void testAllDayVariations() {
         // Test each day of the week
         String[] days = {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"};
         for (String day : days) {
-            Schedule s1 = createSchedule("s1", day + " 1", "device-1", "ON", "20:00", day.toLowerCase(), true);
-            Schedule s2 = createSchedule("s2", day + " 2", "device-1", "OFF", "20:00", day.toLowerCase(), true);
+            Schedule schedule1 = createSchedule("s1", day + " 1", "device-1", "ON", "20:00", day.toLowerCase(), true);
+            Schedule schedule2 = createSchedule("s2", day + " 2", "device-1", "OFF", "20:00", day.toLowerCase(), true);
             
-            List<SchedulingConflict> conflicts = service.detectConflicts(s1, List.of(s2));
+            List<SchedulingConflict> conflicts = service.detectConflicts(schedule1, List.of(schedule2));
             assertEquals(day + " schedules should conflict", 1, conflicts.size());
         }
     }
 
+    /**
+     * Tests that decimal and percent brightness values are correctly compared.
+     */
     @Test
     public void testDimmerDecimalOnly() {
         // Test dimmer value that ONLY matches the second regex "0\.d+"
@@ -583,6 +741,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Decimal and percent brightness should conflict", 1, conflicts.size());
     }
 
+    /**
+     * Tests that values not matching any device type do not result in conflicts.
+     */
     @Test
     public void testNonDeviceTypeValue() {
         // Test values that don't match any device type
@@ -595,6 +756,9 @@ public final class ConflictDetectionServiceTest {
         assertEquals("Non-matching device values should not conflict", 0, conflicts.size());
     }
 
+    /**
+     * Tests that invalid values do not result in conflicts.
+     */
     @Test
     public void testThermostatWithInvalidFormat() {
         // Test thermostat with invalid format that throws NumberFormatException

@@ -471,11 +471,12 @@ public final class MockScheduleService implements ScheduleService {
      * @return true when a conflict exists, otherwise false
      */
     public boolean hasConflicts(String schedId) {
+        boolean conflict = false;
         Schedule schedule = getScheduleById(schedId);
-        if (schedule == null) {
-            return false;
+        if (schedule != null) {
+            conflict = !detectConflicts(schedule).isEmpty();
         }
-        return !detectConflicts(schedule).isEmpty();
+        return conflict;
     }
 
     /**
