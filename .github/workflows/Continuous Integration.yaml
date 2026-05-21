@@ -40,7 +40,27 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('target/site/jacoco/jacoco.csv') != ''
         shell: bash
         run: |
-          coverage="$(awk -F, 'NR>1 {miss += $8; cov += $9} END {total = miss + cov; if (total == 0) {print 0} else {printf "%.0f", (cov/total)*100}}' target/site/jacoco/jacoco.csv)"
+          # Filter jacoco.csv to include only non-UI service classes (matching mvn verify coverage check)
+          # Includes: service/mock/*, service/real/auth/*, service/real/schedule/*
+          # Excludes: service/api/*, anonymous classes ($)
+          coverage="$(awk -F, '
+            NR==1 { next }  # Skip header
+            /service\/api\// { next }  # Exclude API classes
+            /\$/ { next }  # Exclude anonymous classes
+            /service\/(mock|real\/(auth|schedule))/ {
+              miss += $8
+              cov += $9
+            }
+            END {
+              total = miss + cov
+              if (total == 0) {
+                print 0
+              } else {
+                printf "%.0f", (cov/total)*100
+              }
+            }
+          ' target/site/jacoco/jacoco.csv)"
+          
           color="red"
           if [ "$coverage" -ge 90 ]; then color="brightgreen";
           elif [ "$coverage" -ge 80 ]; then color="green";
