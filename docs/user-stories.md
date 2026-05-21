@@ -60,7 +60,7 @@ The **Related FR** column ensures traceability to the requirements document.
 | ✅US-16 | FR-07 | As a **user**, I want to **see the current state of each device in real time in the UI**, so that **I always know the current status of my smart home**. |
 | ✅US-25 | FR-14 | As a **user**, I want to **view an energy usage dashboard**, so that **I can monitor estimated power consumption in my smart home**. |
 | ✅US-26 | FR-14 | As a **user**, I want to **see estimated energy usage per device, per room, and for the whole household, aggregated by day and by week**, so that **I can identify patterns and high energy consumption areas**. |
-| US-31 | FR-18 | As a **user**, I want to **connect supported physical smart devices through the system’s integration layer**, so that **I can manage real devices in addition to simulated ones**. |
+| ✅US-31 | FR-18 | As a **user**, I want to **connect supported physical smart devices through the system's integration layer**, so that **I can manage real devices in addition to simulated ones**. |
 
 ---
 
