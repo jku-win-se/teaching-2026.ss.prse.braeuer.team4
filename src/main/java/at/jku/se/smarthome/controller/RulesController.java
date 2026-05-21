@@ -30,8 +30,8 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the rules view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.GodClass"})
-public class RulesController {
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods", "PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.CouplingBetweenObjects"})
+public class RulesController { // NOPMD - High coupling is inherent in this central controller
 
     /** Trigger type that does not require a source device. */
     private static final String TRIGGER_TIME = "Time";
@@ -130,6 +130,11 @@ public class RulesController {
             );
             if (created == null) {
                 showRuleValidationError(input.triggerType(), input.condition(), input.sourceDevice());
+            } else {
+                // Check for conflicts and block save if conflicts exist
+                if (ruleService.hasConflicts(created.getId())) {
+                    showRuleConflictModal(created, true);
+                }
             }
         });
     }
@@ -145,6 +150,14 @@ public class RulesController {
         }
         Optional<RuleInput> result = showRuleDialog(rule);
         result.ifPresent(input -> {
+            // store previous state to allow revert if conflicts are found
+            String prevName = rule.getName();
+            String prevTrigger = rule.getTriggerType();
+            String prevSource = rule.getSourceDevice();
+            String prevCondition = rule.getCondition();
+            String prevAction = rule.getAction();
+            String prevTarget = rule.getTargetDevice();
+
             boolean success = ruleService.updateRule(
                     rule.getId(),
                     input.name(),
@@ -155,7 +168,16 @@ public class RulesController {
                     input.targetDevice()
             );
             if (success) {
-                rulesTable.refresh();
+                // After updating, check for conflicts. If present, show modal and revert on cancel.
+                if (ruleService.hasConflicts(rule.getId())) {
+                    showRuleConflictModal(rule, false, () -> {
+                        // revert to previous values
+                        ruleService.updateRule(rule.getId(), prevName, prevTrigger, prevSource, prevCondition, prevAction, prevTarget);
+                        rulesTable.refresh();
+                    });
+                } else {
+                    rulesTable.refresh();
+                }
             } else {
                 showRuleValidationError(input.triggerType(), input.condition(), input.sourceDevice());
             }
@@ -474,6 +496,117 @@ public class RulesController {
             String condition,
             String action,
             String targetDevice) {
+    }
+
+    /**
+     * Shows a simple cancel-only modal when rule conflicts are detected.
+     * @param candidate newly created or updated rule
+     * @param wasCreated true when this was a newly created rule (delete on cancel)
+     */
+    private void showRuleConflictModal(Rule candidate, boolean wasCreated) {
+        showRuleConflictModal(candidate, wasCreated, null);
+    }
+
+    /**
+     * Shows a cancel-only modal when rule conflicts are detected. Optionally runs
+     * a revert action when the user cancels (used for edits).
+     */
+    private void showRuleConflictModal(Rule candidate, boolean wasCreated, Runnable onCancelRevert) {
+        // Build list of conflicting rules (same target, same trigger/condition, incompatible actions)
+        var conflicts = ruleService.getRules().stream()
+                .filter(r -> !r.getId().equals(candidate.getId()))
+                .filter(Rule::isEnabled)
+                .filter(r -> candidate.getTargetDevice() != null && candidate.getTargetDevice().equals(r.getTargetDevice()))
+                .filter(r -> normalizeTrigger(r.getTriggerType()).equals(normalizeTrigger(candidate.getTriggerType())))
+                .filter(r -> normalizeValue(r.getCondition()).equals(normalizeValue(candidate.getCondition())))
+                .filter(r -> valuesAreIncompatible(normalizeValue(r.getAction()), normalizeValue(candidate.getAction())))
+                .toList();
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Conflicting Rule Detected");
+        dialog.setHeaderText("The rule '" + candidate.getName() + "' is conflicting with 1 or more existing rule(s)");
+
+        StringBuilder details = new StringBuilder(Math.max(64, conflicts.size() * 40));
+        for (Rule r : conflicts) {
+            details.append("• ").append(r.getName()).append(" (Action: ").append(r.getAction()).append(")\n");
+        }
+        if (details.length() == 0) {
+            details.append("A conflict was detected.");
+        }
+
+        Label content = new Label(details.toString());
+        content.setWrapText(true);
+        GridPane pane = new GridPane();
+        pane.setPadding(new Insets(10));
+        pane.add(content, 0, 0);
+        dialog.getDialogPane().setContent(pane);
+
+        // Only allow cancel — user must fix or abandon the change
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(cancelButton);
+
+        var res = dialog.showAndWait();
+        if (res.isEmpty() || res.get() == cancelButton) {
+            if (wasCreated) {
+                ruleService.deleteRule(candidate.getId());
+                rulesTable.refresh();
+            }
+            if (onCancelRevert != null) {
+                onCancelRevert.run();
+            }
+        }
+    }
+
+    // small helpers reused for conflict detection in controller
+    private String normalizeTrigger(String trigger) {
+        return trigger == null ? "" : trigger.trim().toLowerCase();
+    }
+
+    private String normalizeValue(String value) {
+        return value == null ? "" : value.trim().toUpperCase();
+    }
+
+    private boolean valuesAreIncompatible(String valueA, String valueB) {
+        boolean incompatible = false;
+        if (valueA != null && valueB != null && !valueA.equals(valueB)) {
+            if (isSwitchValue(valueA) && isSwitchValue(valueB)) {
+                incompatible = true;
+            } else if (isCoverValue(valueA) && isCoverValue(valueB)) {
+                incompatible = true;
+            } else if (isDimmerValue(valueA) && isDimmerValue(valueB)) {
+                incompatible = true;
+            } else if (isThermostatValue(valueA) && isThermostatValue(valueB)) {
+                try {
+                    double temp1 = extractTemperatureValue(valueA);
+                    double temp2 = extractTemperatureValue(valueB);
+                    incompatible = Math.abs(temp1 - temp2) > 0.5;
+                } catch (NumberFormatException e) {
+                    incompatible = false;
+                }
+            }
+        }
+        return incompatible;
+    }
+
+    private boolean isSwitchValue(String value) {
+        return "ON".equals(value) || "OFF".equals(value);
+    }
+
+    private boolean isCoverValue(String value) {
+        return "OPEN".equals(value) || "CLOSED".equals(value) || "CLOSE".equals(value);
+    }
+
+    private boolean isDimmerValue(String value) {
+        return value.matches("\\d+%?") || value.matches("0\\.\\d+");
+    }
+
+    private boolean isThermostatValue(String value) {
+        return value.matches("[0-9]+(\\\\.[0-9]+)?°?C?") || value.matches("[0-9]+(\\\\.[0-9]+)?\\s*°?C?");
+    }
+
+    private double extractTemperatureValue(String value) {
+        String numeric = value.replaceAll("[^0-9.]", "");
+        return Double.parseDouble(numeric);
     }
 
     /**

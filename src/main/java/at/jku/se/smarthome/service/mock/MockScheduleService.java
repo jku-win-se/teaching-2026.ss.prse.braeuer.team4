@@ -17,7 +17,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import at.jku.se.smarthome.model.Schedule;
+import at.jku.se.smarthome.model.SchedulingConflict;
 import at.jku.se.smarthome.service.api.ScheduleService;
+import at.jku.se.smarthome.service.rule.ConflictDetectionService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -36,6 +38,8 @@ public final class MockScheduleService implements ScheduleService {
     private final MockRoomService roomService = MockRoomService.getInstance();
     /** Log service for activity logging. */
     private final MockLogService logService = MockLogService.getInstance();
+    /** Conflict detection service. */
+    private final ConflictDetectionService conflictDetectionService = new ConflictDetectionService();
     /** Tracks last processed minute for each schedule. */
     private final Map<String, LocalDateTime> lastProcessedMinuteByScheduleId = new ConcurrentHashMap<>();
     /** Executor service for recurring schedule execution. */
@@ -467,6 +471,22 @@ public final class MockScheduleService implements ScheduleService {
      * @return true when a conflict exists, otherwise false
      */
     public boolean hasConflicts(String schedId) {
-        return false; // Simplified mock
+        boolean conflict = false;
+        Schedule schedule = getScheduleById(schedId);
+        if (schedule != null) {
+            conflict = !detectConflicts(schedule).isEmpty();
+        }
+        return conflict;
+    }
+
+    /**
+     * Detects all conflicts for a schedule.
+     *
+     * @param schedule the schedule to validate
+     * @return list of detected conflicts
+     */
+    @Override
+    public List<SchedulingConflict> detectConflicts(Schedule schedule) {
+        return conflictDetectionService.detectConflicts(schedule, new ArrayList<>(schedules));
     }
 }

@@ -1,6 +1,9 @@
 package at.jku.se.smarthome.service.api;
 
+import java.util.List;
+
 import at.jku.se.smarthome.model.Schedule;
+import at.jku.se.smarthome.model.SchedulingConflict;
 import javafx.collections.ObservableList;
 
 /**
@@ -96,6 +99,14 @@ public interface ScheduleService {
      * Stops background processing for recurring schedules.
      */
     void stopRecurringExecution();
+
+    /**
+     * Detects scheduling conflicts for a schedule.
+     *
+     * @param schedule the schedule to validate for conflicts
+     * @return list of detected conflicts (empty if none)
+     */
+    List<SchedulingConflict> detectConflicts(Schedule schedule);
 
     /**
      * Checks whether a schedule conflicts with existing schedules.

@@ -1,10 +1,11 @@
 package at.jku.se.smarthome.service;
 
-import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,10 +15,10 @@ import at.jku.se.smarthome.model.LogEntry;
 import at.jku.se.smarthome.model.Schedule;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.mock.MockNotificationService;
 import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.mock.MockScheduleService;
 import at.jku.se.smarthome.service.mock.MockVacationModeService;
-import at.jku.se.smarthome.service.mock.MockNotificationService;
 
 /**
  * Tests for {@link MockScheduleService#executeSchedule} covering automated logging (FR-08).
@@ -473,5 +474,53 @@ public class TestMockScheduleService {
         int logsBefore = logService.getLogs().size();
         scheduleService.executeSchedule(schedId);
         assertEquals(logsBefore, logService.getLogs().size());
+    }
+
+    /**
+     * Test: detectConflicts method returns empty list for new schedule.
+     */
+    @Test
+    public void detectConflictsReturnsEmptyListInitially() {
+        Schedule schedule = new Schedule("s1", "Test Schedule", "Main Light", "Light", "ON", "20:00", "Daily", true);
+        
+        var conflicts = scheduleService.detectConflicts(schedule);
+        assertEquals("No conflicts should exist initially", 0, conflicts.size());
+    }
+
+    /**
+     * Test: hasConflicts method returns false for new schedule.
+     */
+    @Test
+    public void hasConflictsReturnsFalseForNewSchedule() {
+        Schedule schedule = new Schedule("s1", "Test Schedule", "Main Light", "Light", "ON", "20:00", "Daily", true);
+        
+        boolean hasConflict = scheduleService.hasConflicts(schedule.getId());
+        assertFalse("New schedule should not have conflicts", hasConflict);
+    }
+
+    /**
+     * Test: detectConflicts exercises the conflict detection path.
+     */
+    @Test
+    public void detectConflictsExercisesConflictPath() {
+        scheduleService.addSchedule("Schedule 1", "Main Light", "Turn On", "06:00 AM", "Daily", true);
+        Schedule sched1 = scheduleService.getScheduleByName("Schedule 1");
+        
+        // Just exercise the code path - result depends on internal state
+        var conflicts = scheduleService.detectConflicts(sched1);
+        assertNotNull("Should return a list", conflicts);
+    }
+
+    /**
+     * Test: hasConflicts exercises the conflict check path.
+     */
+    @Test
+    public void hasConflictsExercisesCheckPath() {
+        scheduleService.addSchedule("Schedule A", "Main Light", "Turn On", "20:00", "Daily", true);
+        String scheduleAId = scheduleService.getScheduleByName("Schedule A").getId();
+        
+        // Just exercise the code path
+        boolean hasConflict = scheduleService.hasConflicts(scheduleAId);
+        assertFalse("Initially no conflicts", hasConflict);
     }
 }

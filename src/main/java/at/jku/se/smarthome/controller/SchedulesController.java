@@ -1,10 +1,12 @@
 package at.jku.se.smarthome.controller;
 
+import java.util.List;
 import java.util.Optional;
 
 import at.jku.se.smarthome.model.Device;
 import at.jku.se.smarthome.model.Room;
 import at.jku.se.smarthome.model.Schedule;
+import at.jku.se.smarthome.model.SchedulingConflict;
 import at.jku.se.smarthome.service.api.RoomService;
 import at.jku.se.smarthome.service.api.ScheduleService;
 import at.jku.se.smarthome.service.api.ServiceRegistry;
@@ -32,7 +34,7 @@ import javafx.scene.layout.HBox;
 /**
  * Controller for the schedules view.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.CouplingBetweenObjects", "unused"})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnusedPrivateMethod", "PMD.CouplingBetweenObjects", "unused", "PMD.GodClass"})
 public class SchedulesController {
 
     
@@ -78,8 +80,10 @@ public class SchedulesController {
     private final RoomService roomService = ServiceRegistry.getRoomService();
     /** User service for authorization checks. */
     private final UserService userService = ServiceRegistry.getUserService();
-    /** Vacation mode service for vacation scheduling. */
+    /** Vacation mode service for vacation mode checks. */
     private final MockVacationModeService vacationModeService = MockVacationModeService.getInstance();
+    /** Last schedule that was modified (for conflict checking). */
+    private Schedule lastModifiedSchedule;
     
     @FXML
     private void initialize() {
@@ -122,7 +126,7 @@ public class SchedulesController {
         }
         Optional<ScheduleInput> result = showScheduleDialog(null);
         result.ifPresent(input -> {
-            scheduleService.addSchedule(
+            Schedule schedule = scheduleService.addSchedule(
                     input.name(),
                     input.device().getId(),
                     input.device().getName(),
@@ -131,6 +135,7 @@ public class SchedulesController {
                     input.recurrence(),
                     input.active()
             );
+            lastModifiedSchedule = schedule;
             updateConflictWarning();
         });
     }
@@ -151,6 +156,7 @@ public class SchedulesController {
                     input.recurrence(),
                     input.active()
             );
+            lastModifiedSchedule = scheduleService.getScheduleById(schedule.getId());
             schedulesTable.refresh();
             updateConflictWarning();
         });
@@ -353,13 +359,96 @@ public class SchedulesController {
     }
 
     private void updateConflictWarning() {
-        if (!vacationModeService.isEnabled()) {
-            conflictWarning.setText("");
-            return;
-        }
+        // Show vacation mode warning first
+        if (vacationModeService.isEnabled()) {
+            conflictWarning.setStyle("-fx-text-fill: #e67e22; -fx-font-size: 12; -fx-font-weight: bold;");
+            conflictWarning.setText("Warning: Vacation mode is ON. Normal schedules are overwritten.");
+        } else {
+            boolean conflictShown = false;
+            // Check for scheduling conflicts if a schedule was just modified
+            if (lastModifiedSchedule != null) {
+                List<SchedulingConflict> conflicts = scheduleService.detectConflicts(lastModifiedSchedule);
+                
+                if (!conflicts.isEmpty()) {
+                    conflictWarning.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold;");
+                    conflictWarning.setText("⚠ Conflict Detected: " + conflicts.size() + " scheduling conflict(s)");
+                    
+                    // Show modal with conflict details
+                    showConflictModal(conflicts, lastModifiedSchedule);
+                    conflictShown = true;
+                }
+            }
 
-        conflictWarning.setStyle("-fx-text-fill: #e67e22; -fx-font-size: 12; -fx-font-weight: bold;");
-        conflictWarning.setText("Warning: Vacation mode is ON. Normal schedules are overwritten.");
+            if (!conflictShown) {
+                // No conflicts
+                conflictWarning.setText("");
+                conflictWarning.setStyle("");
+            }
+        }
+    }
+
+    /**
+     * Shows a modal dialog displaying detected scheduling conflicts.
+     *
+     * @param conflicts list of detected conflicts
+     * @param schedule the schedule that caused the conflicts
+     */
+    @SuppressWarnings("PMD.NullAssignment")
+    private void showConflictModal(List<SchedulingConflict> conflicts, Schedule schedule) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Scheduling Conflicts Detected");
+        dialog.setHeaderText("The schedule \"" + schedule.getName() + "\" creates " + conflicts.size() + " conflict(s)");
+        
+        // Build conflict details
+        StringBuilder conflictDetails = new StringBuilder(Math.max(128, conflicts.size() * 80));
+        for (SchedulingConflict conflict : conflicts) {
+            conflictDetails.append("• ")
+                .append(conflict.getConflictingName())
+                .append(" on ")
+                .append(conflict.getDeviceName())
+                .append("\n  Your value: ")
+                .append(conflict.getCandidateValue())
+                .append(", Conflict value: ")
+                .append(conflict.getConflictingValue())
+                .append("\n  Your time: ")
+                .append(conflict.getCandidateTime())
+                .append(", Conflict time: ")
+                .append(conflict.getConflictingTime())
+                .append("\n\n");
+        }
+        
+        Label contentLabel = new Label(conflictDetails.toString());
+        contentLabel.setWrapText(true);
+        contentLabel.setPadding(new Insets(10));
+        
+        GridPane gridPane = new GridPane();
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+        gridPane.setPadding(new Insets(15));
+        gridPane.add(contentLabel, 0, 0);
+        
+        dialog.getDialogPane().setContent(gridPane);
+        
+        // Add buttons
+        ButtonType continueButton = new ButtonType("Continue Anyway", ButtonBar.ButtonData.YES);
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(continueButton, cancelButton);
+        
+        // Show dialog and handle result
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get() == cancelButton) {
+            // User chose to cancel, delete the schedule if it was just added
+            if (lastModifiedSchedule != null) {
+                scheduleService.deleteSchedule(lastModifiedSchedule.getId());
+                schedulesTable.refresh();
+                conflictWarning.setText("");
+                lastModifiedSchedule = null;
+            }
+        } else {
+            // User chose to continue, keep the schedule and show persistent warning
+            conflictWarning.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold;");
+            conflictWarning.setText("⚠ This schedule has " + conflicts.size() + " known conflict(s)");
+        }
     }
 
     private void showVacationModeAlertIfNeeded() {

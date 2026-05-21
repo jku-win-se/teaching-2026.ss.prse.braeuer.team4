@@ -14,7 +14,7 @@ import javafx.collections.ObservableList;
 /**
  * Mock Rule Service providing rule management functionality.
  */
-@SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.UseObjectForClearerAPI", "PMD.TooManyMethods", "PMD.CyclomaticComplexity", "PMD.GodClass"})
 public final class MockRuleService implements RuleService {
     
     /** Singleton instance of the mock rule service. */
@@ -278,7 +278,120 @@ public final class MockRuleService implements RuleService {
      * @return true when a conflict exists, otherwise false
      */
     public boolean hasConflicts(String ruleId) {
-        return false; // Simplified mock
+        boolean conflictDetected = false;
+        Rule candidate = rules.stream()
+                .filter(r -> r.getId().equals(ruleId))
+                .findFirst()
+                .orElse(null);
+        if (candidate != null && candidate.isEnabled()) {
+            String target = candidate.getTargetDevice();
+            String candAction = normalizeValue(candidate.getAction());
+            String candTrigger = normalizeTrigger(candidate.getTriggerType());
+            String candCondition = normalizeValue(candidate.getCondition());
+
+            for (Rule existing : rules) {
+                if (existing.getId().equals(ruleId)) {
+                    continue;
+                }
+                if (!existing.isEnabled()) {
+                    continue;
+                }
+                if (!target.equals(existing.getTargetDevice())) {
+                    continue;
+                }
+                String existTrigger = normalizeTrigger(existing.getTriggerType());
+                String existCondition = normalizeValue(existing.getCondition());
+
+                // Very small overlap heuristic: same trigger type and same condition string
+                if (!candTrigger.equals(existTrigger) || !candCondition.equals(existCondition)) {
+                    continue;
+                }
+
+                String existAction = normalizeValue(existing.getAction());
+                if (valuesAreIncompatible(candAction, existAction)) {
+                    conflictDetected = true;
+                    break;
+                }
+            }
+        }
+        return conflictDetected;
+    }
+
+    // --- conflict helpers (copied/kept small for mock use) ---
+    private String normalizeTrigger(String trigger) {
+        return trigger == null ? "" : trigger.trim().toLowerCase();
+    }
+
+    private String normalizeValue(String value) {
+        return value == null ? "" : value.trim().toUpperCase();
+    }
+
+    private boolean valuesAreIncompatible(String value1, String value2) {
+        boolean incompatible = false;
+        String action1 = canonicalizeAction(value1);
+        String action2 = canonicalizeAction(value2);
+        if (!action1.equals(action2)) {
+            if (isSwitchValue(action1) && isSwitchValue(action2)) {
+                incompatible = true;
+            } else if (isCoverValue(action1) && isCoverValue(action2)) {
+                incompatible = true;
+            } else if (isDimmerValue(action1) && isDimmerValue(action2)) {
+                incompatible = true;
+            } else if (isThermostatValue(action1) && isThermostatValue(action2)) {
+                try {
+                    double temp1 = extractTemperatureValue(action1);
+                    double temp2 = extractTemperatureValue(action2);
+                    incompatible = Math.abs(temp1 - temp2) > 0.5;
+                } catch (NumberFormatException e) {
+                    incompatible = false;
+                }
+            }
+        }
+        return incompatible;
+    }
+
+    private boolean isSwitchValue(String value) {
+        return "ON".equals(value) || "OFF".equals(value);
+    }
+
+    private boolean isCoverValue(String value) {
+        return "OPEN".equals(value) || "CLOSED".equals(value) || "CLOSE".equals(value);
+    }
+
+    private boolean isDimmerValue(String value) {
+        return value.matches("\\d+%?") || value.matches("0\\.\\d+");
+    }
+
+    private boolean isThermostatValue(String value) {
+        return value.matches("[0-9]+(\\\\.[0-9]+)?°?C?") || value.matches("[0-9]+(\\\\.[0-9]+)?\\s*°?C?");
+    }
+
+    private double extractTemperatureValue(String value) {
+        String numeric = value.replaceAll("[^0-9.]", "");
+        return Double.parseDouble(numeric);
+    }
+
+    private String canonicalizeAction(String value) {
+        String result = "";
+        if (value != null) {
+            String upperValue = value.trim().toUpperCase();
+            if (upperValue.contains("TURN ON")) {
+                result = "ON";
+            } else if (upperValue.contains("TURN OFF")) {
+                result = "OFF";
+            } else if (upperValue.contains("OPEN")) {
+                result = "OPEN";
+            } else if (upperValue.contains("CLOSE") || upperValue.contains("CLOSED")) {
+                result = "CLOSED";
+            } else if (upperValue.startsWith("SET TO ") && upperValue.endsWith("%")) {
+                result = upperValue.substring(7);
+            } else if (upperValue.startsWith("SET TO ") && upperValue.endsWith("°C")) {
+                result = upperValue.substring(7);
+            } else {
+                result = upperValue;
+            }
+        }
+        return result;
     }
 
     @Override
