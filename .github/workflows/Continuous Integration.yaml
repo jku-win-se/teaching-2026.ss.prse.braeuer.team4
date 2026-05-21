@@ -40,8 +40,31 @@ jobs:
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
-          # Calculate coverage for all classes as fallback
-          coverage="$(awk -F, 'NR>1 {miss += $8; cov += $9} END {total = miss + cov; if (total == 0) {print 0} else {printf "%.0f", (cov/total)*100}}' target/site/jacoco/jacoco.csv)"
+          # Calculate coverage only for non-UI service classes (matching mvn verify coverage check)
+          # Includes: at.jku.se.smarthome.service.mock.*, at.jku.se.smarthome.service.real.auth.*, at.jku.se.smarthome.service.real.schedule.*
+          # Excludes: at.jku.se.smarthome.service.api.*, anonymous classes ($)
+          coverage="$(awk -F, '
+            NR==1 { next }
+            /at\.jku\.se\.smarthome\.service\.api\./ { next }
+            /\$/ { next }
+            /at\.jku\.se\.smarthome\.service\.(mock|real\.(auth|schedule))/ {
+              miss += $8
+              cov += $9
+            }
+            END {
+              total = miss + cov
+              if (total > 0) {
+                printf "%.0f", (cov/total)*100
+              } else {
+                print "0"
+              }
+            }
+          ' target/site/jacoco/jacoco.csv)"
+          
+          # Fallback if filtering returns empty
+          if [ -z "$coverage" ] || [ "$coverage" = "0" ]; then
+            coverage="$(awk -F, 'NR>1 {miss += $8; cov += $9} END {total = miss + cov; if (total == 0) {print 0} else {printf "%.0f", (cov/total)*100}}' target/site/jacoco/jacoco.csv)"
+          fi
           
           color="red"
           if [ "$coverage" -ge 90 ]; then color="brightgreen";
@@ -52,7 +75,7 @@ jobs:
 
           badge="[![Coverage](https://img.shields.io/badge/coverage-${coverage}%25-${color})](https://github.com/${{ github.repository }}/actions/workflows/Continuous%20Integration.yaml)"
 
-          # Replace existing badge line 4
+          # Replace line 4 (coverage badge line) in README.md
           sed -i "4s/.*/$(echo "$badge" | sed 's/[&/\]/\\&/g')/" README.md
 
       - name: Commit README coverage badge
