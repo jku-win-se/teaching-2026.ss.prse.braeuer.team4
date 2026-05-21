@@ -1,6 +1,12 @@
 package at.jku.se.smarthome.controller;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import at.jku.se.smarthome.model.IntegrationDevice;
+import at.jku.se.smarthome.service.api.IoTIntegrationService;
+import at.jku.se.smarthome.service.api.LogService;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
 import at.jku.se.smarthome.service.mock.MockIoTIntegrationService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -15,9 +21,15 @@ import javafx.scene.control.cell.PropertyValueFactory;
 
 /**
  * Controller for the IoT settings view.
+ * 
+ * <p>Manages configuration and discovery of MQTT-connected physical IoT devices.
+ * All MQTT operations are logged to the activity log as actor "MQTT".
  */
 @SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyFields"})
 public class IoTSettingsController {
+    
+    /** Logger for IoT settings controller. */
+    private static final Logger LOGGER = LogManager.getLogger(IoTSettingsController.class);
 
     
     /** Toggle button to enable/disable IoT integration. */
@@ -93,7 +105,10 @@ public class IoTSettingsController {
     private TableColumn<IntegrationDevice, String> deviceStatusColumn;
     
     /** IoT integration service instance. */
-    private final MockIoTIntegrationService integrationService = MockIoTIntegrationService.getInstance();
+    private final IoTIntegrationService integrationService = MockIoTIntegrationService.getInstance();
+    
+    /** Log service for recording MQTT activities. */
+    private final LogService logService = ServiceRegistry.getLogService();
     
     @FXML
     @SuppressWarnings("PMD.UnusedPrivateMethod")
@@ -106,7 +121,7 @@ public class IoTSettingsController {
 
         protocolLabel.setText(integrationService.getProtocolName());
 
-        MockIoTIntegrationService.IoTConfiguration configuration = integrationService.getConfiguration();
+        IoTIntegrationService.IoTConfiguration configuration = integrationService.getConfiguration();
         enableToggle.setSelected(configuration.enabled());
         enableToggle.setText(configuration.enabled() ? "ON" : "OFF");
         brokerField.setText(configuration.broker());
@@ -116,6 +131,8 @@ public class IoTSettingsController {
 
         applyEnabledState(configuration.enabled());
         refreshStatusLabels(configuration.enabled(), integrationService.isConnected());
+        
+        LOGGER.info("IoT Settings controller initialized");
     }
     
     @FXML
@@ -125,11 +142,15 @@ public class IoTSettingsController {
         enableToggle.setText(enabled ? "ON" : "OFF");
         applyEnabledState(enabled);
 
-        if (!enabled) {
+        if (enabled) {
+            LOGGER.info("IoT integration enabled by user");
+        } else {
             integrationService.saveConfiguration(false, brokerField.getText(), parsePort(), usernameField.getText(), passwordField.getText());
             resultLabel.setText("Integration disabled. Virtual devices continue to work without MQTT.");
             resultLabel.setStyle("-fx-text-fill: #7f8c8d;");
             refreshStatusLabels(false, false);
+            logService.addLogEntry("IoT Integration", "Integration disabled", "MQTT");
+            LOGGER.info("IoT integration disabled by user");
         }
     }
 
@@ -156,9 +177,13 @@ public class IoTSettingsController {
         if (success) {
             resultLabel.setText("Connection test successful. Broker and port look valid for a mock MQTT setup.");
             resultLabel.setStyle("-fx-text-fill: #27ae60;");
+            logService.addLogEntry("IoT Integration", "Connection test successful to " + broker, "MQTT");
+            LOGGER.info("Connection test successful for broker: {}", broker);
         } else {
             refreshStatusLabels(true, false);
             showError("Connection failed. Please provide a valid broker and port.");
+            logService.addLogEntry("IoT Integration", "Connection test failed to " + broker, "MQTT");
+            LOGGER.warn("Connection test failed for broker: {}", broker);
         }
     }
     
@@ -175,11 +200,14 @@ public class IoTSettingsController {
             return;
         }
         
+        String broker = brokerField.getText().trim();
+        String username = usernameField.getText().trim();
+        
         integrationService.saveConfiguration(
                 true,
-                brokerField.getText().trim(),
+                broker,
                 parsePort(),
-                usernameField.getText().trim(),
+                username,
                 passwordField.getText()
         );
 
@@ -199,9 +227,13 @@ public class IoTSettingsController {
         if (connected) {
             resultLabel.setText("MQTT integration connected. You can now discover physical devices.");
             resultLabel.setStyle("-fx-text-fill: #27ae60;");
+            logService.addLogEntry("IoT Integration", "Connected to broker: " + broker, "MQTT");
+            LOGGER.info("MQTT connected to broker: {}", broker);
         } else {
             resultLabel.setText("Settings saved, but the connection is still offline.");
             resultLabel.setStyle("-fx-text-fill: #e67e22;");
+            logService.addLogEntry("IoT Integration", "Connection attempt failed for broker: " + broker, "MQTT");
+            LOGGER.warn("Failed to connect to broker: {}", broker);
         }
     }
 
@@ -216,6 +248,10 @@ public class IoTSettingsController {
         refreshStatusLabels(true, true);
         resultLabel.setText("Mock device discovery completed. Physical MQTT devices are listed below.");
         resultLabel.setStyle("-fx-text-fill: #27ae60;");
+        
+        int deviceCount = integrationService.getDiscoveredDevices().size();
+        logService.addLogEntry("IoT Integration", "Device discovery completed: found " + deviceCount + " devices", "MQTT");
+        LOGGER.info("Device discovery completed: {} devices found", deviceCount);
     }
 
     private void refreshStatusLabels(boolean enabled, boolean connected) {
