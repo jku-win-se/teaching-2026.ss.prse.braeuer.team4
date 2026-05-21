@@ -2,15 +2,23 @@ package at.jku.se.smarthome.service.mock;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import at.jku.se.smarthome.model.IntegrationDevice;
+import at.jku.se.smarthome.service.api.IoTIntegrationService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 /**
  * Mock MQTT integration layer for demonstrating optional physical device connectivity.
+ * 
+ * <p>Implements IoTIntegrationService for testing and demonstration purposes without
+ * requiring a real MQTT broker. Simulates device discovery and state changes.
  */
-public final class MockIoTIntegrationService {
+public final class MockIoTIntegrationService implements IoTIntegrationService {
 
     /** Lock for singleton synchronization. */
     private static final Object INSTANCE_LOCK = new Object();
@@ -21,6 +29,13 @@ public final class MockIoTIntegrationService {
     private final ObservableList<IntegrationDevice> discoveredDevices = FXCollections.observableArrayList();
     /** Date/time formatter for timestamps. */
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    
+    /** Map of device ID to last known state. */
+    private final Map<String, String> deviceStates = new ConcurrentHashMap<>();
+    
+    /** List of state change listeners. */
+    private final List<DeviceStateChangeListener> stateChangeListeners = 
+        new CopyOnWriteArrayList<>();
 
     /** Flag indicating if IoT integration is enabled. */
     private boolean enabled;
@@ -36,18 +51,6 @@ public final class MockIoTIntegrationService {
     private String password;
     /** Timestamp of last synchronization. */
     private String lastSync;
-
-    /**
-     * Record for IoT configuration.
-     *
-     * @param enabled enable/disable flag for IoT integration
-     * @param broker MQTT broker address
-     * @param port MQTT broker port
-     * @param username username for authentication with the MQTT broker
-     * @param password password for authentication with the MQTT broker
-     */
-    public record IoTConfiguration(boolean enabled, String broker, int port, String username, String password) {
-    }
 
     private MockIoTIntegrationService() {
         broker = "mqtt.example.com";
@@ -86,6 +89,7 @@ public final class MockIoTIntegrationService {
      *
      * @return protocol name
      */
+    @Override
     public String getProtocolName() {
         return "MQTT";
     }
@@ -95,15 +99,12 @@ public final class MockIoTIntegrationService {
      *
      * @return observable list of devices
      */
+    @Override
     public ObservableList<IntegrationDevice> getDiscoveredDevices() {
         return discoveredDevices;
     }
 
-    /**
-     * Returns current IoT configuration.
-     *
-     * @return current configuration
-     */
+    @Override
     public IoTConfiguration getConfiguration() {
         return new IoTConfiguration(enabled, broker, port, username, password);
     }
@@ -113,6 +114,7 @@ public final class MockIoTIntegrationService {
      *
      * @return true if enabled
      */
+    @Override
     public boolean isEnabled() {
         return enabled;
     }
@@ -122,6 +124,7 @@ public final class MockIoTIntegrationService {
      *
      * @return true if connected
      */
+    @Override
     public boolean isConnected() {
         return connected;
     }
@@ -131,6 +134,7 @@ public final class MockIoTIntegrationService {
      *
      * @return last sync time string
      */
+    @Override
     public String getLastSync() {
         return lastSync;
     }
@@ -144,6 +148,7 @@ public final class MockIoTIntegrationService {
      * @param username authentication username
      * @param password authentication password
      */
+    @Override
     public void saveConfiguration(boolean enabled, String broker, int port, String username, String password) {
         this.enabled = enabled;
         this.broker = broker;
@@ -164,6 +169,7 @@ public final class MockIoTIntegrationService {
      * @param portValue broker port
      * @return true if connection parameters are valid
      */
+    @Override
     public boolean testConnection(String broker, String portValue) {
         boolean result = false;
         if (broker != null && !broker.isBlank()) {
@@ -182,6 +188,7 @@ public final class MockIoTIntegrationService {
      *
      * @return true if connection successful
      */
+    @Override
     public boolean connect() {
         boolean canConnect = enabled && broker != null && !broker.isBlank() && port > 0;
         if (canConnect) {
@@ -197,6 +204,7 @@ public final class MockIoTIntegrationService {
     /**
      * Disconnects from MQTT broker.
      */
+    @Override
     public void disconnect() {
         connected = false;
     }
@@ -206,12 +214,42 @@ public final class MockIoTIntegrationService {
      *
      * @return true if refresh successful
      */
+    @Override
     public boolean refreshDevices() {
         if (connected) {
             seedDiscoveredDevices();
             lastSync = LocalDateTime.now().format(formatter);
         }
         return connected;
+    }
+
+    @Override
+    @SuppressWarnings("PMD.OnlyOneReturn")
+    public boolean publishCommand(String deviceId, String command) {
+        if (!connected) {
+            return false;
+        }
+        // Simulate command publishing and update state
+        deviceStates.put(deviceId, command);
+        for (DeviceStateChangeListener listener : stateChangeListeners) {
+            listener.onStateChanged(deviceId, command);
+        }
+        return true;
+    }
+
+    @Override
+    public String getDeviceState(String deviceId) {
+        return deviceStates.getOrDefault(deviceId, "UNKNOWN");
+    }
+
+    @Override
+    public void addStateChangeListener(DeviceStateChangeListener listener) {
+        stateChangeListeners.add(listener);
+    }
+
+    @Override
+    public void removeStateChangeListener(DeviceStateChangeListener listener) {
+        stateChangeListeners.remove(listener);
     }
 
     private void seedDiscoveredDevices() {
@@ -221,5 +259,9 @@ public final class MockIoTIntegrationService {
                 new IntegrationDevice("MQTT Bedroom Thermostat", "Thermostat", "smarthome/bedroom/thermostat/setpoint", "Online"),
                 new IntegrationDevice("MQTT Kitchen Plug", "Switch", "smarthome/kitchen/plug/state", "Sleeping")
         );
+        // Initialize device states
+        for (IntegrationDevice device : discoveredDevices) {
+            deviceStates.put(device.getTopic(), device.getStatus());
+        }
     }
 }
