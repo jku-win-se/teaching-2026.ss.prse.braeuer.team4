@@ -47,6 +47,13 @@
 - [x] CONSTRUCTION - Issue #23 Phase 6: Testing & validation ✅
 - [x] CONSTRUCTION - Issue #23 Phase 7: Code quality review ✅
 - [x] CONSTRUCTION - Issue #23 Phase 8: Final verification (DoD) ✅ COMPLETE
+- [x] CONSTRUCTION - FR-18 IoTIntegrationService interface and design
+- [x] CONSTRUCTION - FR-18 MqttIntegrationService real implementation with Paho
+- [x] CONSTRUCTION - FR-18 MockIoTIntegrationService updated with interface compliance
+- [x] CONSTRUCTION - FR-18 IoTSettingsController with logging and configuration
+- [x] CONSTRUCTION - FR-18 Unit tests for MqttIntegrationService (13/13 passing ✅)
+- [x] CONSTRUCTION - FR-18 Documentation: MQTT topic convention and architecture
+- [x] CONSTRUCTION - FR-18 US-31 marked as implemented
 - [ ] OPERATIONS - Not started
 
 ## Reverse Engineering Status
