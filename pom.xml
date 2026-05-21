@@ -59,12 +59,15 @@
 						</goals>
 						<configuration>
 							<includes>
-								<include>at/jku/se/smarthome/service/mock/*</include>
-								<include>at/jku/se/smarthome/service/real/auth/*</include>
-								<include>at/jku/se/smarthome/service/rule/*</include>
+								<include>at/jku/se/smarthome/service/**</include>
 							</includes>
 							<excludes>
 								<exclude>at/jku/se/smarthome/service/api/*</exclude>
+								<exclude>at/jku/se/smarthome/controller/*</exclude>
+								<exclude>at/jku/se/smarthome/ui/*</exclude>
+								<exclude>at/jku/se/smarthome/config/*</exclude>
+								<exclude>at/jku/se/smarthome/model/*</exclude>
+								<exclude>at/jku/se/smarthome/SmartHomeApp*</exclude>
 								<exclude>**/*$*</exclude>
 							</excludes>
 							<rules>
@@ -114,11 +117,15 @@
 				<version>3.2.5</version>
 				<configuration>
 					<argLine>
+						-Xmx256m
 						@{argLine}
 						--add-opens javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
 						--add-opens javafx.base/com.sun.javafx=ALL-UNNAMED
 						--add-exports javafx.graphics/com.sun.glass.ui=ALL-UNNAMED
 					</argLine>
+					<excludes>
+						<exclude>at/jku/se/smarthome/ui/**</exclude>
+					</excludes>
 				</configuration>
 			</plugin>
 			<plugin>

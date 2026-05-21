@@ -40,14 +40,19 @@ jobs:
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
-          # Calculate coverage only for non-UI service classes (matching mvn verify coverage check)
-          # Includes: at.jku.se.smarthome.service.mock.*, at.jku.se.smarthome.service.real.auth.*, at.jku.se.smarthome.service.real.schedule.*
-          # Excludes: at.jku.se.smarthome.service.api.*, anonymous classes ($)
+          # Calculate coverage only for non-UI business logic classes (matching mvn verify coverage check)
+          # Includes: at.jku.se.smarthome.service.**
+          # Excludes: service api interfaces, controllers, UI, config, model, app entrypoint, anonymous classes ($)
           coverage="$(awk -F, '
             NR==1 { next }
             /at\.jku\.se\.smarthome\.service\.api\./ { next }
+            /at\.jku\.se\.smarthome\.controller\./ { next }
+            /at\.jku\.se\.smarthome\.ui\./ { next }
+            /at\.jku\.se\.smarthome\.config\./ { next }
+            /at\.jku\.se\.smarthome\.model\./ { next }
+            /at\.jku\.se\.smarthome\.SmartHomeApp/ { next }
             /\$/ { next }
-            /at\.jku\.se\.smarthome\.service\.(mock|real\.(auth|schedule))/ {
+            /at\.jku\.se\.smarthome\.service\./ {
               miss += $8
               cov += $9
             }

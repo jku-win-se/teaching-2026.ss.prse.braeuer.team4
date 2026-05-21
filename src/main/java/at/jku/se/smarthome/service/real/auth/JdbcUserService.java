@@ -335,8 +335,13 @@ public final class JdbcUserService extends UserService {
     }
 
     @Override
+    @SuppressWarnings("PMD.NullAssignment")
     public void logout() {
         synchronized (this) {
+            this.currentUserEmail = null;
+            this.currentUsername = null;
+            this.currentUserRole = null;
+            this.currentUserStatus = null;
             this.currentSessionExpiresAt = 0;
         }
     }

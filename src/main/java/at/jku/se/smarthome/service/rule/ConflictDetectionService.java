@@ -149,17 +149,17 @@ public final class ConflictDetectionService {
      * @return true if value is "ON" or "OFF"
      */
     private boolean isSwitchValue(String value) {
-        return "ON".equals(value) || "OFF".equals(value);
+        return "ON".equals(value) || "OFF".equals(value) || "TURN ON".equals(value) || "TURN OFF".equals(value);
     }
 
     /**
      * Checks if a value represents a cover position.
      *
      * @param value the value to check
-     * @return true if value is "OPEN" or "CLOSED"
+     * @return true if value is "OPEN" or "CLOSED" or "CLOSE"
      */
     private boolean isCoverValue(String value) {
-        return "OPEN".equals(value) || "CLOSED".equals(value);
+        return "OPEN".equals(value) || "CLOSED".equals(value) || "CLOSE".equals(value);
     }
 
     /**
