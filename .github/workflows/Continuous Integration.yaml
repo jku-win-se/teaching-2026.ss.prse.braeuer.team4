@@ -41,13 +41,13 @@ jobs:
         shell: bash
         run: |
           # Filter jacoco.csv to include only non-UI service classes (matching mvn verify coverage check)
-          # Includes: service/mock/*, service/real/auth/*, service/real/schedule/*
-          # Excludes: service/api/*, anonymous classes ($)
+          # Includes: at.jku.se.smarthome.service.mock.*, at.jku.se.smarthome.service.real.auth.*, at.jku.se.smarthome.service.real.schedule.*
+          # Excludes: at.jku.se.smarthome.service.api.*, anonymous classes ($)
           coverage="$(awk -F, '
             NR==1 { next }  # Skip header
-            /service\/api\// { next }  # Exclude API classes
+            /at\.jku\.se\.smarthome\.service\.api\./ { next }  # Exclude API classes
             /\$/ { next }  # Exclude anonymous classes
-            /service\/(mock|real\/(auth|schedule))/ {
+            /at\.jku\.se\.smarthome\.service\.(mock|real\.(auth|schedule))/ {
               miss += $8
               cov += $9
             }
@@ -60,6 +60,11 @@ jobs:
               }
             }
           ' target/site/jacoco/jacoco.csv)"
+          
+          # Fallback to full coverage if no matching classes found
+          if [ -z "$coverage" ]; then
+            coverage="$(awk -F, 'NR>1 {miss += $8; cov += $9} END {total = miss + cov; if (total == 0) {print 0} else {printf "%.0f", (cov/total)*100}}' target/site/jacoco/jacoco.csv)"
+          fi
           
           color="red"
           if [ "$coverage" -ge 90 ]; then color="brightgreen";
