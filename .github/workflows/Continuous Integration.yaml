@@ -40,6 +40,10 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('target/site/jacoco/jacoco.csv') != ''
         shell: bash
         run: |
+          echo "=== DEBUG: Starting coverage badge update ==="
+          echo "README.md line 4 (current):"
+          sed -n '4p' README.md
+          
           # Filter jacoco.csv to include only non-UI service classes (matching mvn verify coverage check)
           # Includes: at.jku.se.smarthome.service.mock.*, at.jku.se.smarthome.service.real.auth.*, at.jku.se.smarthome.service.real.schedule.*
           # Excludes: at.jku.se.smarthome.service.api.*, anonymous classes ($)
@@ -61,10 +65,15 @@ jobs:
             }
           ' target/site/jacoco/jacoco.csv)"
           
+          echo "DEBUG: Filtered coverage: $coverage"
+          
           # Fallback to full coverage if no matching classes found
-          if [ -z "$coverage" ]; then
+          if [ -z "$coverage" ] || [ "$coverage" = "0" ]; then
+            echo "DEBUG: Using fallback full coverage calculation"
             coverage="$(awk -F, 'NR>1 {miss += $8; cov += $9} END {total = miss + cov; if (total == 0) {print 0} else {printf "%.0f", (cov/total)*100}}' target/site/jacoco/jacoco.csv)"
           fi
+          
+          echo "DEBUG: Final coverage: $coverage"
           
           color="red"
           if [ "$coverage" -ge 90 ]; then color="brightgreen";
@@ -74,14 +83,23 @@ jobs:
           fi
 
           badge="[![Coverage](https://img.shields.io/badge/coverage-${coverage}%25-${color})](https://github.com/${{ github.repository }}/actions/workflows/Continuous%20Integration.yaml)"
+          echo "DEBUG: New badge:"
+          echo "$badge"
 
           if grep -qE '^\[!\[Coverage\]\(' README.md; then
-            sed -i -E "s#^\[!\[Coverage\]\(.*#${badge}#g" README.md
+            echo "DEBUG: Found Coverage badge pattern, replacing"
+            sed -i -E "s#^\[!\[Coverage\]\(.*\)#${badge}#" README.md
           elif grep -qE '^\[!\[codecov\]\(' README.md; then
-            sed -i -E "s#^\[!\[codecov\]\(.*#${badge}#g" README.md
+            echo "DEBUG: Found codecov badge pattern, replacing"
+            sed -i -E "s#^\[!\[codecov\]\(.*\)#${badge}#" README.md
           else
+            echo "DEBUG: No badge found, inserting at line 3"
             sed -i "3i ${badge}" README.md
           fi
+          
+          echo "DEBUG: README.md line 4 (after):"
+          sed -n '4p' README.md
+          echo "=== DEBUG: Coverage badge update complete ==="
 
       - name: Commit README coverage badge
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
