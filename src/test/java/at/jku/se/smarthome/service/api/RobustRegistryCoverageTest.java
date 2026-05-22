@@ -44,10 +44,10 @@ public class RobustRegistryCoverageTest {
 
         ServiceRegistry.setUserServiceForTesting(MockUserService.getInstance());
         ServiceRegistry.setRoomServiceForTesting(MockRoomService.getInstance());
-        ServiceRegistry.setRuleServiceForTesting(MockRuleService.getInstance());
         ServiceRegistry.setLogServiceForTesting(MockLogService.getInstance());
-        ServiceRegistry.setScheduleServiceForTesting(MockScheduleService.getInstance());
         ServiceRegistry.setNotificationServiceForTesting(MockNotificationService.getInstance());
+        ServiceRegistry.setRuleServiceForTesting(MockRuleService.getInstance());
+        ServiceRegistry.setScheduleServiceForTesting(MockScheduleService.getInstance());
         ServiceRegistry.setEnergyServiceForTesting(MockEnergyService.getInstance());
         ServiceRegistry.setSceneServiceForTesting(MockSceneService.getInstance());
     }
