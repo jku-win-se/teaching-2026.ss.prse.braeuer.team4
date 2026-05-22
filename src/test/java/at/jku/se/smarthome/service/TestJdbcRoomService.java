@@ -7,6 +7,7 @@ import java.sql.Statement;
 
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -24,9 +25,8 @@ import at.jku.se.smarthome.service.real.room.JdbcRoomService;
  * Exercises add, rename and remove device operations against an in-memory H2 database to
  * validate persistence and in-memory view synchronization.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.UnitTestContainsTooManyAsserts"})
 public class TestJdbcRoomService {
-
 
     /** JDBC URL property. */
     private static final String URL_PROPERTY = "smarthome.db.url";
@@ -39,6 +39,12 @@ public class TestJdbcRoomService {
     private String jdbcUrl;
     /** Room service under test. */
     private JdbcRoomService service;
+
+    /** Default constructor. */
+    @SuppressWarnings("PMD.UnnecessaryConstructor")
+    public TestJdbcRoomService() {
+        // Default constructor
+    }
 
     /**
      * Sets up test fixtures before each test.
@@ -137,7 +143,7 @@ public class TestJdbcRoomService {
      * Test: device count in database equals 1 after addition.
      */
     @Test
-    @SuppressWarnings({"PMD.CheckResultSet", "PMD.UnitTestContainsTooManyAsserts"})
+    @SuppressWarnings("PMD.CheckResultSet")
     public void deviceCountInDatabaseEqualsOneAfterAddition() throws Exception {
         Room room = service.addRoom("Test Room");
         service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
@@ -190,7 +196,7 @@ public class TestJdbcRoomService {
      * Test: device count in database equals zero after deletion.
      */
     @Test
-    @SuppressWarnings({"PMD.CheckResultSet", "PMD.UnitTestContainsTooManyAsserts"})
+    @SuppressWarnings("PMD.CheckResultSet")
     public void deviceCountInDatabaseEqualsZeroAfterDeletion() throws Exception {
         Room room = service.addRoom("Test Room");
         Device device = service.addDeviceToRoom(room.getId(), "Test Device", "Switch");
@@ -201,6 +207,87 @@ public class TestJdbcRoomService {
             assertTrue(resultSet.next());
             assertEquals(0, resultSet.getInt(1));
         }
+    }
+
+    /**
+     * Test: updating room name is successful.
+     */
+    @Test
+    public void updateRoomNameSuccess() {
+        Room room = service.addRoom("Old Name");
+        assertTrue(service.updateRoomName(room.getId(), "New Name"));
+        assertEquals("New Name", room.getName());
+    }
+
+    /**
+     * Test: deleting room is successful and cleans up devices.
+     */
+    @Test
+    public void deleteRoomSuccess() {
+        Room room = service.addRoom("To Delete");
+        service.addDeviceToRoom(room.getId(), "D1", "Switch");
+        assertTrue(service.deleteRoom(room.getId()));
+        assertEquals(0, service.getRooms().size());
+        assertEquals(0, service.getAllDevices().size());
+    }
+
+    /**
+     * Test: retrieving device by name is successful.
+     */
+    @Test
+    public void testGetDeviceByNameSuccess() {
+        Room room = service.addRoom("Room");
+        service.addDeviceToRoom(room.getId(), "Named Device", "Switch");
+        assertNotNull(service.getDeviceByName("Named Device"));
+    }
+
+    /**
+     * Test: updating device state is successful.
+     */
+    @Test
+    public void updateDeviceStateSuccess() {
+        Room room = service.addRoom("Room");
+        Device device = service.addDeviceToRoom(room.getId(), "D1", "Switch");
+        assertTrue(service.updateDeviceState(device.getId(), false));
+        assertFalse(device.getState());
+    }
+
+    /**
+     * Test: updating device brightness is successful.
+     */
+    @Test
+    public void updateDeviceBrightnessSuccess() {
+        Room room = service.addRoom("Room");
+        Device device = service.addDeviceToRoom(room.getId(), "Dimmer", "Dimmer");
+        assertTrue(service.updateDeviceBrightness(device.getId(), 50));
+        assertEquals(50, device.getBrightness());
+    }
+
+    /**
+     * Test: updating device temperature is successful.
+     */
+    @Test
+    public void updateDeviceTemperatureSuccess() {
+        Room room = service.addRoom("Room");
+        Device device = service.addDeviceToRoom(room.getId(), "Thermo", "Thermostat");
+        assertTrue(service.updateDeviceTemperature(device.getId(), 22.5));
+        assertEquals(22.5, device.getTemperature(), 0.01);
+    }
+
+    /**
+     * Test: refreshing data from database is successful.
+     */
+    @Test
+    public void refreshFromDatabase() {
+        Room room = service.addRoom("Persisted");
+        service.addDeviceToRoom(room.getId(), "Device", "Switch");
+        
+        JdbcRoomService.resetForTesting();
+        JdbcRoomService restarted = JdbcRoomService.getInstance();
+        
+        assertEquals(1, restarted.getRooms().size());
+        assertEquals("Persisted", restarted.getRooms().get(0).getName());
+        assertEquals(1, restarted.getAllDevices().size());
     }
 }
 

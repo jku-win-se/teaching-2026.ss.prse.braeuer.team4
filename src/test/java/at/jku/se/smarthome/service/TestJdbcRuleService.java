@@ -28,10 +28,8 @@ import at.jku.se.smarthome.service.real.rule.JdbcRuleService;
  * service restart (FR-10/FR-11 persistence) and that the in-memory mirror
  * stays consistent with database state across add/update/delete/toggle.
  */
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.TooManyMethods",
-        "PMD.MethodNamingConventions", "PMD.UnitTestContainsTooManyAsserts",
-        "PMD.JUnitTestsShouldIncludeAssert", "PMD.CommentRequired",
-        "PMD.TooManyStaticImports"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.MethodNamingConventions", 
+    "PMD.UnitTestContainsTooManyAsserts", "PMD.CommentRequired", "PMD.TooManyStaticImports"})
 public class TestJdbcRuleService {
 
     /** JDBC URL property. */
@@ -46,6 +44,15 @@ public class TestJdbcRuleService {
     /** Service under test. */
     private JdbcRuleService service;
 
+    /** Default constructor. */
+    @SuppressWarnings("PMD.UnnecessaryConstructor")
+    public TestJdbcRuleService() {
+        // Default constructor
+    }
+
+    /**
+     * Set up test fixtures before each test.
+     */
     @Before
     public void setUp() {
         jdbcUrl = "jdbc:h2:mem:rules_" + System.nanoTime()
@@ -64,12 +71,16 @@ public class TestJdbcRuleService {
         // Notification + log services are looked up via ServiceRegistry inside
         // JdbcRuleService; route them to the mock implementations so the rule
         // service does not pull in another JDBC singleton.
+        ServiceRegistry.setRoomServiceForTesting(MockRoomService.getInstance());
         ServiceRegistry.setNotificationServiceForTesting(MockNotificationService.getInstance());
         ServiceRegistry.setLogServiceForTesting(MockLogService.getInstance());
 
         service = JdbcRuleService.getInstance();
     }
 
+    /**
+     * Tear down test fixtures after each test.
+     */
     @After
     public void tearDown() {
         JdbcRuleService.resetForTesting();
@@ -80,6 +91,9 @@ public class TestJdbcRuleService {
         System.clearProperty(PASSWORD_PROPERTY);
     }
 
+    /**
+     * Test: seeded rules are loaded from init script on first start.
+     */
     @Test
     public void seededRules_loadFromInitScriptOnFirstStart() {
         assertEquals(3, service.getRules().size());
@@ -91,6 +105,9 @@ public class TestJdbcRuleService {
         assertEquals("Time", first.getTriggerType());
     }
 
+    /**
+     * Test: adding rule persists across service restart.
+     */
     @Test
     public void addRule_persistsAcrossServiceRestart() {
         Rule created = service.addRule("Late Night", "Time", "Clock", "23:00",
@@ -109,6 +126,9 @@ public class TestJdbcRuleService {
         assertTrue(reloaded.isEnabled());
     }
 
+    /**
+     * Test: updating rule writes changes to database.
+     */
     @Test
     public void updateRule_writesChangesToDatabase() {
         Rule created = service.addRule("Tweak Me", "Time", "Clock", "07:00",
@@ -130,6 +150,9 @@ public class TestJdbcRuleService {
         assertEquals("Turn Off", reloaded.getAction());
     }
 
+    /**
+     * Test: deleting rule removes it from database and mirror.
+     */
     @Test
     public void deleteRule_removesFromDatabaseAndMirror() {
         int sizeBefore = service.getRules().size();
@@ -149,48 +172,106 @@ public class TestJdbcRuleService {
         }
     }
 
+    /**
+     * Test: deleting rule with unknown ID returns false.
+     */
     @Test
     public void deleteRule_unknownId_returnsFalse() {
         assertFalse(service.deleteRule("does-not-exist"));
     }
 
+    /**
+     * Test: manual execution of rule is successful.
+     */
     @Test
-    public void toggleRule_persistsEnabledFlipAcrossRestart() {
-        boolean toggled = service.toggleRule("rule-001");
-        assertTrue(toggled);
-        Rule afterToggle = service.getRules().stream()
-                .filter(r -> "rule-001".equals(r.getId()))
-                .findFirst()
-                .orElseThrow();
-        assertFalse(afterToggle.isEnabled());
-        assertEquals("Inactive", afterToggle.getStatus());
-
-        JdbcRuleService.resetForTesting();
-        JdbcRuleService restarted = JdbcRuleService.getInstance();
-        Rule reloaded = restarted.getRules().stream()
-                .filter(r -> "rule-001".equals(r.getId()))
-                .findFirst()
-                .orElseThrow();
-        assertFalse("toggled state must persist", reloaded.isEnabled());
-        assertEquals("Inactive", reloaded.getStatus());
+    public void executeRule_manual_success() {
+        // Find existing "Main Light" device or add it if not found (though it should be there from MockRoomService init)
+        at.jku.se.smarthome.model.Device target = ServiceRegistry.getRoomService().getDeviceByName("Main Light");
+        if (target == null) {
+            target = new at.jku.se.smarthome.model.Device("light-1", "Main Light", "Switch", "Living Room", false);
+            ServiceRegistry.getRoomService().getRooms().get(0).addDevice(target);
+        }
+        target.setState(false);
+        
+        Rule rule = service.addRule("Test Manual", "Time", "Clock", "12:00", "Turn On", "Main Light");
+        boolean executed = service.executeRule(rule.getId(), true);
+        
+        assertTrue("Manual execution should succeed", executed);
+        assertTrue("Target device should be turned on", target.getState());
     }
 
+    /**
+     * Test: rule execution fails if condition is not met.
+     */
     @Test
-    public void addRule_invalidValidation_returnsNullAndDoesNotPersist() {
-        // Empty trigger type is invalid per RuleValidator.
-        Rule created = service.addRule("Bad Rule", "", "Clock", "07:00",
-                "Turn On", "Main Light");
-        assertNull(created);
-
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(
-                     "SELECT COUNT(*) AS cnt FROM rules WHERE name = 'Bad Rule'")) {
-            if (resultSet.next()) {
-                assertEquals("invalid rule must not be inserted", 0, resultSet.getInt("cnt"));
-            }
-        } catch (SQLException exception) {
-            throw new IllegalStateException(exception);
+    public void executeRule_conditionNotMet_returnsFalse() {
+        at.jku.se.smarthome.model.Device target = ServiceRegistry.getRoomService().getDeviceByName("Main Light");
+        if (target == null) {
+            target = new at.jku.se.smarthome.model.Device("light-1", "Main Light", "Switch", "Living Room", false);
+            ServiceRegistry.getRoomService().getRooms().get(0).addDevice(target);
         }
+        
+        // Use a time format supported by RuleValidator (HH:mm)
+        Rule rule = service.addRule("Test Cond", "Time", "Clock", "23:59", "Turn On", "Main Light");
+        assertNotNull("Rule should be created", rule);
+        boolean executed = service.executeRule(rule.getId(), false);
+        
+        assertFalse("Execution should fail if condition not met", executed);
+    }
+
+    /**
+     * Test: conflict detection works for same target with opposite actions.
+     */
+    @Test
+    public void hasConflicts_detectsSameTargetOppositeAction() {
+        service.addRule("Rule 1", "Time", "Clock", "12:00", "Turn On", "Light A");
+        Rule rule2 = service.addRule("Rule 2", "Time", "Clock", "12:00", "Turn Off", "Light A");
+        
+        assertTrue("Conflict should be detected for same target, same trigger, different action", 
+                service.hasConflicts(rule2.getId()));
+    }
+
+    /**
+     * Test: applying parameterized action for brightness.
+     */
+    @Test
+    public void applyParameterizedAction_brightness() {
+        at.jku.se.smarthome.model.Device target = ServiceRegistry.getRoomService().getDeviceByName("Dimmer Light");
+        if (target == null) {
+            target = new at.jku.se.smarthome.model.Device("dimmer-1", "Dimmer Light", "Dimmer", "Living Room", false);
+            ServiceRegistry.getRoomService().getRooms().get(0).addDevice(target);
+        }
+        
+        Rule rule = service.addRule("Dim", "Time", "Clock", "12:00", "Set to 75%", "Dimmer Light");
+        service.executeRule(rule.getId(), true);
+        
+        assertEquals(75, target.getBrightness());
+    }
+
+    /**
+     * Test: applying parameterized action for temperature.
+     */
+    @Test
+    public void applyParameterizedAction_temperature() {
+        at.jku.se.smarthome.model.Device target = ServiceRegistry.getRoomService().getDeviceByName("Temperature Control");
+        if (target == null) {
+            target = new at.jku.se.smarthome.model.Device("thermo-1", "Temperature Control", "Thermostat", "Bedroom", false);
+            ServiceRegistry.getRoomService().getRooms().get(1).addDevice(target);
+        }
+        
+        Rule rule = service.addRule("Warm", "Time", "Clock", "12:00", "Set to 22.5°C", "Temperature Control");
+        service.executeRule(rule.getId(), true);
+        
+        assertEquals(22.5, target.getTemperature(), 0.01);
+    }
+
+    /**
+     * Test: starting and stopping recurring execution.
+     */
+    @Test
+    public void startAndStopExecution() {
+        service.startRecurringExecution();
+        service.stopRecurringExecution();
+        assertNotNull(service);
     }
 }

@@ -333,7 +333,7 @@ public final class JdbcEnergyService implements EnergyService {
         // If no activity this week, check if empty cache exists
         if (maxActivityTimeStr == null) {
             String cacheExistsSql = "SELECT COUNT(*) as cnt FROM energy_weekly "
-                    + "WHERE year = ? AND iso_week = ?";
+                    + "WHERE \"year\" = ? AND iso_week = ?";
             try (PreparedStatement stmt = connection.prepareStatement(cacheExistsSql)) {
                 stmt.setInt(1, year);
                 stmt.setInt(2, isoWeekOfYear);
@@ -348,7 +348,7 @@ public final class JdbcEnergyService implements EnergyService {
 
         // Check if cache exists and is more recent than last activity
         String checkCacheSql = "SELECT COUNT(*) as cnt FROM energy_weekly "
-                + "WHERE year = ? AND iso_week = ? AND created_at > ?";
+                + "WHERE \"year\" = ? AND iso_week = ? AND created_at > ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(checkCacheSql)) {
             stmt.setInt(1, year);
@@ -387,7 +387,7 @@ public final class JdbcEnergyService implements EnergyService {
         Map<String, Double> result = new LinkedHashMap<>();
         
         String sql = "SELECT device_name, consumption_wh FROM energy_weekly "
-                + "WHERE year = ? AND iso_week = ?";
+                + "WHERE \"year\" = ? AND iso_week = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, year);
             stmt.setInt(2, isoWeekOfYear);
@@ -414,9 +414,9 @@ public final class JdbcEnergyService implements EnergyService {
      */
     private void storeWeeklyConsumptionCache(Connection connection, int year, int isoWeekOfYear, 
                                              String deviceName, double onTimeHours, double consumptionWh) throws SQLException {
-        String sql = "INSERT INTO energy_weekly (year, iso_week, device_id, device_name, on_time_hours, consumption_wh) "
+        String sql = "INSERT INTO energy_weekly (\"year\", iso_week, device_id, device_name, on_time_hours, consumption_wh) "
                 + "VALUES (?, ?, ?, ?, ?, ?) "
-                + "ON CONFLICT (year, iso_week, device_id) DO UPDATE SET "
+                + "ON CONFLICT (\"year\", iso_week, device_id) DO UPDATE SET "
                 + "on_time_hours = EXCLUDED.on_time_hours, "
                 + "consumption_wh = EXCLUDED.consumption_wh, "
                 + "created_at = CURRENT_TIMESTAMP";

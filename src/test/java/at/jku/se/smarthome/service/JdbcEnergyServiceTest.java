@@ -5,10 +5,12 @@ import java.util.Map;
 
 import org.junit.After;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.real.energy.JdbcEnergyService;
 
 /**
@@ -16,24 +18,40 @@ import at.jku.se.smarthome.service.real.energy.JdbcEnergyService;
  * <p>
  * Test scenarios verify energy consumption retrieval and basic validations.
  */
-@SuppressWarnings({ "PMD.AtLeastOneConstructor", "PMD.TooManyMethods" })
+@SuppressWarnings({ "PMD.TooManyMethods" })
 public class JdbcEnergyServiceTest {
     /** Energy service instance under test. */
     private JdbcEnergyService energyService;
 
     /**
-     * Skips the test if running on CI (headless environment).
+     * Default constructor.
      */
-    @org.junit.BeforeClass
-    public static void skipIfHeadless() {
-        assumeTrue("Skipping DB test on CI (headless)", System.getenv("CI") == null);
+    @SuppressWarnings("PMD.UnnecessaryConstructor")
+    public JdbcEnergyServiceTest() {
+        // Default constructor
     }
 
     /**
      * Setup test environment before each test.
      */
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
+        ServiceRegistry.resetForTesting();
+        // Use in-memory DB for tests
+        String jdbcUrl = "jdbc:h2:mem:energy_" + System.nanoTime() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1";
+        System.setProperty("smarthome.db.url", jdbcUrl);
+        System.setProperty("smarthome.db.user", "sa");
+        System.setProperty("smarthome.db.password", "");
+        
+        // Pre-create tables that energy service depends on but doesn't manage
+        try (java.sql.Connection conn = java.sql.DriverManager.getConnection(jdbcUrl, "sa", "")) {
+            conn.createStatement().execute("CREATE TABLE IF NOT EXISTS activity_log (timestamp VARCHAR(64), device VARCHAR(255), room VARCHAR(255), action VARCHAR(64), actor VARCHAR(255))");
+            conn.createStatement().execute("CREATE TABLE IF NOT EXISTS devices (name VARCHAR(255) PRIMARY KEY, type VARCHAR(64), state BOOLEAN)");
+        }
+
+        MockRoomService.resetForTesting();
+        ServiceRegistry.setRoomServiceForTesting(MockRoomService.getInstance());
+        
         // Reset singleton for test isolation
         JdbcEnergyService.resetForTesting();
         energyService = JdbcEnergyService.getInstance();
@@ -49,6 +67,11 @@ public class JdbcEnergyServiceTest {
             energyService.invalidateCache();
         }
         JdbcEnergyService.resetForTesting();
+        ServiceRegistry.resetForTesting();
+        MockRoomService.resetForTesting();
+        System.clearProperty("smarthome.db.url");
+        System.clearProperty("smarthome.db.user");
+        System.clearProperty("smarthome.db.password");
     }
 
     /**
@@ -64,6 +87,31 @@ public class JdbcEnergyServiceTest {
 
         // Assert
         assertNotNull("Daily device consumption should not be null", dailyConsumption);
+    }
+
+    /**
+     * Test: Weekly consumption retrieval by room.
+     */
+    @Test
+    public void testGetWeeklyByRoom() {
+        LocalDate today = LocalDate.now();
+        int isoWeek = today.get(java.time.temporal.WeekFields.ISO.weekOfYear());
+        int year = today.getYear();
+        
+        Map<String, Double> weeklyRoom = energyService.getWeeklyByRoom(isoWeek, year);
+        assertNotNull(weeklyRoom);
+    }
+
+    /**
+     * Test: Household weekly consumption retrieval.
+     */
+    @Test
+    public void testGetHouseholdWeekly() {
+        LocalDate today = LocalDate.now();
+        int isoWeek = today.get(java.time.temporal.WeekFields.ISO.weekOfYear());
+        int year = today.getYear();
+        double household = energyService.getHouseholdWeekly(isoWeek, year);
+        assertTrue(household >= 0);
     }
 
     /**

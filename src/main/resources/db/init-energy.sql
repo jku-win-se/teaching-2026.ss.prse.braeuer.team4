@@ -15,14 +15,14 @@ CREATE TABLE IF NOT EXISTS energy_daily (
 
 -- Optional table for storing pre-calculated weekly energy consumption
 CREATE TABLE IF NOT EXISTS energy_weekly (
-    year INTEGER NOT NULL,
+    "year" INTEGER NOT NULL,
     iso_week INTEGER NOT NULL,
     device_id TEXT NOT NULL,
     device_name TEXT NOT NULL,
     on_time_hours DECIMAL(10, 2) NOT NULL,
     consumption_wh DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (year, iso_week, device_id)
+    PRIMARY KEY ("year", iso_week, device_id)
 );
 
 -- Optional table for device type to nominal power mapping (cache)
@@ -34,4 +34,4 @@ CREATE TABLE IF NOT EXISTS device_power_config (
 
 -- Index for efficient queries by device and date
 CREATE INDEX IF NOT EXISTS idx_energy_daily_device ON energy_daily(device_name, date);
-CREATE INDEX IF NOT EXISTS idx_energy_weekly_device ON energy_weekly(device_name, year, iso_week);
+CREATE INDEX IF NOT EXISTS idx_energy_weekly_device ON energy_weekly(device_name, "year", iso_week);

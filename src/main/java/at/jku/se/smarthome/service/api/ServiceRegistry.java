@@ -277,6 +277,7 @@ public final class ServiceRegistry {
             testUserServiceOverride = null;
             testRuleServiceOverride = null;
             testNotificationServiceOverride = null;
+            testEnergyServiceOverride = null;
             testSceneServiceOverride = null;
         }
     }
