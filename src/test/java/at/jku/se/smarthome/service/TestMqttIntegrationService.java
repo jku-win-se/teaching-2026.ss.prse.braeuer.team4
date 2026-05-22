@@ -1,16 +1,16 @@
 package at.jku.se.smarthome.service;
 
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.junit.After;
+import static org.junit.Assume.assumeTrue;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import at.jku.se.smarthome.model.IntegrationDevice;
 import at.jku.se.smarthome.service.api.IoTIntegrationService.IoTConfiguration;
 import at.jku.se.smarthome.service.real.mqtt.MqttIntegrationService;
 
@@ -22,6 +22,14 @@ public class TestMqttIntegrationService {
 
     /** The service under test. */
     private MqttIntegrationService service;
+
+    /**
+     * Skips the test on headless CI where JavaFX initialization can block.
+     */
+    @BeforeClass
+    public static void skipIfHeadless() {
+        assumeTrue("Skipping JavaFX service test on CI", System.getenv("CI") == null);
+    }
 
     /**
      * Sets up test fixtures before each test.

@@ -1,14 +1,25 @@
 package at.jku.se.smarthome.controller;
 
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
-import at.jku.se.smarthome.model.*;
-import at.jku.se.smarthome.service.api.ServiceRegistry;
-import at.jku.se.smarthome.service.mock.*;
-import javafx.scene.layout.VBox;
-import javafx.scene.control.ComboBox;
 import java.lang.reflect.Method;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import at.jku.se.smarthome.model.Device;
+import at.jku.se.smarthome.model.Room;
+import at.jku.se.smarthome.model.Schedule;
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.mock.MockRuleService;
+import at.jku.se.smarthome.service.mock.MockUserService;
+import javafx.scene.control.ComboBox;
+import javafx.scene.layout.VBox;
 
 /**
  * Robust unit tests for controller logic without launching full UI.
@@ -24,6 +35,14 @@ public class RobustControllerCoverageTest {
     @SuppressWarnings("PMD.UnnecessaryConstructor")
     public RobustControllerCoverageTest() {
         // Default constructor
+    }
+
+    /**
+     * Skips the test on headless CI where JavaFX initialization can block.
+     */
+    @BeforeClass
+    public static void skipIfHeadless() {
+        assumeTrue("Skipping JavaFX controller coverage test on CI", System.getenv("CI") == null);
     }
 
     /**
