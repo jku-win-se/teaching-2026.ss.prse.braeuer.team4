@@ -4,7 +4,6 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 import org.junit.Before;
@@ -131,7 +130,7 @@ public class TestMqttIntegrationService {
     public void testMessageArrivedIgnoresInvalidTopic() throws Exception {
         service.messageArrived("invalid/topic", new MqttMessage("ON".getBytes()));
         service.messageArrived("smarthome/device/invalid", new MqttMessage("ON".getBytes()));
-        assertNotNull(service);
+        org.junit.Assert.assertNotNull(service);
     }
 
     /**
@@ -149,7 +148,7 @@ public class TestMqttIntegrationService {
     @Test
     public void testDeliveryComplete() {
         service.deliveryComplete(null);
-        assertNotNull(service);
+        org.junit.Assert.assertNotNull(service);
     }
 
     /**

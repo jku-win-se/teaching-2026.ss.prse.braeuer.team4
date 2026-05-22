@@ -1,9 +1,18 @@
 package at.jku.se.smarthome.service.api;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
-import at.jku.se.smarthome.service.mock.*;
+
+import at.jku.se.smarthome.service.mock.MockEnergyService;
+import at.jku.se.smarthome.service.mock.MockLogService;
+import at.jku.se.smarthome.service.mock.MockNotificationService;
+import at.jku.se.smarthome.service.mock.MockRoomService;
+import at.jku.se.smarthome.service.mock.MockRuleService;
+import at.jku.se.smarthome.service.mock.MockSceneService;
+import at.jku.se.smarthome.service.mock.MockScheduleService;
+import at.jku.se.smarthome.service.mock.MockUserService;
 
 /**
  * Robust unit tests for ServiceRegistry.
@@ -24,6 +33,23 @@ public class RobustRegistryCoverageTest {
     @Before
     public void setUp() {
         ServiceRegistry.resetForTesting();
+        MockUserService.resetForTesting();
+        MockRoomService.resetForTesting();
+        MockRuleService.resetForTesting();
+        MockLogService.resetForTesting();
+        MockScheduleService.resetForTesting();
+        MockNotificationService.resetForTesting();
+        MockEnergyService.resetForTesting();
+        MockSceneService.resetForTesting();
+
+        ServiceRegistry.setUserServiceForTesting(MockUserService.getInstance());
+        ServiceRegistry.setRoomServiceForTesting(MockRoomService.getInstance());
+        ServiceRegistry.setRuleServiceForTesting(MockRuleService.getInstance());
+        ServiceRegistry.setLogServiceForTesting(MockLogService.getInstance());
+        ServiceRegistry.setScheduleServiceForTesting(MockScheduleService.getInstance());
+        ServiceRegistry.setNotificationServiceForTesting(MockNotificationService.getInstance());
+        ServiceRegistry.setEnergyServiceForTesting(MockEnergyService.getInstance());
+        ServiceRegistry.setSceneServiceForTesting(MockSceneService.getInstance());
     }
 
     /**
@@ -43,10 +69,7 @@ public class RobustRegistryCoverageTest {
         assertNotNull(ServiceRegistry.getSceneService());
         
         // Exercise overrides
-        ServiceRegistry.setUserServiceForTesting(MockUserService.getInstance());
         assertEquals(MockUserService.getInstance(), ServiceRegistry.getUserService());
-        
-        ServiceRegistry.setRoomServiceForTesting(MockRoomService.getInstance());
         assertEquals(MockRoomService.getInstance(), ServiceRegistry.getRoomService());
 
         ServiceRegistry.resetForTesting();

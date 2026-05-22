@@ -4,13 +4,13 @@ import java.time.LocalDate;
 import java.util.Map;
 
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import at.jku.se.smarthome.service.api.ServiceRegistry;
+import at.jku.se.smarthome.service.mock.MockRoomService;
 import at.jku.se.smarthome.service.real.energy.JdbcEnergyService;
 
 /**
@@ -36,6 +36,7 @@ public class JdbcEnergyServiceTest {
      */
     @Before
     public void setUp() throws Exception {
+        ServiceRegistry.resetForTesting();
         // Use in-memory DB for tests
         String jdbcUrl = "jdbc:h2:mem:energy_" + System.nanoTime() + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1";
         System.setProperty("smarthome.db.url", jdbcUrl);
@@ -47,6 +48,9 @@ public class JdbcEnergyServiceTest {
             conn.createStatement().execute("CREATE TABLE IF NOT EXISTS activity_log (timestamp VARCHAR(64), device VARCHAR(255), room VARCHAR(255), action VARCHAR(64), actor VARCHAR(255))");
             conn.createStatement().execute("CREATE TABLE IF NOT EXISTS devices (name VARCHAR(255) PRIMARY KEY, type VARCHAR(64), state BOOLEAN)");
         }
+
+        MockRoomService.resetForTesting();
+        ServiceRegistry.setRoomServiceForTesting(MockRoomService.getInstance());
         
         // Reset singleton for test isolation
         JdbcEnergyService.resetForTesting();
@@ -63,6 +67,8 @@ public class JdbcEnergyServiceTest {
             energyService.invalidateCache();
         }
         JdbcEnergyService.resetForTesting();
+        ServiceRegistry.resetForTesting();
+        MockRoomService.resetForTesting();
         System.clearProperty("smarthome.db.url");
         System.clearProperty("smarthome.db.user");
         System.clearProperty("smarthome.db.password");
