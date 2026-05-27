@@ -1,0 +1,16 @@
+at.jku.se.smarthome
+at.jku.se.smarthome.config
+at.jku.se.smarthome.controller
+at.jku.se.smarthome.model
+at.jku.se.smarthome.service.api
+at.jku.se.smarthome.service.mock
+at.jku.se.smarthome.service.real.auth
+at.jku.se.smarthome.service.real.energy
+at.jku.se.smarthome.service.real.log
+at.jku.se.smarthome.service.real.mqtt
+at.jku.se.smarthome.service.real.notification
+at.jku.se.smarthome.service.real.room
+at.jku.se.smarthome.service.real.rule
+at.jku.se.smarthome.service.real.scene
+at.jku.se.smarthome.service.real.schedule
+at.jku.se.smarthome.service.rule
