@@ -31,4 +31,4 @@
 
 # JavaDoc für wichtige Klassen, Interfaces und Methoden
 
-[Links zu JavaDoc-Seiten](./docs/javadoc/index.html)
+[Links zu JavaDoc-Seiten](https://jku-win-se.github.io/teaching-2026.ss.prse.braeuer.team4/javadoc/index.html)
