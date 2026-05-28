@@ -410,10 +410,10 @@ public final class JdbcRuleService implements RuleService {
     private String nextRuleId() {
         int maxNum = 0;
         for (Rule rule : rules) {
-            String id = rule.getId();
-            if (id != null && id.startsWith("rule-")) {
+            String ruleId = rule.getId();
+            if (ruleId != null && ruleId.startsWith("rule-")) {
                 try {
-                    int num = Integer.parseInt(id.substring(5));
+                    int num = Integer.parseInt(ruleId.substring(5));
                     if (num > maxNum) {
                         maxNum = num;
                     }
