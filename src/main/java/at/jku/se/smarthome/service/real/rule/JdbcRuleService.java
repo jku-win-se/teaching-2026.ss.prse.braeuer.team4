@@ -311,13 +311,14 @@ public final class JdbcRuleService implements RuleService {
 
     private void processDueRules() {
         RoomService roomService = ServiceRegistry.getRoomService();
+        RuleEvaluator evaluator = new RuleEvaluator();
         for (Rule rule : rules) {
             if (!rule.isEnabled()) {
                 activeRuleIds.remove(rule.getId());
                 continue;
             }
             Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
-            boolean conditionMet = new RuleEvaluator().evaluate(rule, sourceDevice);
+            boolean conditionMet = evaluator.evaluate(rule, sourceDevice);
             if (conditionMet && !activeRuleIds.contains(rule.getId())) {
                 activeRuleIds.add(rule.getId());
                 executeEnabledRule(rule, false);
