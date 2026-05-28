@@ -98,7 +98,7 @@ public final class MockRuleService implements RuleService {
         RuleValidator.Result validation = RuleValidator.validate(triggerType, condition, sourceDevice, roomService);
         if (validation.valid()) {
             rule = new Rule(
-                    "rule-" + String.format("%03d", rules.size() + 1),
+                    nextRuleId(),
                     name,
                     triggerType,
                     sourceDevice,
@@ -390,6 +390,24 @@ public final class MockRuleService implements RuleService {
             }
         }
         return result;
+    }
+
+    private String nextRuleId() {
+        int maxNum = 0;
+        for (Rule rule : rules) {
+            String id = rule.getId();
+            if (id != null && id.startsWith("rule-")) {
+                try {
+                    int num = Integer.parseInt(id.substring(5));
+                    if (num > maxNum) {
+                        maxNum = num;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // skip malformed IDs
+                }
+            }
+        }
+        return String.format("rule-%03d", maxNum + 1);
     }
 
     @Override

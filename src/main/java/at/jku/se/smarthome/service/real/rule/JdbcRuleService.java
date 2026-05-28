@@ -408,9 +408,21 @@ public final class JdbcRuleService implements RuleService {
     }
 
     private String nextRuleId() {
-        // Mirrors MockRuleService format ("rule-001"). Uses size+1 over the cached list,
-        // which is consistent because every add/delete keeps the list in sync with the DB.
-        return String.format("rule-%03d", rules.size() + 1);
+        int maxNum = 0;
+        for (Rule rule : rules) {
+            String id = rule.getId();
+            if (id != null && id.startsWith("rule-")) {
+                try {
+                    int num = Integer.parseInt(id.substring(5));
+                    if (num > maxNum) {
+                        maxNum = num;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // skip malformed IDs
+                }
+            }
+        }
+        return String.format("rule-%03d", maxNum + 1);
     }
 
     // --- conflict helpers (small heuristic, paralleling schedule conflict logic) ---
