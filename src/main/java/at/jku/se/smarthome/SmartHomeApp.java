@@ -9,6 +9,7 @@ import at.jku.se.smarthome.service.api.ServiceRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -53,23 +54,25 @@ public class SmartHomeApp extends Application {
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(600);
         
-        // Load login scene
         loadLoginScene();
-        
-        // Load register scene
         loadRegisterScene();
-        
-        // Load main scene
-        loadMainScene();
 
-        // Start recurring schedule processing after the JavaFX toolkit is fully available.
-        ServiceRegistry.getScheduleService().startRecurringExecution();
-        ServiceRegistry.getRuleService().startRecurringExecution();
-        
-        // Show login scene first
         primaryStage.setScene(loginScene);
         primaryStage.setMaximized(true);
         primaryStage.show();
+
+        // Defer JDBC-backed service init so the login window appears immediately.
+        // loadMainScene() and startRecurringExecution() still run on the JavaFX thread
+        // but only after the login window is visible.
+        Platform.runLater(() -> {
+            try {
+                loadMainScene();
+            } catch (IOException e) {
+                LOGGER.error("Failed to pre-load the main scene.", e);
+            }
+            ServiceRegistry.getScheduleService().startRecurringExecution();
+            ServiceRegistry.getRuleService().startRecurringExecution();
+        });
     }
     
     /**
@@ -142,6 +145,11 @@ public class SmartHomeApp extends Application {
      * Shows the main application scene.
      */
     private void showMainScene() {
+        if (mainScene == null) {
+            // Background init not yet complete — retry on the next event cycle.
+            Platform.runLater(this::showMainScene);
+            return;
+        }
         if (mainController != null) {
             mainController.refreshSessionState();
         }

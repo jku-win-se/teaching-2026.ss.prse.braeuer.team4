@@ -10,7 +10,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -59,6 +61,8 @@ public final class JdbcRuleService implements RuleService {
     private final ObservableList<Rule> rules = FXCollections.observableArrayList();
     /** Flag indicating database schema is initialized. */
     private final AtomicBoolean schemaReady = new AtomicBoolean(false);
+    /** Rule IDs whose condition was true on the previous evaluation cycle (edge detection). */
+    private final Set<String> activeRuleIds = new HashSet<>();
 
     /** Scheduler for background rule evaluation. */
     private ScheduledExecutorService ruleScheduler;
@@ -306,9 +310,19 @@ public final class JdbcRuleService implements RuleService {
     }
 
     private void processDueRules() {
+        RoomService roomService = ServiceRegistry.getRoomService();
         for (Rule rule : rules) {
-            if (rule.isEnabled()) {
+            if (!rule.isEnabled()) {
+                activeRuleIds.remove(rule.getId());
+                continue;
+            }
+            Device sourceDevice = roomService.getDeviceByName(rule.getSourceDevice());
+            boolean conditionMet = new RuleEvaluator().evaluate(rule, sourceDevice);
+            if (conditionMet && !activeRuleIds.contains(rule.getId())) {
+                activeRuleIds.add(rule.getId());
                 executeEnabledRule(rule, false);
+            } else if (!conditionMet) {
+                activeRuleIds.remove(rule.getId());
             }
         }
     }
