@@ -215,8 +215,6 @@ public final class MockRuleService implements RuleService {
                 } else {
                     notificationService.addNotification("Rule execution failed: unsupported action in " + rule.getName(), NotificationType.FAILURE);
                 }
-            } else {
-                notificationService.addNotification("Rule execution failed: condition not met for " + rule.getName(), NotificationType.FAILURE);
             }
         } else {
             notificationService.addNotification("Rule execution failed: " + rule.getName() + " is inactive", NotificationType.FAILURE);

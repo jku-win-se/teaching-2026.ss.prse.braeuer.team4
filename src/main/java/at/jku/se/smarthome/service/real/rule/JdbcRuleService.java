@@ -339,10 +339,6 @@ public final class JdbcRuleService implements RuleService {
                         "Rule execution failed: unsupported action in " + rule.getName(),
                         NotificationType.FAILURE);
             }
-        } else {
-            notificationService.addNotification(
-                    "Rule execution failed: condition not met for " + rule.getName(),
-                    NotificationType.FAILURE);
         }
         return executed;
     }
