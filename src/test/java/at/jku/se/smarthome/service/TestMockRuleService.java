@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.time.LocalTime;
 
-import at.jku.se.smarthome.model.NotificationEntry;
 import at.jku.se.smarthome.model.NotificationType;
 import at.jku.se.smarthome.model.Rule;
 import at.jku.se.smarthome.service.api.RuleService;
@@ -228,15 +227,16 @@ public class TestMockRuleService {
     }
 
     /**
-     * Test: execute rule emits error notification when condition is not met.
+     * Test: execute rule returns false and emits no notification when condition is not met.
+     * Condition-not-met is normal polling behavior, not an error.
      */
     @Test
-    public void executeRule_conditionNotMet_emitsErrorNotification() {
+    public void executeRule_conditionNotMet_returnsFalseWithNoNotification() {
+        int notificationsBefore = notificationService.getNotifications().size();
         Rule rule = service.addRule("Bed Check", "Device State", "Bed Light", "State = Active", "Turn On", "Main Light");
-        service.executeRule(rule.getId());
-        NotificationEntry note = notificationService.getNotifications().get(0);
-        assertEquals(NotificationType.FAILURE, note.getType());
-        assertTrue(note.getMessage().contains("condition not met"));
+        boolean result = service.executeRule(rule.getId());
+        assertFalse(result);
+        assertEquals(notificationsBefore, notificationService.getNotifications().size());
     }
 
     /**
