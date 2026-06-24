@@ -1,0 +1,43 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Home Orchestrator logo</title>
+  <desc id="desc">Minimal smart home logo with a house outline, central orchestration node, and connected device nodes.</desc>
+  <rect width="512" height="512" rx="96" fill="#ECF0F1"/>
+
+  <path
+    d="M122 252L256 142L390 252"
+    stroke="#2C3E50"
+    stroke-width="24"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+  <path
+    d="M156 246V370C156 386.569 169.431 400 186 400H326C342.569 400 356 386.569 356 370V246"
+    stroke="#2C3E50"
+    stroke-width="24"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+
+  <path d="M256 282L190 250" stroke="#3498DB" stroke-width="12" stroke-linecap="round"/>
+  <path d="M256 282L322 250" stroke="#3498DB" stroke-width="12" stroke-linecap="round"/>
+  <path d="M256 282L208 352" stroke="#3498DB" stroke-width="12" stroke-linecap="round"/>
+  <path d="M256 282L304 352" stroke="#3498DB" stroke-width="12" stroke-linecap="round"/>
+
+  <circle cx="256" cy="282" r="42" fill="#3498DB"/>
+  <circle cx="256" cy="282" r="18" fill="#ECF0F1"/>
+  <path
+    d="M256 240V224M256 340V324M214 282H198M314 282H298"
+    stroke="#ECF0F1"
+    stroke-width="10"
+    stroke-linecap="round"/>
+
+  <circle cx="190" cy="250" r="24" fill="#FFFFFF" stroke="#2C3E50" stroke-width="10"/>
+  <path d="M181 250H199M190 241V259" stroke="#27AE60" stroke-width="8" stroke-linecap="round"/>
+
+  <circle cx="322" cy="250" r="24" fill="#FFFFFF" stroke="#2C3E50" stroke-width="10"/>
+  <path d="M313 246H331M313 256H331" stroke="#27AE60" stroke-width="8" stroke-linecap="round"/>
+
+  <circle cx="208" cy="352" r="24" fill="#FFFFFF" stroke="#2C3E50" stroke-width="10"/>
+  <path d="M208 340V352L218 362" stroke="#27AE60" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="304" cy="352" r="24" fill="#FFFFFF" stroke="#2C3E50" stroke-width="10"/>
+  <path d="M310 338L296 356H306L300 370L318 348H306L310 338Z" fill="#27AE60"/>
+</svg>

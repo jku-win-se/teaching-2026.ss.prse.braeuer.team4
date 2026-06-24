@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Deep Dive — SmartHome Orchestrator</title>
+<style>
+:root {
+  --bg:#0d0f18; --s1:#151825; --s2:#1b1e2e; --s3:#222538;
+  --violet:#6c63ff; --teal:#00d4aa; --orange:#ffa94d;
+  --red:#ff6b6b; --green:#51cf66; --yellow:#fcc419; --blue:#4dabf7;
+  --text:#e8eaf0; --dim:#7b7f99; --border:#252840;
+  --fxml:#e5c07b; --ctrl:#61afef; --svc:#c678dd; --jdbc:#98c379; --mock:#56b6c2; --model:#d19a66;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+code{font-family:'Consolas','Courier New',monospace;font-size:12px;background:var(--s3);padding:2px 6px;border-radius:4px;color:var(--teal);}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:300;background:rgba(13,15,24,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;height:52px;gap:2px;overflow-x:auto;}
+.nl{font-weight:700;font-size:13px;color:var(--violet);margin-right:18px;white-space:nowrap;}
+nav button{background:none;border:none;color:var(--dim);font-size:12px;font-weight:500;padding:0 12px;height:52px;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap;}
+nav button:hover{color:var(--text);}
+nav button.on{color:var(--violet);border-bottom-color:var(--violet);}
+
+/* PAGES */
+.pg{display:none;padding:68px 32px 60px;max-width:1060px;margin:0 auto;animation:fi .3s ease;}
+.pg.on{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:26px;font-weight:700;margin-bottom:6px;}
+.sub{color:var(--dim);font-size:13px;line-height:1.6;margin-bottom:26px;}
+h2{font-size:15px;font-weight:600;margin:28px 0 12px;}
+h3{font-size:13px;font-weight:600;margin-bottom:7px;}
+p{font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:10px;}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:10px;}
+.card.v{border-color:rgba(108,99,255,.4);}
+.card.t{border-color:rgba(0,212,170,.35);}
+.card.o{border-color:rgba(255,169,77,.35);}
+.card.g{border-color:rgba(81,207,102,.3);}
+.card.r{border-color:rgba(255,107,107,.3);}
+.card.b{border-color:rgba(77,171,247,.3);}
+
+/* ══════════════════════════════════
+   PAGE 1 — LAYER OVERVIEW
+══════════════════════════════════ */
+.layer-stack{display:flex;flex-direction:column;gap:3px;}
+.layer{border-radius:10px;padding:14px 20px;cursor:pointer;transition:opacity .2s,transform .2s;border:1px solid transparent;}
+.layer:hover{transform:translateX(4px);}
+.layer-head{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.layer-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.layer-title{font-weight:700;font-size:14px;}
+.layer-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{border-radius:5px;padding:3px 9px;font-size:11px;font-family:monospace;}
+
+.lyr-fxml {background:rgba(229,192,123,.06);border-color:rgba(229,192,123,.35);}
+.lyr-fxml .layer-num{background:rgba(229,192,123,.2);color:var(--fxml);}
+.lyr-fxml .layer-title{color:var(--fxml);}
+.lyr-fxml .chip{background:rgba(229,192,123,.1);border:1px solid rgba(229,192,123,.25);color:var(--fxml);}
+
+.lyr-ctrl {background:rgba(97,175,239,.05);border-color:rgba(97,175,239,.3);}
+.lyr-ctrl .layer-num{background:rgba(97,175,239,.2);color:var(--ctrl);}
+.lyr-ctrl .layer-title{color:var(--ctrl);}
+.lyr-ctrl .chip{background:rgba(97,175,239,.1);border:1px solid rgba(97,175,239,.25);color:var(--ctrl);}
+
+.lyr-svc {background:rgba(198,120,221,.05);border-color:rgba(198,120,221,.3);}
+.lyr-svc .layer-num{background:rgba(198,120,221,.2);color:var(--svc);}
+.lyr-svc .layer-title{color:var(--svc);}
+.lyr-svc .chip{background:rgba(198,120,221,.1);border:1px solid rgba(198,120,221,.25);color:var(--svc);}
+
+.lyr-reg {background:rgba(255,169,77,.05);border-color:rgba(255,169,77,.3);}
+.lyr-reg .layer-num{background:rgba(255,169,77,.2);color:var(--orange);}
+.lyr-reg .layer-title{color:var(--orange);}
+.lyr-reg .chip{background:rgba(255,169,77,.12);border:1px solid rgba(255,169,77,.3);color:var(--orange);}
+
+.lyr-impl{background:rgba(20,22,34,.6);border-color:var(--border);}
+.lyr-impl-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.lyr-mock{background:rgba(86,182,194,.05);border:1px solid rgba(86,182,194,.25);border-radius:7px;padding:10px 12px;}
+.lyr-mock .layer-title{color:var(--mock);}
+.lyr-mock .chip{background:rgba(86,182,194,.1);border:1px solid rgba(86,182,194,.2);color:var(--mock);}
+.lyr-jdbc{background:rgba(152,195,121,.05);border:1px solid rgba(152,195,121,.25);border-radius:7px;padding:10px 12px;}
+.lyr-jdbc .layer-title{color:var(--jdbc);}
+.lyr-jdbc .chip{background:rgba(152,195,121,.1);border:1px solid rgba(152,195,121,.2);color:var(--jdbc);}
+
+.lyr-db  {background:rgba(108,99,255,.06);border-color:rgba(108,99,255,.4);}
+.lyr-db .layer-num{background:rgba(108,99,255,.2);color:var(--violet);}
+.lyr-db .layer-title{color:var(--violet);}
+.lyr-db .chip{background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);color:var(--violet);}
+
+.lyr-model{background:rgba(209,154,102,.05);border-color:rgba(209,154,102,.3);}
+.lyr-model .layer-num{background:rgba(209,154,102,.2);color:var(--model);}
+.lyr-model .layer-title{color:var(--model);}
+.lyr-model .chip{background:rgba(209,154,102,.1);border:1px solid rgba(209,154,102,.25);color:var(--model);}
+
+.arrow-sep{text-align:center;font-size:14px;color:var(--dim);padding:1px 0;letter-spacing:2px;}
+
+/* ══════════════════════════════════
+   PAGE 2 — FXML + CONTROLLERS
+══════════════════════════════════ */
+.pairing-grid{display:grid;grid-template-columns:1fr 50px 1fr;gap:0;align-items:start;}
+.pair-col{display:flex;flex-direction:column;gap:6px;}
+.pair-card{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:border-color .2s;}
+.pair-card:hover{border-color:var(--violet);}
+.pair-card.fxml-c{border-color:rgba(229,192,123,.3);}
+.pair-card.ctrl-c{border-color:rgba(97,175,239,.3);}
+.pair-card .pc-name{font-family:monospace;font-size:12px;font-weight:600;}
+.pair-card .pc-desc{font-size:11px;color:var(--dim);margin-top:3px;}
+.pair-card.fxml-c .pc-name{color:var(--fxml);}
+.pair-card.ctrl-c .pc-name{color:var(--ctrl);}
+.pair-arrows{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;gap:0;padding-top:16px;}
+.pa{font-size:13px;color:var(--dim);height:38px;display:flex;align-items:center;}
+
+.detail-box{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:16px;margin-top:16px;}
+.detail-box h3{color:var(--ctrl);margin-bottom:10px;}
+
+/* ══════════════════════════════════
+   PAGE 3 — SERVICE REGISTRY
+══════════════════════════════════ */
+.reg-diagram{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;}
+.reg-center{background:rgba(255,169,77,.08);border:2px solid rgba(255,169,77,.5);border-radius:12px;padding:14px 28px;text-align:center;font-weight:700;font-size:14px;color:var(--orange);z-index:2;}
+.reg-ring{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;}
+.reg-card{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;min-width:120px;transition:border-color .2s,transform .2s;cursor:pointer;}
+.reg-card:hover{transform:translateY(-3px);border-color:var(--orange);}
+.reg-card .rc-name{font-family:monospace;font-size:12px;color:var(--orange);font-weight:600;margin-bottom:3px;}
+.reg-card .rc-desc{font-size:10px;color:var(--dim);}
+
+.holder-pattern{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.holder-card{background:var(--s1);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.holder-label{padding:6px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.holder-label.bad{background:rgba(255,107,107,.12);color:var(--red);}
+.holder-label.good{background:rgba(81,207,102,.1);color:var(--green);}
+.code-block{background:#090b12;padding:12px 14px;font-family:monospace;font-size:11px;line-height:1.7;color:#abb2bf;overflow-x:auto;}
+.kw{color:#c678dd;} .cl{color:#e5c07b;} .fn{color:#61afef;} .str{color:#98c379;} .cm{color:#5c6370;} .num{color:#d19a66;}
+
+.inject-demo{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.inject-flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-top:10px;}
+.if-box{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:9px 14px;font-size:12px;text-align:center;}
+.if-box.prod{border-color:rgba(152,195,121,.35);} .if-box.prod span{color:var(--jdbc);}
+.if-box.test{border-color:rgba(86,182,194,.35);} .if-box.test span{color:var(--mock);}
+.if-box.ctrl{border-color:rgba(97,175,239,.3);} .if-box.ctrl span{color:var(--ctrl);}
+.if-arrow{padding:0 10px;color:var(--dim);font-size:18px;}
+
+/* ══════════════════════════════════
+   PAGE 4 — MOCK VS JDBC
+══════════════════════════════════ */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.cmp-col{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.cmp-head{padding:12px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.cmp-head.mock-h{background:rgba(86,182,194,.1);color:var(--mock);}
+.cmp-head.jdbc-h{background:rgba(152,195,121,.1);color:var(--jdbc);}
+.cmp-body{padding:14px 16px;display:flex;flex-direction:column;gap:8px;}
+.cmp-row{display:flex;align-items:flex-start;gap:10px;}
+.cmp-icon{flex-shrink:0;font-size:14px;}
+.cmp-text{font-size:12px;color:var(--dim);line-height:1.5;}
+.cmp-text strong{color:var(--text);}
+
+.service-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.service-table th{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;}
+.service-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+.service-table tr:last-child td{border-bottom:none;}
+.service-table td:first-child{font-family:monospace;color:var(--svc);}
+.service-table td:nth-child(2){font-family:monospace;color:var(--mock);}
+.service-table td:nth-child(3){font-family:monospace;color:var(--jdbc);}
+.service-table td:last-child{color:var(--dim);}
+
+/* ══════════════════════════════════
+   PAGE 5 — DATA FLOW (animated)
+══════════════════════════════════ */
+.flow-scenario{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.flow-step{display:flex;align-items:flex-start;gap:14px;padding:12px 16px;background:var(--s1);border:1px solid var(--border);border-radius:9px;opacity:.4;transition:opacity .4s,border-color .4s,background .4s;}
+.flow-step.active{opacity:1;}
+.flow-step.done{opacity:.7;}
+.fs-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:var(--s3);color:var(--dim);}
+.flow-step.active .fs-num{background:var(--violet);color:white;}
+.flow-step.done .fs-num{background:var(--green);color:white;}
+.fs-layer{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.fs-desc{font-size:13px;color:var(--text);}
+.fs-code{font-family:monospace;font-size:11px;color:var(--dim);margin-top:4px;}
+
+.scenario-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.stab{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;transition:border-color .2s;}
+.stab:hover{border-color:var(--violet);}
+.stab.on{background:rgba(108,99,255,.14);border-color:var(--violet);color:var(--violet);font-weight:600;}
+.flow-controls{display:flex;gap:10px;align-items:center;margin-top:12px;}
+.btn{background:var(--violet);border:none;color:#fff;font-size:12px;font-weight:600;padding:8px 18px;border-radius:7px;cursor:pointer;transition:opacity .2s;}
+.btn:hover{opacity:.85;}
+.btn.sec{background:var(--s2);color:var(--text);border:1px solid var(--border);}
+.flow-note{font-size:12px;color:var(--dim);}
+
+/* ══════════════════════════════════
+   PAGE 6 — MODEL
+══════════════════════════════════ */
+.model-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.model-card{background:var(--s1);border:1px solid var(--border);border-radius:9px;overflow:hidden;cursor:pointer;transition:border-color .2s;}
+.model-card:hover{border-color:var(--model);}
+.mc-head{padding:9px 14px;font-family:monospace;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);}
+.mc-head.device{color:#e06c75;background:rgba(224,108,117,.07);}
+.mc-head.room{color:var(--model);background:rgba(209,154,102,.07);}
+.mc-head.rule{color:var(--violet);background:rgba(108,99,255,.07);}
+.mc-head.user{color:var(--teal);background:rgba(0,212,170,.07);}
+.mc-head.log{color:var(--blue);background:rgba(77,171,247,.07);}
+.mc-head.sched{color:var(--green);background:rgba(81,207,102,.07);}
+.mc-head.scene{color:var(--orange);background:rgba(255,169,77,.07);}
+.mc-head.notif{color:var(--yellow);background:rgba(252,196,25,.07);}
+.mc-head.vac{color:var(--dim);background:rgba(123,127,153,.07);}
+.mc-body{padding:10px 14px;}
+.field{font-size:11px;padding:3px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;}
+.field:last-child{border-bottom:none;}
+.field-t{color:var(--dim);width:70px;flex-shrink:0;font-family:monospace;}
+.field-n{color:var(--text);font-family:monospace;}
+
+/* ══════════════════════════════════
+   PAGE 7 — DB SCHEMA
+══════════════════════════════════ */
+.db-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.db-table{background:var(--s1);border:1px solid rgba(108,99,255,.3);border-radius:9px;overflow:hidden;}
+.db-thead{background:rgba(108,99,255,.12);padding:9px 14px;font-family:monospace;font-size:12px;font-weight:700;color:var(--violet);border-bottom:1px solid rgba(108,99,255,.25);}
+.db-body{padding:10px 14px;}
+.db-col{font-size:11px;padding:3px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;}
+.db-col:last-child{border-bottom:none;}
+.db-col .ct{font-family:monospace;color:var(--dim);font-size:10px;flex-shrink:0;}
+.db-col .cn{font-family:monospace;color:var(--teal);}
+.pk{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,169,77,.15);color:var(--orange);flex-shrink:0;}
+.fk{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(108,99,255,.15);color:var(--violet);flex-shrink:0;}
+.db-note{font-size:11px;color:var(--dim);margin-top:10px;padding:8px 12px;background:var(--s2);border-radius:6px;}
+
+/* ══════════════════════════════════
+   PAGE 8 — STARTUP SEQUENCE
+══════════════════════════════════ */
+.timeline-v{display:flex;flex-direction:column;gap:0;position:relative;padding-left:30px;}
+.timeline-v::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--border);}
+.tv-step{position:relative;padding:0 0 18px 18px;}
+.tv-step::before{content:'';position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--border);border:2px solid var(--s1);z-index:1;}
+.tv-step.done::before{background:var(--green);}
+.tv-step.warn::before{background:var(--orange);}
+.tv-step.new::before{background:var(--violet);box-shadow:0 0 8px var(--violet);}
+.tv-step .ts-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.tv-step.done .ts-label{color:var(--green);}
+.tv-step.warn .ts-label{color:var(--orange);}
+.tv-step.new .ts-label{color:var(--violet);}
+.tv-step .ts-desc{font-size:13px;color:var(--text);line-height:1.5;}
+.tv-step .ts-code{font-family:monospace;font-size:11px;color:var(--dim);margin-top:4px;}
+.tv-step .ts-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin-top:4px;}
+.tv-step.done .ts-badge{background:rgba(81,207,102,.1);color:var(--green);}
+.tv-step.warn .ts-badge{background:rgba(255,169,77,.1);color:var(--orange);}
+.tv-step.new .ts-badge{background:rgba(108,99,255,.12);color:var(--violet);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nl">🏗️ Architecture</div>
+  <button class="on" onclick="go('p1',this)">1. Layers</button>
+  <button onclick="go('p2',this)">2. View &amp; Controllers</button>
+  <button onclick="go('p3',this)">3. ServiceRegistry</button>
+  <button onclick="go('p4',this)">4. Mock vs JDBC</button>
+  <button onclick="go('p5',this)">5. Data Flow</button>
+  <button onclick="go('p6',this)">6. Domain Model</button>
+  <button onclick="go('p7',this)">7. Database</button>
+  <button onclick="go('p8',this)">8. Startup</button>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     PAGE 1 — LAYER OVERVIEW
+══════════════════════════════════════════ -->
+<div class="pg on" id="p1">
+  <h1>Architecture in 6 Layers</h1>
+  <p class="sub">The app follows a strict top-to-bottom dependency rule: each layer only knows about the layer directly below it. The <strong>View</strong> never touches the database. The <strong>Controller</strong> never knows whether it's talking to a mock or a real database — it only talks to an <em>interface</em>.</p>
+
+  <div class="layer-stack">
+
+    <div class="layer lyr-fxml">
+      <div class="layer-head">
+        <div class="layer-num">1</div>
+        <div class="layer-title">View — FXML files (JavaFX markup)</div>
+      </div>
+      <div class="layer-chips">
+        <span class="chip">login-view.fxml</span><span class="chip">main-shell.fxml</span>
+        <span class="chip">devices-control-view.fxml</span><span class="chip">automation-view.fxml</span>
+        <span class="chip">energy-view.fxml</span><span class="chip">users-view.fxml</span>
+        <span class="chip">simulation-view.fxml</span><span class="chip">vacation-mode-view.fxml</span>
+        <span class="chip">register-view.fxml</span><span class="chip">rooms-view.fxml</span>
+        <span class="chip">scenes-view.fxml</span><span class="chip">schedules-view.fxml</span>
+        <span class="chip">activity-log-view.fxml</span><span class="chip">iot-settings-view.fxml</span>
+        <span class="chip">settings-view.fxml</span>
+      </div>
+      <p style="margin-top:8px;font-size:12px">XML files that declare buttons, tables, and labels. No Java logic here — just layout and bindings. Each FXML is paired with exactly one Controller.</p>
+    </div>
+
+    <div class="arrow-sep">↕</div>
+
+    <div class="layer lyr-ctrl">
+      <div class="layer-head">
+        <div class="layer-num">2</div>
+        <div class="layer-title">Controller — JavaFX Java classes</div>
+      </div>
+      <div class="layer-chips">
+        <span class="chip">LoginController</span><span class="chip">DevicesController</span>
+        <span class="chip">RulesController</span><span class="chip">SchedulesController</span>
+        <span class="chip">EnergyController</span><span class="chip">UsersController</span>
+        <span class="chip">SimulationController</span><span class="chip">VacationModeController</span>
+        <span class="chip">MainController</span><span class="chip">RegisterController</span>
+        <span class="chip">RoomsController</span><span class="chip">ScenesController</span>
+        <span class="chip">SchedulesController</span><span class="chip">ActivityLogController</span>
+        <span class="chip">IoTSettingsController</span><span class="chip">SettingsController</span>
+      </div>
+      <p style="margin-top:8px;font-size:12px">Handle button clicks and user input. They ask services for data and update the UI. They do NOT contain business logic themselves — that lives in the service layer.</p>
+    </div>
+
+    <div class="arrow-sep">↕</div>
+
+    <div class="layer lyr-svc">
+      <div class="layer-head">
+        <div class="layer-num">3</div>
+        <div class="layer-title">Service API — Java Interfaces (contracts)</div>
+      </div>
+      <div class="layer-chips">
+        <span class="chip">UserService</span><span class="chip">RuleService</span>
+        <span class="chip">RoomService</span><span class="chip">ScheduleService</span>
+        <span class="chip">LogService</span><span class="chip">NotificationService</span>
+        <span class="chip">EnergyService</span><span class="chip">SceneService</span>
+        <span class="chip">IoTIntegrationService</span>
+      </div>
+      <p style="margin-top:8px;font-size:12px">Pure Java interfaces — no implementation. Controllers only import these. This means you can swap Mock ↔ JDBC without touching any controller.</p>
+    </div>
+
+    <div class="arrow-sep">↕</div>
+
+    <div class="layer lyr-reg">
+      <div class="layer-head">
+        <div class="layer-num">4</div>
+        <div class="layer-title">ServiceRegistry — The single dependency injection point</div>
+      </div>
+      <div class="layer-chips">
+        <span class="chip">ServiceRegistry.getUserService()</span>
+        <span class="chip">ServiceRegistry.getRuleService()</span>
+        <span class="chip">ServiceRegistry.getRoomService()</span>
+        <span class="chip">ServiceRegistry.getLogService()</span>
+        <span class="chip">ServiceRegistry.setXxxForTesting(mock)</span>
+      </div>
+      <p style="margin-top:8px;font-size:12px">A static factory class. In production it returns JDBC implementations. In tests you call <code>setXxxForTesting(mock)</code> to inject a mock. Controllers never call <code>new JdbcXxx()</code> directly.</p>
+    </div>
+
+    <div class="arrow-sep">↕</div>
+
+    <div class="layer lyr-impl">
+      <div class="layer-head" style="margin-bottom:4px">
+        <div class="layer-num" style="background:rgba(139,143,168,.2);color:var(--dim)">5</div>
+        <div class="layer-title" style="color:var(--text)">Implementations — Two parallel sets</div>
+      </div>
+      <div class="lyr-impl-inner">
+        <div class="lyr-mock">
+          <div class="layer-title" style="margin-bottom:8px">Mock (in-memory)</div>
+          <div class="layer-chips">
+            <span class="chip">MockUserService</span><span class="chip">MockRuleService</span>
+            <span class="chip">MockRoomService</span><span class="chip">MockLogService</span>
+            <span class="chip">MockScheduleService</span><span class="chip">MockEnergyService</span>
+            <span class="chip">MockNotificationService</span><span class="chip">MockIoTIntegrationService</span>
+          </div>
+          <p style="font-size:11px;margin-top:7px">Used in unit tests. No database needed. Reset via <code>resetForTesting()</code>.</p>
+        </div>
+        <div class="lyr-jdbc">
+          <div class="layer-title" style="margin-bottom:8px">JDBC (PostgreSQL)</div>
+          <div class="layer-chips">
+            <span class="chip">JdbcUserService</span><span class="chip">JdbcRuleService</span>
+            <span class="chip">JdbcRoomService</span><span class="chip">JdbcLogService</span>
+            <span class="chip">JdbcScheduleService</span><span class="chip">JdbcEnergyService</span>
+            <span class="chip">JdbcNotificationService</span><span class="chip">MqttIntegrationService</span>
+          </div>
+          <p style="font-size:11px;margin-top:7px">Used in production. Connects to Aiven cloud PostgreSQL. Lazy-initialized via Holder pattern.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-sep">↕</div>
+
+    <div class="layer lyr-db">
+      <div class="layer-head">
+        <div class="layer-num">6</div>
+        <div class="layer-title">Aiven PostgreSQL (Cloud Database)</div>
+      </div>
+      <div class="layer-chips">
+        <span class="chip">users</span><span class="chip">rules</span><span class="chip">schedules</span>
+        <span class="chip">rooms</span><span class="chip">devices</span><span class="chip">activity_log</span>
+        <span class="chip">notifications</span><span class="chip">scenes</span><span class="chip">energy_daily</span><span class="chip">energy_weekly</span><span class="chip">device_power_config</span>
+      </div>
+      <p style="margin-top:8px;font-size:12px">Remote PostgreSQL. Only the JDBC layer touches it. The rest of the app is completely unaware of the database structure.</p>
+    </div>
+
+    <div class="arrow-sep" style="padding:4px 0">also used across all layers ↕</div>
+
+    <div class="layer lyr-model">
+      <div class="layer-head">
+        <div class="layer-num">M</div>
+        <div class="layer-title">Domain Model — Plain Java objects (no framework dependencies)</div>
+      </div>
+      <div class="layer-chips">
+        <span class="chip">Device</span><span class="chip">Room</span><span class="chip">Rule</span>
+        <span class="chip">Schedule</span><span class="chip">User</span><span class="chip">LogEntry</span>
+        <span class="chip">Scene</span><span class="chip">NotificationEntry</span><span class="chip">VacationModeConfig</span>
+      </div>
+      <p style="margin-top:8px;font-size:12px">Simple data holders with getters/setters. Passed between all layers. No business logic, no framework annotations.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 2 — VIEW & CONTROLLERS
+══════════════════════════════════════════ -->
+<div class="pg" id="p2">
+  <h1>View &amp; Controllers</h1>
+  <p class="sub">Every FXML view is paired 1-to-1 with a Controller. The FXML describes <em>what</em> the screen looks like; the Controller describes <em>what happens</em> when the user interacts with it.</p>
+
+  <div class="pairing-grid">
+    <div class="pair-col">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--fxml);margin-bottom:6px">FXML Files</div>
+      <div class="pair-card fxml-c"><div class="pc-name">login-view.fxml</div><div class="pc-desc">Email + password fields, login button, register link</div></div>
+      <div class="pair-card fxml-c"><div class="pc-name">main-shell.fxml</div><div class="pc-desc">Tab bar, notification bell, logout button, content area</div></div>
+      <div class="pair-card fxml-c"><div class="pc-name">devices-control-view.fxml</div><div class="pc-desc">Device cards with type-specific controls per room</div></div>
+      <div class="pair-card fxml-c"><div class="pc-name">automation-view.fxml</div><div class="pc-desc">Rules table, add/edit form, enable toggle, run button</div></div>
+      <div class="pair-card fxml-c"><div class="pc-name">energy-view.fxml</div><div class="pc-desc">Pie chart, bar chart, navigation buttons (today/week)</div></div>
+      <div class="pair-card fxml-c"><div class="pc-name">users-view.fxml</div><div class="pc-desc">User table with invite / revoke / restore actions</div></div>
+      <div class="pair-card fxml-c"><div class="pc-name">simulation-view.fxml</div><div class="pc-desc">Start conditions, rule picker, speed slider, replay</div></div>
+      <div class="pair-card fxml-c"><div class="pc-name">vacation-mode-view.fxml</div><div class="pc-desc">Date range picker, schedule selector, activate toggle</div></div>
+    </div>
+
+    <div class="pair-arrows">
+      <div class="pa" style="color:var(--violet)">↔</div>
+      <div class="pa" style="color:var(--violet)">↔</div>
+      <div class="pa" style="color:var(--violet)">↔</div>
+      <div class="pa" style="color:var(--violet)">↔</div>
+      <div class="pa" style="color:var(--violet)">↔</div>
+      <div class="pa" style="color:var(--violet)">↔</div>
+      <div class="pa" style="color:var(--violet)">↔</div>
+      <div class="pa" style="color:var(--violet)">↔</div>
+    </div>
+
+    <div class="pair-col">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ctrl);margin-bottom:6px">Controllers</div>
+      <div class="pair-card ctrl-c"><div class="pc-name">LoginController</div><div class="pc-desc">Calls UserService.authenticate() → navigates on success</div></div>
+      <div class="pair-card ctrl-c"><div class="pc-name">MainController</div><div class="pc-desc">Handles tab navigation, notification badge, session state</div></div>
+      <div class="pair-card ctrl-c"><div class="pc-name">DevicesController</div><div class="pc-desc">Calls RoomService.updateDeviceState/Brightness/Temperature, logs via LogService</div></div>
+      <div class="pair-card ctrl-c"><div class="pc-name">RulesController</div><div class="pc-desc">CRUD via RuleService, conflict check, manual executeRule()</div></div>
+      <div class="pair-card ctrl-c"><div class="pc-name">EnergyController</div><div class="pc-desc">Calls EnergyService for aggregated Wh data, renders charts</div></div>
+      <div class="pair-card ctrl-c"><div class="pc-name">UsersController</div><div class="pc-desc">Calls UserService.inviteUser() / revokeUser() / restoreUser()</div></div>
+      <div class="pair-card ctrl-c"><div class="pc-name">SimulationController</div><div class="pc-desc">Runs MockSimulationService with accelerated clock replay</div></div>
+      <div class="pair-card ctrl-c"><div class="pc-name">VacationModeController</div><div class="pc-desc">Calls VacationModeService.activate(config)</div></div>
+    </div>
+  </div>
+
+  <div class="detail-box">
+    <h3>How a Controller loads its service</h3>
+    <p style="color:var(--dim);font-size:12px;margin-bottom:10px">A Controller never calls <code>new JdbcRuleService()</code>. It always asks the ServiceRegistry. This is the key to testability.</p>
+    <div class="code-block">
+<span class="cm">// Field initializer in RulesController.java</span>
+<span class="kw">private final</span> <span class="cl">RuleService</span> ruleService = <span class="cl">ServiceRegistry</span>.<span class="fn">getRuleService</span>();
+<span class="cm">//                      ↑ Interface          ↑ Returns JdbcRuleService in production</span>
+<span class="cm">//                                             Returns MockRuleService in tests</span>
+
+<span class="cm">// Usage — Controller doesn't know or care which implementation it got</span>
+<span class="kw">private void</span> <span class="fn">handleAddRule</span>() {
+  <span class="cl">Rule</span> rule = ruleService.<span class="fn">addRule</span>(name, triggerType, source, cond, action, target);
+  <span class="kw">if</span> (rule != <span class="kw">null</span>) refreshTable();
+}
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 3 — SERVICE REGISTRY
+══════════════════════════════════════════ -->
+<div class="pg" id="p3">
+  <h1>ServiceRegistry — The DI Entry Point</h1>
+  <p class="sub">A static factory that returns the correct service implementation. In production: JDBC. In tests: whatever mock you inject. No Spring, no annotation magic — just a simple pattern that works.</p>
+
+  <div class="reg-diagram">
+    <div class="reg-center">ServiceRegistry</div>
+    <div class="reg-ring">
+      <div class="reg-card"><div class="rc-name">getUserService()</div><div class="rc-desc">Auth + session management</div></div>
+      <div class="reg-card"><div class="rc-name">getRuleService()</div><div class="rc-desc">Automation rules engine</div></div>
+      <div class="reg-card"><div class="rc-name">getRoomService()</div><div class="rc-desc">Rooms + devices CRUD</div></div>
+      <div class="reg-card"><div class="rc-name">getLogService()</div><div class="rc-desc">Activity log entries</div></div>
+      <div class="reg-card"><div class="rc-name">getScheduleService()</div><div class="rc-desc">Time-based schedules</div></div>
+      <div class="reg-card"><div class="rc-name">getNotificationService()</div><div class="rc-desc">In-app notifications</div></div>
+      <div class="reg-card"><div class="rc-name">getEnergyService()</div><div class="rc-desc">Energy consumption data</div></div>
+      <div class="reg-card"><div class="rc-name">getSceneService()</div><div class="rc-desc">Named device state groups</div></div>
+    </div>
+  </div>
+
+  <h2>The Holder Pattern — Thread-Safe Lazy Init (PMD Finding #1)</h2>
+  <div class="holder-pattern">
+    <div class="holder-card">
+      <div class="holder-label bad">❌ Before — Double-Checked Locking (broken)</div>
+      <div class="code-block">
+<span class="kw">private static volatile</span> <span class="cl">RuleService</span> svc;
+
+<span class="kw">public static</span> <span class="cl">RuleService</span> <span class="fn">getRuleService</span>() {
+  <span class="kw">if</span> (svc == <span class="kw">null</span>) {
+    <span class="kw">synchronized</span> (<span class="cl">ServiceRegistry</span>.class) {
+      <span class="kw">if</span> (svc == <span class="kw">null</span>) {
+        svc = <span class="cl">JdbcRuleService</span>.<span class="fn">getInstance</span>();
+      }
+    }
+  }
+  <span class="kw">return</span> svc;
+}
+<span class="cm">// ⚠ volatile is needed but the pattern
+// is still error-prone and hard to reason about</span>
+      </div>
+    </div>
+    <div class="holder-card">
+      <div class="holder-label good">✅ After — Initialization-on-Demand Holder</div>
+      <div class="code-block">
+<span class="cm">// No volatile, no synchronized needed here</span>
+<span class="kw">public static</span> <span class="cl">RuleService</span> <span class="fn">getRuleService</span>() {
+  <span class="kw">return</span> testOverride != <span class="kw">null</span>
+      ? testOverride
+      : <span class="cl">RuleServiceHolder</span>.INSTANCE;
+}
+
+<span class="kw">private static final class</span> <span class="cl">RuleServiceHolder</span> {
+  <span class="kw">private static final</span> <span class="cl">RuleService</span> INSTANCE
+      = <span class="cl">JdbcRuleService</span>.<span class="fn">getInstance</span>();
+}
+<span class="cm">// JVM guarantees the class is loaded exactly
+// once, thread-safely, on first access</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Test Injection</h2>
+  <div class="inject-demo">
+    <p style="font-size:13px;margin-bottom:12px">Tests call <code>setXxxForTesting(mock)</code> before the test runs, and <code>resetForTesting()</code> in the teardown. The controller under test has no idea it's talking to a mock.</p>
+    <div class="inject-flow">
+      <div class="if-box test"><span>MockRuleService</span><div style="font-size:10px;color:var(--dim);margin-top:2px">in-memory</div></div>
+      <div class="if-arrow">→</div>
+      <div class="if-box ctrl"><code>setRuleServiceForTesting(mock)</code></div>
+      <div class="if-arrow">→</div>
+      <div class="if-box ctrl"><span>ServiceRegistry</span></div>
+      <div class="if-arrow">→</div>
+      <div class="if-box ctrl"><span>RulesController</span><div style="font-size:10px;color:var(--dim);margin-top:2px">calls getRuleService()</div></div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="code-block">
+<span class="fn">@BeforeEach</span>
+<span class="kw">void</span> <span class="fn">setUp</span>() {
+  mock = <span class="kw">new</span> <span class="cl">MockRuleService</span>();
+  <span class="cl">ServiceRegistry</span>.<span class="fn">setRuleServiceForTesting</span>(mock);  <span class="cm">// inject</span>
+}
+
+<span class="fn">@AfterEach</span>
+<span class="kw">void</span> <span class="fn">tearDown</span>() {
+  <span class="cl">ServiceRegistry</span>.<span class="fn">resetForTesting</span>();  <span class="cm">// restore defaults for next test</span>
+  <span class="cl">MockRuleService</span>.<span class="fn">resetForTesting</span>();  <span class="cm">// clear in-memory state</span>
+}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 4 — MOCK vs JDBC
+══════════════════════════════════════════ -->
+<div class="pg" id="p4">
+  <h1>Mock vs JDBC — Two Implementations, One Interface</h1>
+  <p class="sub">Every service has two implementations. This is the core design decision that makes the codebase testable without a running database.</p>
+
+  <div class="compare-grid">
+    <div class="cmp-col">
+      <div class="cmp-head mock-h">Mock Implementations</div>
+      <div class="cmp-body">
+        <div class="cmp-row"><div class="cmp-icon">📦</div><div class="cmp-text"><strong>Storage:</strong> Plain Java lists and maps in memory. No files, no network.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">⚡</div><div class="cmp-text"><strong>Speed:</strong> Microseconds. Tests run instantly — no network roundtrip.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">🔄</div><div class="cmp-text"><strong>Reset:</strong> <code>resetForTesting()</code> clears all state between test cases — no data bleeds between tests.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">🌱</div><div class="cmp-text"><strong>Seed data:</strong> <code>initializeMockRules()</code> pre-populates demo data so the UI looks populated from the start.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">🔬</div><div class="cmp-text"><strong>Used in:</strong> All unit tests, controller tests, coverage tests.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">⚠️</div><div class="cmp-text"><strong>Limitation:</strong> Data is lost when the app restarts. Not suitable for production.</div></div>
+      </div>
+    </div>
+    <div class="cmp-col">
+      <div class="cmp-head jdbc-h">JDBC Implementations</div>
+      <div class="cmp-body">
+        <div class="cmp-row"><div class="cmp-icon">🗄️</div><div class="cmp-text"><strong>Storage:</strong> Aiven cloud PostgreSQL. All data survives restarts and is shared across sessions.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">🔒</div><div class="cmp-text"><strong>Schema init:</strong> Each service runs its own <code>init-xxx.sql</code> on first connection to create tables if they don't exist.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">🔁</div><div class="cmp-text"><strong>In-memory mirror:</strong> An <code>ObservableList</code> mirrors the DB table so JavaFX UI bindings update live without re-querying.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">🌱</div><div class="cmp-text"><strong>Seed data:</strong> <code>seedDemoRules()</code> etc. inserts demo data only if the table is empty on first run.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">🏭</div><div class="cmp-text"><strong>Used in:</strong> Production app. Also used in integration tests with H2 in-memory DB.</div></div>
+        <div class="cmp-row"><div class="cmp-icon">🔑</div><div class="cmp-text"><strong>Config:</strong> DB URL from <code>.env</code> / env vars / <code>smarthome-db.properties</code>.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Service Mapping Table</h2>
+  <div class="card">
+    <table class="service-table">
+      <thead><tr><th>Interface</th><th>Mock</th><th>JDBC / Real</th><th>Responsibility</th></tr></thead>
+      <tbody>
+        <tr><td>UserService</td><td>MockUserService</td><td>JdbcUserService</td><td>Login, session, invite/revoke users</td></tr>
+        <tr><td>RuleService</td><td>MockRuleService</td><td>JdbcRuleService</td><td>CRUD rules, evaluate + execute, background scheduling</td></tr>
+        <tr><td>RoomService</td><td>MockRoomService</td><td>JdbcRoomService</td><td>Rooms + devices CRUD, device lookup by name</td></tr>
+        <tr><td>LogService</td><td>MockLogService</td><td>JdbcLogService</td><td>Record every device state change with timestamp + actor</td></tr>
+        <tr><td>ScheduleService</td><td>MockScheduleService</td><td>JdbcScheduleService</td><td>Time-based schedules with recurring execution</td></tr>
+        <tr><td>NotificationService</td><td>MockNotificationService</td><td>JdbcNotificationService</td><td>In-app notification bell with persistence</td></tr>
+        <tr><td>EnergyService</td><td>MockEnergyService</td><td>JdbcEnergyService</td><td>Estimate Wh from activity log, aggregate by device/room</td></tr>
+        <tr><td>SceneService</td><td>MockSceneService</td><td>JdbcSceneService</td><td>Named device state groups, activate with one action</td></tr>
+        <tr><td>IoTIntegrationService</td><td>MockIoTIntegrationService</td><td>MqttIntegrationService</td><td>Optional MQTT bridge for real physical devices</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 5 — DATA FLOW
+══════════════════════════════════════════ -->
+<div class="pg" id="p5">
+  <h1>Data Flow — Tracing a Request</h1>
+  <p class="sub">Pick a scenario and step through exactly which layers are touched, in order, with the actual method calls.</p>
+
+  <div class="scenario-tabs">
+    <button class="stab on" onclick="selectScenario('login',this)">🔐 User Login</button>
+    <button class="stab" onclick="selectScenario('toggle',this)">💡 Toggle Device</button>
+    <button class="stab" onclick="selectScenario('rule',this)">⚡ Rule Fires</button>
+    <button class="stab" onclick="selectScenario('energy',this)">📊 View Energy</button>
+  </div>
+
+  <div id="flow-container"></div>
+
+  <div class="flow-controls">
+    <button class="btn" onclick="stepFlow()">▶ Next Step</button>
+    <button class="btn sec" onclick="resetFlow()">↺ Reset</button>
+    <span class="flow-note" id="flow-note">Step 0 of 0</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 6 — DOMAIN MODEL
+══════════════════════════════════════════ -->
+<div class="pg" id="p6">
+  <h1>Domain Model</h1>
+  <p class="sub">Plain Java objects — no framework, no annotations. They are passed between all layers and stored in both the in-memory lists and the database.</p>
+
+  <div class="model-grid">
+    <div class="model-card">
+      <div class="mc-head device">Device</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">String</span><span class="field-n">id, name, room</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">type (SWITCH/DIMMER/…)</span></div>
+        <div class="field"><span class="field-t">boolean</span><span class="field-n">state (on/off)</span></div>
+        <div class="field"><span class="field-t">int</span><span class="field-n">brightness (0–100)</span></div>
+        <div class="field"><span class="field-t">double</span><span class="field-n">temperature, currentValue</span></div>
+      </div>
+    </div>
+    <div class="model-card">
+      <div class="mc-head room">Room</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">String</span><span class="field-n">id, name</span></div>
+        <div class="field"><span class="field-t">List</span><span class="field-n">devices</span></div>
+        <div class="field"><span class="field-t">int</span><span class="field-n">deviceCount</span></div>
+      </div>
+    </div>
+    <div class="model-card">
+      <div class="mc-head rule">Rule</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">String</span><span class="field-n">id, name</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">triggerType</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">sourceDevice, condition</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">action, targetDevice</span></div>
+        <div class="field"><span class="field-t">boolean</span><span class="field-n">enabled</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">status (Active/Inactive)</span></div>
+      </div>
+    </div>
+    <div class="model-card">
+      <div class="mc-head user">User</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">String</span><span class="field-n">email, username</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">passwordHash</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">role (Owner/Member)</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">status (Active/Revoked/Pending)</span></div>
+      </div>
+    </div>
+    <div class="model-card">
+      <div class="mc-head log">LogEntry</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">String</span><span class="field-n">device, room</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">action</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">actor ("user@x", "Rule: X")</span></div>
+        <div class="field"><span class="field-t">LocalDateTime</span><span class="field-n">timestamp</span></div>
+      </div>
+    </div>
+    <div class="model-card">
+      <div class="mc-head sched">Schedule</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">String</span><span class="field-n">id, name, deviceName</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">action, cronExpression</span></div>
+        <div class="field"><span class="field-t">boolean</span><span class="field-n">active</span></div>
+        <div class="field"><span class="field-t">LocalDateTime</span><span class="field-n">nextRunAt</span></div>
+      </div>
+    </div>
+    <div class="model-card">
+      <div class="mc-head scene">Scene</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">String</span><span class="field-n">id, name</span></div>
+        <div class="field"><span class="field-t">Map</span><span class="field-n">deviceStates (name→state)</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">description</span></div>
+      </div>
+    </div>
+    <div class="model-card">
+      <div class="mc-head notif">NotificationEntry</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">String</span><span class="field-n">id, message</span></div>
+        <div class="field"><span class="field-t">NotificationType</span><span class="field-n">SUCCESS / FAILURE</span></div>
+        <div class="field"><span class="field-t">LocalDateTime</span><span class="field-n">timestamp</span></div>
+        <div class="field"><span class="field-t">boolean</span><span class="field-n">read</span></div>
+      </div>
+    </div>
+    <div class="model-card">
+      <div class="mc-head vac">VacationModeConfig</div>
+      <div class="mc-body">
+        <div class="field"><span class="field-t">LocalDate</span><span class="field-n">startDate, endDate</span></div>
+        <div class="field"><span class="field-t">String</span><span class="field-n">scheduleName</span></div>
+        <div class="field"><span class="field-t">boolean</span><span class="field-n">active</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 7 — DATABASE SCHEMA
+══════════════════════════════════════════ -->
+<div class="pg" id="p7">
+  <h1>Database Schema</h1>
+  <p class="sub">Each JDBC service owns exactly one table (or a small group). Schemas are created automatically from embedded SQL scripts on first connection — no manual setup needed.</p>
+
+  <div class="db-grid">
+    <div class="db-table">
+      <div class="db-thead">users</div>
+      <div class="db-body">
+        <div class="db-col"><span class="pk">PK</span><span class="cn">id</span><span class="ct">BIGSERIAL</span></div>
+        <div class="db-col"><span class="cn">email</span><span class="ct">VARCHAR UNIQUE</span></div>
+        <div class="db-col"><span class="cn">username</span><span class="ct">VARCHAR</span></div>
+        <div class="db-col"><span class="cn">password_hash</span><span class="ct">VARCHAR (bcrypt)</span></div>
+        <div class="db-col"><span class="cn">role</span><span class="ct">VARCHAR</span></div>
+        <div class="db-col"><span class="cn">status</span><span class="ct">VARCHAR</span></div>
+        <div class="db-col"><span class="cn">last_login_at</span><span class="ct">TIMESTAMP</span></div>
+      </div>
+      <div class="db-note">Owned by JdbcUserService + JdbcUserRegistrationStore</div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-thead">rooms</div>
+      <div class="db-body">
+        <div class="db-col"><span class="pk">PK</span><span class="cn">id</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">name</span><span class="ct">TEXT NOT NULL</span></div>
+        <div class="db-col"><span class="cn">created_at</span><span class="ct">TIMESTAMP</span></div>
+      </div>
+      <div class="db-thead" style="margin-top:8px">devices</div>
+      <div class="db-body">
+        <div class="db-col"><span class="pk">PK</span><span class="cn">id</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">name, type</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="fk">FK</span><span class="cn">room_id</span><span class="ct">→ rooms.id</span></div>
+        <div class="db-col"><span class="cn">state</span><span class="ct">BOOLEAN DEFAULT TRUE</span></div>
+        <div class="db-col"><span class="cn">brightness, temperature</span><span class="ct">INT / DOUBLE</span></div>
+      </div>
+      <div class="db-note">Owned by JdbcRoomService. Devices CASCADE delete with room.</div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-thead">rules</div>
+      <div class="db-body">
+        <div class="db-col"><span class="pk">PK</span><span class="cn">id</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">name</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">trigger_type</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">source_device</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">condition_expr</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">action, target_device</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">enabled</span><span class="ct">BOOLEAN</span></div>
+        <div class="db-col"><span class="cn">status</span><span class="ct">VARCHAR</span></div>
+      </div>
+      <div class="db-note">Owned by JdbcRuleService. No FK to devices — names are strings.</div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-thead">activity_log</div>
+      <div class="db-body">
+        <div class="db-col"><span class="pk">PK</span><span class="cn">id</span><span class="ct">BIGSERIAL</span></div>
+        <div class="db-col"><span class="cn">device, room</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">action</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">actor</span><span class="ct">TEXT ("Rule: X")</span></div>
+        <div class="db-col"><span class="cn">timestamp</span><span class="ct">TIMESTAMP</span></div>
+      </div>
+      <div class="db-note">Source of truth for EnergyService calculations. Append-only.</div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-thead">schedules</div>
+      <div class="db-body">
+        <div class="db-col"><span class="pk">PK</span><span class="cn">id</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">name, device_name</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">action</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">cron_expression</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">active</span><span class="ct">BOOLEAN</span></div>
+        <div class="db-col"><span class="cn">next_run_at</span><span class="ct">TIMESTAMP</span></div>
+      </div>
+      <div class="db-note">Owned by JdbcScheduleService.</div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-thead">notifications</div>
+      <div class="db-body">
+        <div class="db-col"><span class="pk">PK</span><span class="cn">id</span><span class="ct">BIGSERIAL</span></div>
+        <div class="db-col"><span class="cn">message</span><span class="ct">TEXT</span></div>
+        <div class="db-col"><span class="cn">type</span><span class="ct">SUCCESS / FAILURE</span></div>
+        <div class="db-col"><span class="cn">read</span><span class="ct">BOOLEAN</span></div>
+        <div class="db-col"><span class="cn">timestamp</span><span class="ct">TIMESTAMP</span></div>
+      </div>
+      <div class="db-note">+ scenes, energy_daily, energy_weekly, device_power_config tables also exist.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE 8 — STARTUP SEQUENCE
+══════════════════════════════════════════ -->
+<div class="pg" id="p8">
+  <h1>App Startup Sequence</h1>
+  <p class="sub">What happens from double-clicking the JAR to seeing the login screen. The <span style="color:var(--violet)">purple</span> steps are new fixes we added today.</p>
+
+  <div class="timeline-v">
+    <div class="tv-step done">
+      <div class="ts-label">JVM</div>
+      <div class="ts-desc">Java launches the application, calls <code>SmartHomeApp.main(args)</code></div>
+      <div class="ts-code">Application.launch(SmartHomeApp.class, args)</div>
+    </div>
+    <div class="tv-step done">
+      <div class="ts-label">JavaFX Runtime</div>
+      <div class="ts-desc">JavaFX initializes and calls <code>SmartHomeApp.start(primaryStage)</code> on the JavaFX Application Thread</div>
+    </div>
+    <div class="tv-step done">
+      <div class="ts-label">Stage Setup</div>
+      <div class="ts-desc">Window title, size, and minimum dimensions are set. No services touched yet.</div>
+      <div class="ts-code">primaryStage.setTitle("Smart Home Orchestrator"); setWidth(1000); setHeight(700)</div>
+    </div>
+    <div class="tv-step done">
+      <div class="ts-label">Load Login + Register scenes</div>
+      <div class="ts-desc">Two lightweight FXML files are parsed. Their controllers are created — these only hold UI references, no service calls yet.</div>
+      <div class="ts-code">loadLoginScene(); loadRegisterScene();</div>
+    </div>
+    <div class="tv-step done">
+      <div class="ts-label">Show Window</div>
+      <div class="ts-desc">The login screen appears immediately. User can start reading the form.</div>
+      <div class="ts-code">primaryStage.setScene(loginScene); primaryStage.show();</div>
+      <div><span class="ts-badge done">User sees the app instantly</span></div>
+    </div>
+    <div class="tv-step new">
+      <div class="ts-label">Platform.runLater() — deferred</div>
+      <div class="ts-desc">The heavy work is posted to the JavaFX event queue instead of running before <code>show()</code>. This is the startup fix — previously these lines came before <code>show()</code> and blocked the window from appearing.</div>
+      <div class="ts-code">Platform.runLater(() -> { loadMainScene(); startServices(); })</div>
+      <div><span class="ts-badge new">Fixed today — was the cause of the freeze</span></div>
+    </div>
+    <div class="tv-step warn">
+      <div class="ts-label">loadMainScene()</div>
+      <div class="ts-desc"><code>main-shell.fxml</code> is loaded. <code>MainController</code> is created. Its field initializers trigger <code>ServiceRegistry.getNotificationService()</code> → lazy-initializes <code>JdbcNotificationService</code> → opens first connection to Aiven PostgreSQL. This takes 1–3 seconds.</div>
+      <div class="ts-code">ServiceRegistry.getNotificationService() → JdbcNotificationServiceHolder.INSTANCE</div>
+      <div><span class="ts-badge warn">Network round-trip to Aiven happens here</span></div>
+    </div>
+    <div class="tv-step done">
+      <div class="ts-label">Start Background Services</div>
+      <div class="ts-desc">Schedule and Rule recurring execution starts. A daemon thread wakes every 30 seconds and posts <code>processDueRules()</code> via <code>Platform.runLater()</code>.</div>
+      <div class="ts-code">getScheduleService().startRecurringExecution(); getRuleService().startRecurringExecution();</div>
+    </div>
+    <div class="tv-step done">
+      <div class="ts-label">App ready</div>
+      <div class="ts-desc">User can now log in. On successful login, <code>showMainScene()</code> switches to the main shell. If <code>mainScene</code> is still null (init not finished), it retries via <code>Platform.runLater(this::showMainScene)</code>.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── NAV ──────────────────────────────────────────────────────
+function go(id, btn) {
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  if(btn) btn.classList.add('on');
+}
+
+// ── DATA FLOW ─────────────────────────────────────────────────
+const scenarios = {
+  login: {
+    title: 'User Login',
+    steps: [
+      { layer:'View (login-view.fxml)', color:'#e5c07b', desc:'User types email + password and clicks Login', code:'@FXML Button loginButton → handleLogin()' },
+      { layer:'LoginController', color:'#61afef', desc:'Reads the text fields, creates a background Task so the UI stays responsive', code:'new Task<LoginStatus>() { call() → userService.authenticate(email, pass) }' },
+      { layer:'Background Thread', color:'#6c63ff', desc:'Task runs off the JavaFX thread to avoid freezing the UI during the network call', code:'Thread loginThread = new Thread(loginTask); loginThread.setDaemon(true); loginThread.start()' },
+      { layer:'ServiceRegistry', color:'#ffa94d', desc:'Returns the active UserService — JdbcUserService in production', code:'ServiceRegistry.getUserService() → JdbcUserServiceHolder.INSTANCE' },
+      { layer:'JdbcUserService', color:'#98c379', desc:'Checks throttling, queries the users table, verifies bcrypt password hash', code:'registrationStore.findByEmail(email) → BCrypt.checkpw(password, hash)' },
+      { layer:'Aiven PostgreSQL', color:'#6c63ff', desc:'SQL: SELECT email, password_hash, role, status FROM users WHERE email = ?', code:'ResultSet: {email, hash, role="Owner", status="Active"}' },
+      { layer:'JdbcUserService', color:'#98c379', desc:'Password matches and account is active → establish session, return SUCCESS', code:'establishSession(email, username, "Owner", "Active", now); return LoginStatus.SUCCESS' },
+      { layer:'LoginController (JavaFX thread)', color:'#61afef', desc:'Task succeeds → onSucceeded fires on JavaFX thread → navigate to main screen', code:'loginCallback.onLoginSuccess() → SmartHomeApp.showMainScene()' },
+    ]
+  },
+  toggle: {
+    title: 'Toggle a Device',
+    steps: [
+      { layer:'View (devices-control-view.fxml)', color:'#e5c07b', desc:'User clicks the ON/OFF toggle on a device card', code:'Toggle button in device card → state change listener fires' },
+      { layer:'DevicesController', color:'#61afef', desc:'Calls RoomService directly to update the device state — there is no separate SmartHomeService in production', code:'roomService.updateDeviceState(device.getId(), newVal)' },
+      { layer:'ServiceRegistry', color:'#ffa94d', desc:'Returns JdbcRoomService (handles both room structure AND device state updates)', code:'ServiceRegistry.getRoomService() → JdbcRoomServiceHolder.INSTANCE' },
+      { layer:'JdbcRoomService', color:'#98c379', desc:'Updates device state in the in-memory ObservableList AND persists to DB', code:'device.setState(!device.getState()); UPDATE devices SET state=? WHERE id=?' },
+      { layer:'Aiven PostgreSQL', color:'#6c63ff', desc:'State change written to the devices table', code:'UPDATE devices SET state = true WHERE id = \'dev-001\'' },
+      { layer:'LogService', color:'#56b6c2', desc:'DevicesController calls LogService to record who did what', code:'logService.addLogEntry(device.getName(), room, "Turn On", currentUser.getEmail())' },
+      { layer:'Aiven PostgreSQL', color:'#6c63ff', desc:'Log entry written to activity_log (also used by EnergyService)', code:'INSERT INTO activity_log (device, room, action, actor, timestamp) VALUES (...)' },
+      { layer:'View (ObservableList binding)', color:'#e5c07b', desc:'JavaFX UI automatically updates because DevicesController is bound to the ObservableList', code:'rooms.addListener(...) → UI refreshes device card state' },
+    ]
+  },
+  rule: {
+    title: 'Automatic Rule Fires',
+    steps: [
+      { layer:'Scheduler Thread', color:'#6c63ff', desc:'Every 30 seconds the scheduler thread wakes up', code:'ruleScheduler.scheduleAtFixedRate(..., 30, SECONDS)' },
+      { layer:'JavaFX Thread (via Platform.runLater)', color:'#61afef', desc:'Scheduler posts processDueRules() to the JavaFX queue', code:'Platform.runLater(this::processDueRules)' },
+      { layer:'JdbcRuleService.processDueRules()', color:'#98c379', desc:'Loops over all enabled rules. For each: evaluates condition, checks edge detection set', code:'for (Rule rule : rules) { evaluator.evaluate(rule, sourceDevice) }' },
+      { layer:'RuleEvaluator', color:'#ffa94d', desc:'Checks the condition. Example: "Bedroom Light is ON?" → device.getState() = true', code:'evaluateDeviceState("State = Active", device) → device.getState() = true' },
+      { layer:'Edge Detection (activeRuleIds)', color:'#c678dd', desc:'Condition is true AND rule is NOT in activeRuleIds → first time firing → proceed', code:'if (conditionMet && !activeRuleIds.contains(rule.getId())) → fire!' },
+      { layer:'JdbcRuleService.executeEnabledRule()', color:'#98c379', desc:'Finds the target device, applies the action (e.g. Turn On Main Light)', code:'applyAction(targetDevice, "Turn On") → targetDevice.setState(true)' },
+      { layer:'LogService', color:'#56b6c2', desc:'Records the rule-triggered action in the activity log', code:'logService.addLogEntry("Main Light", room, "Turn On", "Rule: Motion Welcome")' },
+      { layer:'NotificationService', color:'#ffa94d', desc:'Adds a SUCCESS notification — the bell badge increments in the UI', code:'notificationService.addNotification("Rule executed: Turn On → Main Light", SUCCESS)' },
+    ]
+  },
+  energy: {
+    title: 'View Energy Dashboard',
+    steps: [
+      { layer:'View (energy-view.fxml)', color:'#e5c07b', desc:'User clicks the Energy tab. JavaFX loads the energy view.', code:'Tab selection → EnergyController.initialize()' },
+      { layer:'EnergyController', color:'#61afef', desc:'On init, requests energy data for "today" from EnergyService', code:'energyService.getDailyByDevice(LocalDate.now())' },
+      { layer:'ServiceRegistry', color:'#ffa94d', desc:'Returns JdbcEnergyService singleton', code:'ServiceRegistry.getEnergyService() → JdbcEnergyServiceHolder.INSTANCE' },
+      { layer:'JdbcEnergyService', color:'#98c379', desc:'Queries the activity_log table for all ON/OFF events for today. Calculates on-time per device.', code:'SELECT action, timestamp FROM activity_log WHERE device=? AND timestamp >= today ORDER BY timestamp' },
+      { layer:'Aiven PostgreSQL', color:'#6c63ff', desc:'Returns all device state change events for the current day', code:'ResultSet: [{Turn On, 08:00}, {Turn Off, 09:30}, {Turn On, 14:00}, ...]' },
+      { layer:'JdbcEnergyService (calculation)', color:'#98c379', desc:'Wh = nominal power × on-time. Room = sum of devices. Household = sum of rooms.', code:'Wh = nominalPower(DIMMER=40W) × onTimeHours(1.5h) = 60 Wh' },
+      { layer:'EnergyController', color:'#61afef', desc:'Receives the aggregated data, populates charts and table', code:'populatePieChart(byRoom); populateBarChart(byDevice); updateHouseholdTotal()' },
+      { layer:'View (energy-view.fxml)', color:'#e5c07b', desc:'User sees pie chart (by room), bar chart (by device), and total household Wh', code:'Charts rendered by JavaFX chart API with data bound from EnergyService' },
+    ]
+  }
+};
+
+let currentScenario = 'login';
+let currentStep = -1;
+
+function selectScenario(id, btn) {
+  document.querySelectorAll('.stab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  currentScenario = id;
+  currentStep = -1;
+  renderFlow();
+}
+
+function renderFlow() {
+  const sc = scenarios[currentScenario];
+  const container = document.getElementById('flow-container');
+  container.innerHTML = '<div class="flow-scenario">' +
+    sc.steps.map((s,i) => `
+      <div class="flow-step${i<currentStep?'done':i===currentStep?' active':''}" id="fs-${i}">
+        <div class="fs-num">${i+1}</div>
+        <div>
+          <div class="fs-layer" style="color:${s.color}">${s.layer}</div>
+          <div class="fs-desc">${s.desc}</div>
+          <div class="fs-code">${s.code}</div>
+        </div>
+      </div>`).join('') + '</div>';
+  document.getElementById('flow-note').textContent =
+    `Step ${Math.max(0,currentStep+1)} of ${sc.steps.length}`;
+}
+
+function stepFlow() {
+  const sc = scenarios[currentScenario];
+  if (currentStep < sc.steps.length - 1) {
+    currentStep++;
+    renderFlow();
+    document.getElementById('fs-'+currentStep)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+function resetFlow() {
+  currentStep = -1;
+  renderFlow();
+}
+
+// init
+renderFlow();
+</script>
+</body>
+</html>

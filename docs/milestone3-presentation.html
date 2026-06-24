@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartHome Orchestrator — Milestone 3</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232636;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --accent3: #ff6b6b;
+    --accent4: #ffa94d;
+    --text: #e8eaf0;
+    --text-dim: #8b8fa8;
+    --border: #2e3148;
+    --green: #51cf66;
+    --yellow: #fcc419;
+    --red: #ff6b6b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(15,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0; padding: 0 32px;
+    height: 56px;
+  }
+  .nav-logo {
+    font-weight: 700; font-size: 14px; color: var(--accent);
+    margin-right: 32px; white-space: nowrap;
+  }
+  nav button {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 13px; font-weight: 500;
+    padding: 0 16px; height: 56px; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .2s, border-color .2s;
+    white-space: nowrap;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── SECTIONS ── */
+  section {
+    display: none; padding: 88px 40px 60px;
+    max-width: 1100px; margin: 0 auto;
+    animation: fadeIn .3s ease;
+  }
+  section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 32px 0 14px; color: var(--text); }
+  h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--accent2); }
+  p { color: var(--text-dim); line-height: 1.6; font-size: 14px; margin-bottom: 12px; }
+  .subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 32px; }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center; padding: 100px 40px 60px;
+    max-width: 700px; margin: 0 auto;
+  }
+  .hero h1 { font-size: 40px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero p { font-size: 16px; margin: 16px 0 40px; }
+  .hero-stats { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 28px; min-width: 130px;
+    transition: border-color .2s, transform .2s;
+  }
+  .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .stat-num { font-size: 32px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .nav-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; max-width: 700px; margin-left: auto; margin-right: auto; }
+  .nav-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; cursor: pointer;
+    transition: border-color .2s, transform .2s; text-align: left;
+  }
+  .nav-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .nav-card .icon { font-size: 28px; margin-bottom: 10px; }
+  .nav-card h3 { color: var(--text); font-size: 15px; margin-bottom: 6px; }
+  .nav-card p { font-size: 12px; margin: 0; }
+
+  /* ── ARCHITECTURE ── */
+  .arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .arch-layer {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 20px;
+    transition: border-color .2s;
+  }
+  .arch-layer:hover { border-color: var(--accent); }
+  .arch-layer.full { grid-column: 1 / -1; }
+  .arch-layer h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
+  .arch-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--text-dim);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .chip.hl { background: rgba(108,99,255,.15); border-color: rgba(108,99,255,.4); color: var(--accent); }
+  .chip.hl2 { background: rgba(0,212,170,.1); border-color: rgba(0,212,170,.3); color: var(--accent2); }
+
+  .arrow-down { text-align: center; font-size: 20px; color: var(--text-dim); padding: 4px 0; }
+
+  .rule-flow {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; margin-top: 8px;
+  }
+  .flow-steps { display: flex; align-items: flex-start; gap: 0; flex-wrap: wrap; }
+  .flow-step {
+    flex: 1; min-width: 140px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px; text-align: center;
+    font-size: 12px; position: relative;
+  }
+  .flow-step .step-title { font-weight: 600; color: var(--text); margin-bottom: 4px; font-size: 13px; }
+  .flow-step .step-sub { color: var(--text-dim); font-size: 11px; }
+  .flow-arrow { align-self: center; color: var(--accent); font-size: 18px; padding: 0 8px; flex-shrink: 0; }
+  .flow-step.new { border-color: var(--accent); }
+  .flow-step.new .step-title { color: var(--accent); }
+
+  /* ── PMD ── */
+  .pmd-grid { display: grid; gap: 12px; }
+  .pmd-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; cursor: pointer;
+    transition: border-color .2s;
+  }
+  .pmd-card:hover { border-color: var(--accent); }
+  .pmd-card.open { border-color: var(--accent); }
+  .pmd-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+  }
+  .pmd-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .pmd-num.bug { background: rgba(255,107,107,.2); color: var(--red); }
+  .pmd-num.design { background: rgba(108,99,255,.2); color: var(--accent); }
+  .pmd-num.style { background: rgba(0,212,170,.15); color: var(--accent2); }
+  .pmd-num.perf { background: rgba(255,169,77,.15); color: var(--accent4); }
+  .pmd-num.judge { background: rgba(139,143,168,.15); color: var(--text-dim); }
+  .pmd-rule { font-family: monospace; font-size: 13px; font-weight: 600; flex: 1; }
+  .pmd-badge {
+    font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0;
+  }
+  .pmd-badge.bug { background: rgba(255,107,107,.2); color: var(--red); }
+  .pmd-badge.design { background: rgba(108,99,255,.2); color: var(--accent); }
+  .pmd-badge.style { background: rgba(0,212,170,.1); color: var(--accent2); }
+  .pmd-badge.perf { background: rgba(255,169,77,.15); color: var(--accent4); }
+  .pmd-badge.judge { background: rgba(139,143,168,.1); color: var(--text-dim); }
+  .pmd-chevron { color: var(--text-dim); transition: transform .2s; flex-shrink: 0; }
+  .pmd-card.open .pmd-chevron { transform: rotate(180deg); }
+  .pmd-body {
+    display: none; padding: 0 18px 18px; border-top: 1px solid var(--border);
+  }
+  .pmd-card.open .pmd-body { display: block; }
+  .pmd-desc { color: var(--text-dim); font-size: 13px; margin: 14px 0 12px; line-height: 1.6; }
+  .code-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .code-block { border-radius: 8px; overflow: hidden; }
+  .code-block .code-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    padding: 6px 12px;
+  }
+  .code-block.before .code-label { background: rgba(255,107,107,.15); color: var(--red); }
+  .code-block.after .code-label { background: rgba(81,207,102,.12); color: var(--green); }
+  .code-block pre {
+    background: #0d0f18; padding: 12px 14px;
+    font-size: 11.5px; line-height: 1.6; overflow-x: auto;
+    color: #abb2bf;
+  }
+  .code-block pre .kw { color: #c678dd; }
+  .code-block pre .str { color: #98c379; }
+  .code-block pre .cm { color: #5c6370; }
+  .code-block pre .cl { color: #e5c07b; }
+  .code-block pre .fn { color: #61afef; }
+  .code-block pre .num { color: #d19a66; }
+  .takeaway {
+    background: rgba(108,99,255,.08); border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0; padding: 10px 14px;
+    font-size: 13px; color: var(--text); margin-top: 12px;
+  }
+  .takeaway strong { color: var(--accent); }
+
+  /* ── COVERAGE ── */
+  .cov-hero { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .cov-stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; text-align: center;
+  }
+  .cov-stat .big { font-size: 36px; font-weight: 700; }
+  .cov-stat .label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .cov-stat.green .big { color: var(--green); }
+  .cov-stat.yellow .big { color: var(--yellow); }
+  .cov-stat.accent .big { color: var(--accent); }
+
+  .bar-chart { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-label { font-size: 12px; color: var(--text-dim); width: 130px; flex-shrink: 0; text-align: right; font-family: monospace; }
+  .bar-track { flex: 1; background: var(--surface2); border-radius: 4px; height: 20px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(.4,0,.2,1); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; }
+  .bar-fill span { font-size: 11px; font-weight: 600; color: white; }
+  .threshold-line {
+    position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent4);
+    opacity: .7;
+  }
+
+  .cov-journey {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; margin-top: 16px;
+  }
+  .journey-steps { display: flex; align-items: center; gap: 0; margin-top: 12px; }
+  .journey-step {
+    flex: 1; text-align: center; padding: 14px 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; position: relative;
+  }
+  .journey-step .j-val { font-size: 22px; font-weight: 700; }
+  .journey-step .j-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .journey-arrow { padding: 0 10px; color: var(--accent); font-size: 20px; }
+  .journey-step.start .j-val { color: var(--red); }
+  .journey-step.mid .j-val { color: var(--yellow); }
+  .journey-step.end .j-val { color: var(--green); }
+
+  .pyramid {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px; margin-top: 16px;
+  }
+  .pyramid-levels { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .pyr-level {
+    border-radius: 6px; padding: 10px 20px; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+  }
+  .pyr-level .pyr-label { font-size: 13px; font-weight: 600; }
+  .pyr-level .pyr-count { font-size: 12px; color: var(--text-dim); }
+
+  .test-classes {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px;
+  }
+  .test-cls {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px;
+    transition: border-color .2s;
+  }
+  .test-cls:hover { border-color: var(--accent2); }
+  .test-cls .tc-name { font-family: monospace; font-size: 12px; color: var(--accent2); margin-bottom: 4px; }
+  .test-cls .tc-desc { font-size: 11px; color: var(--text-dim); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .arch-grid { grid-template-columns: 1fr; }
+    .code-compare { grid-template-columns: 1fr; }
+    .cov-hero { grid-template-columns: 1fr; }
+    .nav-cards { grid-template-columns: 1fr; }
+    .test-classes { grid-template-columns: 1fr; }
+    nav { padding: 0 12px; overflow-x: auto; }
+    section { padding: 80px 16px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">🏠 SmartHome M3</div>
+  <button class="active" onclick="show('home', this)">Overview</button>
+  <button onclick="show('arch', this)">Architecture</button>
+  <button onclick="show('pmd', this)">PMD Findings</button>
+  <button onclick="show('coverage', this)">Test Coverage</button>
+</nav>
+
+<!-- ═══════════════════════════ HOME ═══════════════════════════ -->
+<section id="home" class="active">
+  <div class="hero">
+    <h1>Milestone 3</h1>
+    <p class="subtitle">SmartHome Orchestrator · Team 4 · JKU PRSE 2026</p>
+    <div class="hero-stats">
+      <div class="stat-card"><div class="stat-num">10</div><div class="stat-label">New Features (FRs)</div></div>
+      <div class="stat-card"><div class="stat-num">603</div><div class="stat-label">Test Methods</div></div>
+      <div class="stat-card"><div class="stat-num">77%</div><div class="stat-label">Service Coverage</div></div>
+      <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">PMD Findings Fixed</div></div>
+    </div>
+  </div>
+
+  <div class="nav-cards">
+    <div class="nav-card" onclick="show('arch', document.querySelectorAll('nav button')[1])">
+      <div class="icon">🏗️</div>
+      <h3>Architecture</h3>
+      <p>Layered design, ServiceRegistry, Rule Engine, JDBC persistence</p>
+    </div>
+    <div class="nav-card" onclick="show('pmd', document.querySelectorAll('nav button')[2])">
+      <div class="icon">🔍</div>
+      <h3>PMD Findings</h3>
+      <p>12 issues — 4 real bugs including a concurrency anti-pattern</p>
+    </div>
+    <div class="nav-card" onclick="show('coverage', document.querySelectorAll('nav button')[3])">
+      <div class="icon">✅</div>
+      <h3>Test Coverage</h3>
+      <p>~45% → 77% in the service layer. 603 tests across 48 classes.</p>
+    </div>
+  </div>
+
+  <h2>Features shipped in M3</h2>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+    <div class="arch-layer"><h3>FR-10 / FR-11 — Rule Engine</h3><p>Condition-action rules with Time, Device State, Sensor Threshold triggers. JDBC-persistent, background execution every 30 s with edge detection.</p></div>
+    <div class="arch-layer"><h3>FR-12 — In-App Notifications</h3><p>Bell badge + notification list for rule success/failure. JDBC-backed persistence.</p></div>
+    <div class="arch-layer"><h3>FR-14 — Energy Dashboard</h3><p>Per-device / room / household estimation from activity log. Daily + weekly, CSV export.</p></div>
+    <div class="arch-layer"><h3>FR-15 — Conflict Detection</h3><p>ConflictDetectionService warns before saving incompatible rules for the same device.</p></div>
+    <div class="arch-layer"><h3>FR-17 — Scenes</h3><p>Named groups of device states, activated with one click. JDBC-persistent.</p></div>
+    <div class="arch-layer"><h3>FR-18 — MQTT Integration</h3><p>Optional Eclipse Paho MQTT bridge. Graceful degradation when broker unreachable.</p></div>
+    <div class="arch-layer"><h3>FR-19 — Simulation</h3><p>Full-day simulation with start conditions, active rules, accelerated replay.</p></div>
+    <div class="arch-layer"><h3>FR-20 — User Management</h3><p>Owner can invite, revoke, restore members. All actions logged.</p></div>
+    <div class="arch-layer"><h3>FR-21 — Vacation Mode</h3><p>Named schedule for a date range, overrides normal daily schedules.</p></div>
+    <div class="arch-layer"><h3>Bug Fixes (current branch)</h3><p>Startup freeze fixed (Platform.runLater). Rule notification spam fixed (edge detection).</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ ARCHITECTURE ═══════════════════════════ -->
+<section id="arch">
+  <h1>Architecture</h1>
+  <p class="subtitle">Layered MVC with interface-based service injection and dual Mock/JDBC backends</p>
+
+  <h2>Layer Overview</h2>
+  <div style="display:flex;flex-direction:column;gap:4px">
+
+    <div class="arch-layer full" style="border-color:rgba(108,99,255,.4)">
+      <h3 style="color:var(--accent)">View — FXML</h3>
+      <div class="arch-chips">
+        <span class="chip">login-view.fxml</span>
+        <span class="chip">main-shell.fxml</span>
+        <span class="chip">devices-view.fxml</span>
+        <span class="chip">rules-view.fxml</span>
+        <span class="chip">energy-view.fxml</span>
+        <span class="chip">simulation-view.fxml</span>
+        <span class="chip">...</span>
+      </div>
+    </div>
+
+    <div class="arrow-down">↕</div>
+
+    <div class="arch-layer full" style="border-color:rgba(0,212,170,.3)">
+      <h3 style="color:var(--accent2)">Controller — JavaFX</h3>
+      <div class="arch-chips">
+        <span class="chip hl2">LoginController</span>
+        <span class="chip hl2">DevicesController</span>
+        <span class="chip hl2">RulesController</span>
+        <span class="chip hl2">EnergyController</span>
+        <span class="chip hl2">UsersController</span>
+        <span class="chip hl2">SimulationController</span>
+        <span class="chip hl2">VacationModeController</span>
+        <span class="chip hl2">IoTSettingsController</span>
+      </div>
+    </div>
+
+    <div class="arrow-down">↕</div>
+
+    <div class="arch-layer full" style="border-color:rgba(255,169,77,.3)">
+      <h3 style="color:var(--accent4)">Service API — Interfaces + ServiceRegistry (DI entry point)</h3>
+      <div class="arch-chips">
+        <span class="chip" style="border-color:rgba(255,169,77,.4);color:var(--accent4)">ServiceRegistry</span>
+        <span class="chip">UserService</span>
+        <span class="chip">RuleService</span>
+        <span class="chip">RoomService</span>
+        <span class="chip">ScheduleService</span>
+        <span class="chip">LogService</span>
+        <span class="chip">NotificationService</span>
+        <span class="chip">EnergyService</span>
+        <span class="chip">SceneService</span>
+        <span class="chip">IoTIntegrationService</span>
+      </div>
+    </div>
+
+    <div class="arrow-down">↕</div>
+
+    <div class="arch-grid">
+      <div class="arch-layer" style="border-color:rgba(81,207,102,.2)">
+        <h3 style="color:var(--green)">Mock Implementations (Tests / Demo)</h3>
+        <div class="arch-chips">
+          <span class="chip">MockUserService</span>
+          <span class="chip">MockRuleService</span>
+          <span class="chip">MockRoomService</span>
+          <span class="chip">MockEnergyService</span>
+          <span class="chip">MockLogService</span>
+          <span class="chip">MockIoTIntegrationService</span>
+        </div>
+      </div>
+      <div class="arch-layer" style="border-color:rgba(108,99,255,.3)">
+        <h3 style="color:var(--accent)">JDBC Implementations (Production)</h3>
+        <div class="arch-chips">
+          <span class="chip hl">JdbcUserService</span>
+          <span class="chip hl">JdbcRuleService</span>
+          <span class="chip hl">JdbcRoomService</span>
+          <span class="chip hl">JdbcEnergyService</span>
+          <span class="chip hl">JdbcLogService</span>
+          <span class="chip hl">MqttIntegrationService</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down">↕</div>
+
+    <div class="arch-layer full" style="background:rgba(108,99,255,.06);border-color:rgba(108,99,255,.4)">
+      <h3 style="color:var(--accent)">Aiven PostgreSQL (Cloud DB)</h3>
+      <div class="arch-chips">
+        <span class="chip hl">users</span>
+        <span class="chip hl">rules</span>
+        <span class="chip hl">schedules</span>
+        <span class="chip hl">rooms / devices</span>
+        <span class="chip hl">activity_log</span>
+        <span class="chip hl">notifications</span>
+        <span class="chip hl">scenes</span>
+        <span class="chip hl">energy_log</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Key Design Decisions</h2>
+  <div class="arch-grid">
+    <div class="arch-layer">
+      <h3>Initialization-on-Demand Holder</h3>
+      <p>Thread-safe lazy init for all JDBC services — no explicit locks, no double-checked locking (→ PMD Finding #1). Each service lives in its own static inner <code style="color:var(--accent2)">Holder</code> class.</p>
+    </div>
+    <div class="arch-layer">
+      <h3>Test Injection via ServiceRegistry</h3>
+      <p><code style="color:var(--accent2)">ServiceRegistry.setXxxForTesting(mock)</code> replaces any service at runtime. Tests never touch production JDBC — they inject mocks before each test method.</p>
+    </div>
+    <div class="arch-layer">
+      <h3>Startup Fix (today)</h3>
+      <p>JDBC init was blocking the JavaFX thread <em>before</em> <code style="color:var(--accent2)">show()</code>. Fixed with <code style="color:var(--accent2)">Platform.runLater()</code> so the login window appears immediately.</p>
+    </div>
+    <div class="arch-layer">
+      <h3>Graceful MQTT Degradation</h3>
+      <p>All FR-01..FR-17 features work without a broker. Integration devices show OFFLINE. No retry loop blocks the UI thread.</p>
+    </div>
+  </div>
+
+  <h2>Rule Engine Flow (new in M3)</h2>
+  <div class="rule-flow">
+    <p style="margin-bottom:14px;font-size:13px;">Scheduler fires every 30 s → <strong style="color:var(--accent2)">edge detection</strong> → only notifies on false→true transition</p>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-title">Scheduler</div>
+        <div class="step-sub">every 30 s<br>daemon thread</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="step-title">processDueRules()</div>
+        <div class="step-sub">iterate enabled rules</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step new">
+        <div class="step-title">RuleEvaluator</div>
+        <div class="step-sub">Time / DeviceState<br>/ SensorThreshold</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step new">
+        <div class="step-title">Edge Detection</div>
+        <div class="step-sub">activeRuleIds<br>false→true only</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="step-title">applyAction()</div>
+        <div class="step-sub">+ Log + Notify</div>
+      </div>
+    </div>
+    <p style="margin-top:12px;font-size:12px;color:var(--accent);"><strong>New (today):</strong> Steps 3 & 4 prevent notification spam when a condition is permanently true (e.g. Bedroom Light is on by default → was firing every 30 s).</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ PMD ═══════════════════════════ -->
+<section id="pmd">
+  <h1>PMD Findings</h1>
+  <p class="subtitle">12 findings — 4 real bugs. PMD paid for itself on finding #1 alone.</p>
+
+  <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+    <div style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);border-radius:8px;padding:10px 16px;font-size:13px;"><span style="color:var(--red);font-weight:700">4 Bugs</span> <span style="color:var(--text-dim)">— real defects caught</span></div>
+    <div style="background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.3);border-radius:8px;padding:10px 16px;font-size:13px;"><span style="color:var(--accent);font-weight:700">3 Design</span> <span style="color:var(--text-dim)">— structural improvements</span></div>
+    <div style="background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:8px;padding:10px 16px;font-size:13px;"><span style="color:var(--accent2);font-weight:700">4 Style</span> <span style="color:var(--text-dim)">— readability</span></div>
+    <div style="background:rgba(139,143,168,.08);border:1px solid rgba(139,143,168,.2);border-radius:8px;padding:10px 16px;font-size:13px;"><span style="color:var(--text-dim);font-weight:700">1 Judgment</span> <span style="color:var(--text-dim)">— suppress with reason</span></div>
+  </div>
+
+  <div class="pmd-grid">
+
+    <!-- 1 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num bug">1</div>
+        <div class="pmd-rule">DoubleCheckedLocking</div>
+        <span class="pmd-badge bug">Bug</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">ServiceRegistry used the double-checked locking pattern — a well-known broken concurrency anti-pattern in Java. Even with <code>volatile</code>, it's error-prone and hard to reason about.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">❌ Before</div>
+            <pre><span class="kw">private static volatile</span> <span class="cl">ScheduleService</span> service;
+
+<span class="kw">public static</span> <span class="cl">ScheduleService</span> <span class="fn">get</span>() {
+  <span class="kw">if</span> (service == <span class="kw">null</span>) {
+    <span class="kw">synchronized</span> (<span class="cl">ServiceRegistry</span>.class) {
+      <span class="kw">if</span> (service == <span class="kw">null</span>) {
+        service = <span class="kw">new</span> <span class="cl">JdbcScheduleService</span>();
+      }
+    }
+  }
+  <span class="kw">return</span> service;
+}</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ After</div>
+            <pre><span class="kw">public static</span> <span class="cl">ScheduleService</span> <span class="fn">get</span>() {
+  <span class="kw">return</span> <span class="cl">Holder</span>.INSTANCE;
+}
+
+<span class="kw">private static final class</span> <span class="cl">Holder</span> {
+  <span class="kw">private static final</span> <span class="cl">ScheduleService</span>
+    INSTANCE = <span class="cl">JdbcScheduleService</span>
+      .<span class="fn">getInstance</span>();
+}</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> Initialization-on-demand Holder — thread-safe lazy init with zero synchronization overhead, guaranteed by the JVM class loader.</div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num bug">2</div>
+        <div class="pmd-rule">SystemPrintln</div>
+        <span class="pmd-badge bug">Bug</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">A debug leftover <code>System.out.println</code> was dumping the entire CSV export to stdout in production. Users never see it — but it clutters logs and can leak data.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">❌ Before</div>
+            <pre><span class="kw">private void</span> <span class="fn">handleExportCSV</span>() {
+  <span class="cl">String</span> csv = logService.<span class="fn">exportToCSV</span>();
+  <span class="cm">// "In a real app, save to file..."</span>
+  <span class="cl">System</span>.out.<span class="fn">println</span>(
+    <span class="str">"Export CSV:\n"</span> + csv  <span class="cm">// BUG</span>
+  );
+}</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ After</div>
+            <pre><span class="kw">private void</span> <span class="fn">handleExportCSV</span>() {
+  logService.<span class="fn">exportToCSV</span>();
+  <span class="cm">// save to file / clipboard</span>
+}</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> PMD acts as a safety net — catches debug code before it ships.</div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num bug">3</div>
+        <div class="pmd-rule">AvoidCatchingNPE</div>
+        <span class="pmd-badge bug">Bug</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">NullPointerException was used for control flow when loading FXML resources. This catches <em>any</em> NPE in the try block — not just the intended one — and is slow and misleading.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">❌ Before</div>
+            <pre><span class="kw">try</span> {
+  <span class="cl">FXMLLoader</span> l = <span class="kw">new</span> <span class="cl">FXMLLoader</span>(
+    <span class="cl">Objects</span>.<span class="fn">requireNonNull</span>(
+      <span class="fn">getClass</span>().<span class="fn">getResource</span>(path))
+  );
+  <span class="cl">Node</span> v = l.<span class="fn">load</span>();
+} <span class="kw">catch</span> (<span class="cl">NullPointerException</span> e) {
+  <span class="fn">showError</span>(<span class="str">"Not found"</span>, e); <span class="cm">// BAD</span>
+}</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ After</div>
+            <pre><span class="cl">URL</span> res = <span class="fn">getClass</span>().<span class="fn">getResource</span>(path);
+<span class="kw">if</span> (res == <span class="kw">null</span>) {
+  <span class="fn">showError</span>(<span class="str">"Not found"</span>);
+  <span class="kw">return</span>;
+}
+<span class="cl">FXMLLoader</span> l = <span class="kw">new</span> <span class="cl">FXMLLoader</span>(res);
+<span class="cl">Node</span> v = l.<span class="fn">load</span>();</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> Explicit null checks are always better than catching NPE — they're faster, clearer, and don't accidentally swallow unrelated bugs.</div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num bug">4</div>
+        <div class="pmd-rule">NullAssignment → domain logic bug</div>
+        <span class="pmd-badge bug">Bug</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">Session expiry called <code>logout()</code> which set <code>currentUserRole = null</code>. The rest of the code expected "Guest" — not null. PMD's NullAssignment flag revealed a real domain logic error.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">❌ Before</div>
+            <pre><span class="kw">if</span> (<span class="cl">System</span>.<span class="fn">currentTimeMillis</span>()
+    >= sessionExpiresAt) {
+  <span class="fn">logout</span>();
+  <span class="cm">// sets currentUserRole = null!</span>
+}</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ After</div>
+            <pre><span class="kw">if</span> (<span class="cl">System</span>.<span class="fn">currentTimeMillis</span>()
+    >= sessionExpiresAt) {
+  currentUserEmail = <span class="kw">null</span>;
+  currentUsername = <span class="kw">null</span>;
+  currentUserRole = <span class="str">"Guest"</span>; <span class="cm">// ✓</span>
+  currentUserStatus = <span class="kw">null</span>;
+  sessionExpiresAt = <span class="num">0</span>;
+}</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> PMD's NullAssignment warning triggered investigation — revealing a domain logic bug where an expired session produced a null role instead of "Guest".</div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num design">5</div>
+        <div class="pmd-rule">OnlyOneReturn</div>
+        <span class="pmd-badge design">Design</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">ActivityLogController.matches() had 4 early return statements. Restructuring with named boolean variables makes the logic immediately readable.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">❌ Before</div>
+            <pre><span class="kw">if</span> (filterByDevice &&
+    !device.<span class="fn">equals</span>(entry.<span class="fn">getDevice</span>()))
+  <span class="kw">return false</span>;
+<span class="kw">if</span> (fromIso != <span class="kw">null</span> &&
+    date.<span class="fn">compareTo</span>(fromIso) &lt; 0)
+  <span class="kw">return false</span>;
+<span class="cm">// ... more returns ...</span>
+<span class="kw">return true</span>;</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ After</div>
+            <pre"><span class="kw">final boolean</span> deviceOk =
+  !filterByDevice ||
+  device.<span class="fn">equals</span>(entry.<span class="fn">getDevice</span>());
+<span class="kw">final boolean</span> fromOk =
+  fromIso == <span class="kw">null</span> ||
+  date.<span class="fn">compareTo</span>(fromIso) >= 0;
+<span class="kw">final boolean</span> toOk = ...;
+<span class="kw">return</span> deviceOk && fromOk && toOk;</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> Named boolean variables turn implicit logic into a self-documenting expression.</div>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num style">6</div>
+        <div class="pmd-rule">ShortVariable</div>
+        <span class="pmd-badge style">Style</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">Single-letter variable names like <code>d</code>, <code>r</code>, <code>t</code>, <code>s</code> were used throughout. A reader has to trace back to the declaration to understand what each one means.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">❌ Before</div>
+            <pre><span class="cl">String</span> id = <span class="cl">UUID</span>.<span class="fn">randomUUID</span>()...;
+<span class="cl">String</span> t = type.<span class="fn">trim</span>().<span class="fn">toLowerCase</span>();
+<span class="cl">String</span> s = sql.<span class="fn">trim</span>();
+<span class="cl">Room</span> r = input.<span class="fn">room</span>();
+<span class="cl">Device</span> d = roomSvc.<span class="fn">addDevice</span>(...);</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ After</div>
+            <pre"><span class="cl">String</span> deviceId = <span class="cl">UUID</span>.<span class="fn">randomUUID</span>()...;
+<span class="cl">String</span> normalizedType = type.<span class="fn">trim</span>()...;
+<span class="cl">String</span> sqlStatement = sql.<span class="fn">trim</span>();
+<span class="cl">Room</span> selectedRoom = input.<span class="fn">room</span>();
+<span class="cl">Device</span> createdDevice = svc.<span class="fn">addDevice</span>(...);</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> Short names save typing, but cost reading time. PMD enforces intention-revealing names.</div>
+      </div>
+    </div>
+
+    <!-- 9 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num perf">9</div>
+        <div class="pmd-rule">InsufficientStringBufferDeclaration</div>
+        <span class="pmd-badge perf">Performance</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">CSV export created a StringBuilder with default capacity 16. With potentially hundreds of log entries (~96 chars each), the internal array was reallocated many times.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">❌ Before</div>
+            <pre"><span class="cl">StringBuilder</span> csv =
+  <span class="kw">new</span> <span class="cl">StringBuilder</span>();
+<span class="cm">// capacity = 16 → many reallocations</span>
+csv.<span class="fn">append</span>(<span class="str">"Timestamp,Device,..."</span>);
+<span class="kw">for</span> (<span class="cl">LogEntry</span> e : logs) { ... }</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ After</div>
+            <pre"><span class="kw">int</span> cap = logs.<span class="fn">size</span>() * <span class="num">96</span> + <span class="num">64</span>;
+<span class="cl">StringBuilder</span> csv =
+  <span class="kw">new</span> <span class="cl">StringBuilder</span>(cap);
+<span class="cm">// one allocation, no copies</span>
+csv.<span class="fn">append</span>(<span class="str">"Timestamp,Device,..."</span>);</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> Pre-sizing a StringBuilder avoids O(n) reallocations. PMD catches this automatically.</div>
+      </div>
+    </div>
+
+    <!-- 11 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num design">11</div>
+        <div class="pmd-rule">UnitTestContainsTooManyAsserts</div>
+        <span class="pmd-badge design">Design</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">A single test method was checking 7+ things at once. When it failed, you couldn't tell which assertion broke.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">❌ Before (1 test, 7 asserts)</div>
+            <pre"><span class="fn">@Test</span>
+<span class="kw">void</span> <span class="fn">addUpdateToggleDelete</span>() {
+  <span class="cl">Schedule</span> s = svc.<span class="fn">addSchedule</span>(...);
+  <span class="fn">assertNotNull</span>(s);
+  <span class="fn">assertEquals</span>(<span class="num">1</span>, svc.<span class="fn">size</span>());
+  <span class="fn">assertTrue</span>(svc.<span class="fn">update</span>(...));
+  <span class="fn">assertEquals</span>(<span class="str">"New"</span>, s.<span class="fn">getName</span>());
+  <span class="cm">// ... 3 more ...</span>
+}</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ After (focused tests)</div>
+            <pre"><span class="fn">@Test</span> <span class="kw">void</span> <span class="fn">addReturnsNonNull</span>() {...}
+<span class="fn">@Test</span> <span class="kw">void</span> <span class="fn">addIncreasesSize</span>() {...}
+<span class="fn">@Test</span> <span class="kw">void</span> <span class="fn">updateChangesName</span>() {...}
+<span class="fn">@Test</span> <span class="kw">void</span> <span class="fn">toggleEnablesInactive</span>() {...}
+<span class="fn">@Test</span> <span class="kw">void</span> <span class="fn">deleteReducesSize</span>() {...}</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> One assert per test = precise failure localization. When the test fails, the name tells you exactly what broke.</div>
+      </div>
+    </div>
+
+    <!-- 12 -->
+    <div class="pmd-card" onclick="togglePmd(this)">
+      <div class="pmd-header">
+        <div class="pmd-num judge">12</div>
+        <div class="pmd-rule">MethodNamingConventions — suppress with reason</div>
+        <span class="pmd-badge judge">Judgment</span>
+        <span class="pmd-chevron">▼</span>
+      </div>
+      <div class="pmd-body">
+        <p class="pmd-desc">PMD expected camelCase for all methods, but test methods using snake_case are a widely accepted convention for readability. This is a case where blind compliance would reduce code quality.</p>
+        <div class="code-compare">
+          <div class="code-block before">
+            <div class="code-label">PMD wanted: camelCase</div>
+            <pre"><span class="fn">@Test</span>
+<span class="kw">void</span> <span class="fn">freshDatabaseHasNoNotifications</span>() {
+  <span class="cm">// harder to read at a glance</span>
+}</pre>
+          </div>
+          <div class="code-block after">
+            <div class="code-label">✅ Kept + suppressed</div>
+            <pre"><span class="fn">@SuppressWarnings</span>(<span class="str">"PMD.MethodNamingConventions"</span>)
+<span class="kw">class</span> <span class="cl">TestJdbcRuleService</span> { ... }
+
+<span class="fn">@Test</span>
+<span class="kw">void</span> <span class="fn">freshDatabase_hasNoNotifications</span>() {
+  <span class="cm">// instantly readable</span>
+}</pre>
+          </div>
+        </div>
+        <div class="takeaway"><strong>Takeaway:</strong> Not every PMD finding needs a code change. When a rule conflicts with an established convention, suppress with justification — don't blindly comply.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════ COVERAGE ═══════════════════════════ -->
+<section id="coverage">
+  <h1>Test Coverage</h1>
+  <p class="subtitle">JaCoCo measures the <code>service/**</code> layer only — Controllers and FXML views require a JavaFX runtime and are excluded from the threshold.</p>
+
+  <div class="cov-hero">
+    <div class="cov-stat green"><div class="big">77%</div><div class="label">Service Layer Coverage (CI)</div></div>
+    <div class="cov-stat accent"><div class="big">603</div><div class="label">@Test Methods</div></div>
+    <div class="cov-stat accent"><div class="big">48</div><div class="label">Test Classes</div></div>
+  </div>
+
+  <h2>Coverage by Metric</h2>
+  <div class="bar-chart">
+    <div class="bar-row">
+      <div class="bar-label">Lines</div>
+      <div class="bar-track">
+        <div class="bar-fill" id="bar-line" style="width:0%;background:linear-gradient(90deg,#6c63ff,#9f97ff)"><span>77%</span></div>
+        <div class="threshold-line" style="left:75%"></div>
+      </div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Methods</div>
+      <div class="bar-track">
+        <div class="bar-fill" id="bar-method" style="width:0%;background:linear-gradient(90deg,#00d4aa,#4ae3c8)"><span>81%</span></div>
+        <div class="threshold-line" style="left:75%"></div>
+      </div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Classes</div>
+      <div class="bar-track">
+        <div class="bar-fill" id="bar-class" style="width:0%;background:linear-gradient(90deg,#51cf66,#7dde8a)"><span>85%</span></div>
+        <div class="threshold-line" style="left:75%"></div>
+      </div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Branches</div>
+      <div class="bar-track">
+        <div class="bar-fill" id="bar-branch" style="width:0%;background:linear-gradient(90deg,#ffa94d,#ffc07a)"><span>62%</span></div>
+        <div class="threshold-line" style="left:75%"></div>
+      </div>
+    </div>
+    <p style="margin-top:10px;font-size:11px;color:var(--accent4);">▏ = 75% threshold (JaCoCo minimum)</p>
+  </div>
+
+  <h2>Coverage Journey</h2>
+  <div class="cov-journey">
+    <p>Coverage grew from ~45% (start of M3) to 77% through dedicated test sprints.</p>
+    <div class="journey-steps">
+      <div class="journey-step start">
+        <div class="j-val">~45%</div>
+        <div class="j-label">M2 end</div>
+      </div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step mid">
+        <div class="j-val">~55%</div>
+        <div class="j-label">After PMD fixes</div>
+      </div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step mid">
+        <div class="j-val">~65%</div>
+        <div class="j-label">JDBC service tests</div>
+      </div>
+      <div class="journey-arrow">→</div>
+      <div class="journey-step end">
+        <div class="j-val">77%</div>
+        <div class="j-label">M3 — threshold met ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Test Pyramid</h2>
+  <div class="pyramid">
+    <div class="pyramid-levels">
+      <div class="pyr-level" style="width:40%;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.2)">
+        <span class="pyr-label" style="color:var(--red)">UI Smoke Tests</span>
+        <span class="pyr-count">1 class · needs JavaFX runtime</span>
+      </div>
+      <div class="pyr-level" style="width:65%;background:rgba(255,169,77,.08);border:1px solid rgba(255,169,77,.2)">
+        <span class="pyr-label" style="color:var(--accent4)">Controller Tests</span>
+        <span class="pyr-count">RobustControllerCoverageTest · headless</span>
+      </div>
+      <div class="pyr-level" style="width:100%;background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.2)">
+        <span class="pyr-label" style="color:var(--accent)">Service Tests — 603 @Test methods</span>
+        <span class="pyr-count">JDBC + Mock + Boundary + Concurrency + Integration</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Notable Test Classes</h2>
+  <div class="test-classes">
+    <div class="test-cls">
+      <div class="tc-name">TestJdbcRuleService</div>
+      <div class="tc-desc">Rule CRUD, edge detection, conflict detection, manual vs scheduled execution</div>
+    </div>
+    <div class="test-cls">
+      <div class="tc-name">TestJdbcUserService</div>
+      <div class="tc-desc">Login throttling (3 attempts → lock), session expiry, role-based access</div>
+    </div>
+    <div class="test-cls">
+      <div class="tc-name">ConflictDetectionServiceTest</div>
+      <div class="tc-desc">All 4 device type matrices: Switch, Dimmer, Thermostat, Cover</div>
+    </div>
+    <div class="test-cls">
+      <div class="tc-name">TestMqttIntegrationService</div>
+      <div class="tc-desc">Broker unavailable, reconnect, bidirectional state sync</div>
+    </div>
+    <div class="test-cls">
+      <div class="tc-name">JdbcEnergyServiceTest</div>
+      <div class="tc-desc">Known on-time → expected Wh, room sums, zero-activity edge case</div>
+    </div>
+    <div class="test-cls">
+      <div class="tc-name">TestMockUserServiceLoginLogout</div>
+      <div class="tc-desc">Session lifecycle, Guest role after expiry, concurrent access</div>
+    </div>
+    <div class="test-cls">
+      <div class="tc-name">RobustLogicCoverageTest</div>
+      <div class="tc-desc">Branch coverage for all service edge cases</div>
+    </div>
+    <div class="test-cls">
+      <div class="tc-name">TestJdbcScheduleService</div>
+      <div class="tc-desc">Recurring execution, conflict detection, vacation mode override</div>
+    </div>
+    <div class="test-cls">
+      <div class="tc-name">TestMockVacationModeService</div>
+      <div class="tc-desc">Date range activation, schedule override, deactivation</div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function show(id, btn) {
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (id === 'coverage') animateBars();
+  }
+
+  function togglePmd(card) {
+    card.classList.toggle('open');
+  }
+
+  function animateBars() {
+    setTimeout(() => {
+      const bars = [
+        { id: 'bar-line',   pct: 77 },
+        { id: 'bar-method', pct: 81 },
+        { id: 'bar-class',  pct: 85 },
+        { id: 'bar-branch', pct: 62 },
+      ];
+      bars.forEach(b => {
+        const el = document.getElementById(b.id);
+        if (el) el.style.width = b.pct + '%';
+      });
+    }, 100);
+  }
+</script>
+</body>
+</html>
