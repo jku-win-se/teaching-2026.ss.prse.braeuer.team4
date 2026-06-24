@@ -3,8 +3,6 @@
 [![Continuous Integration](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml/badge.svg)](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml)
 [![Coverage](https://img.shields.io/badge/coverage-77%25-yellow)](https://github.com/jku-win-se/teaching-2026.ss.prse.braeuer.team4/actions/workflows/Continuous%20Integration.yaml)
 
-> **„Personalisierte Rules. Orchestration. Automation."**
-
 ![SmartHome Orchestrator – Device Control](./pic/home-orchestrator-showcase.jpg)
 
 ## Überblick über das Projekt
@@ -35,8 +33,6 @@ Wesentliche Funktionen:
 Technisch handelt es sich um einen mehrschichtigen Monolithen (JavaFX-UI → Service-Schicht
 → PostgreSQL), wobei zu jedem Dienst eine In-Memory-Mock-Variante für Tests und Demobetrieb
 existiert. Details siehe [Systemarchitektur](./docs/system-architecture.md).
-
-**Team 4:** Gruber Manuel, Li Xinyue, Möseneder Simon — Praktikum Software Engineering, SS 2026.
 
 ## Überblick über die Applikation aus Benutzersicht
 
