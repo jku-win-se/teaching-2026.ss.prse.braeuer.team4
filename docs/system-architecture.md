@@ -165,6 +165,11 @@ Aktionen auf demselben Gerät (FR-15). Ablauf siehe
 - **Aktivitätsdaten**: Alle manuellen und automatisierten Zustandsänderungen werden in
   `activity_log` protokolliert (Zeitstempel, Gerät, Actor) und bilden die Datenbasis für
   Energie-Berechnung und Activity-Log.
+- **Persistenzumfang**: Die meisten Dienste (Auth, Räume, Geräte/Log, Zeitpläne, Regeln,
+  Benachrichtigungen, Energie, Szenen) sind JDBC-gestützt und über die Datenbank persistent.
+  Die Funktionen **MQTT-Integration (FR-18)**, **Tagessimulation (FR-19)** und **Vacation
+  Mode (FR-21)** laufen produktiv über In-Memory-Dienste; ihr Zustand wird daher nicht über
+  Programmläufe hinweg persistiert.
 
 ## 6. Erweiterungspunkte
 

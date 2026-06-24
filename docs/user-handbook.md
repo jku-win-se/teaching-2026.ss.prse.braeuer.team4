@@ -209,7 +209,7 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 1. `Rules` öffnen.
 2. **+ Add Rule** klicken.
 3. Name vergeben.
-4. Trigger-Typ wählen (`TIME`, `THRESHOLD`, `EVENT`).
+4. Trigger-Typ wählen (`Time`, `Sensor Threshold`, `Device State`).
 5. Quelle/Bedingung setzen.
 6. Zielgerät + Aktion setzen.
 7. Mit **Save** speichern.
