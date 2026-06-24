@@ -34,6 +34,46 @@ Technisch handelt es sich um einen mehrschichtigen Monolithen (JavaFX-UI → Ser
 → PostgreSQL), wobei zu jedem Dienst eine In-Memory-Mock-Variante für Tests und Demobetrieb
 existiert. Details siehe [Systemarchitektur](./docs/system-architecture.md).
 
+## Team
+
+Praktikum Software Engineering – SS 2026, Team 4.
+
+| Mitglied | Schwerpunkt |
+|---|---|
+| **Gruber Manuel** | Service-Layer-Architektur (Mock-/JDBC-Restrukturierung, `ServiceRegistry`), Zeitpläne, Energie-Dashboard, MQTT-Integration, Regel-Konflikterkennung sowie CI/Build & Qualitätssicherung (JaCoCo, PMD, JavaDoc-Hosting) |
+| **Li Xinyue** | Regel-Engine (`RuleService`, `RuleEvaluator`, `RuleValidator`), Automatisierung, In-App-Benachrichtigungen und Szenen mit JDBC-Persistenz |
+| **Möseneder Simon** | Räume- & Geräteverwaltung (anlegen/umbenennen/löschen), CSV-Export, Tagessimulation, Vacation Mode und Benutzerhandbuch |
+
+## Umgesetzte Anforderungen
+
+Die funktionalen Anforderungen **FR-01 bis FR-21 sind vollständig umgesetzt**. Die
+Rückverfolgbarkeit zu den User Stories ist in der
+[User-Stories-Dokumentation](./docs/user-stories.md) abgebildet.
+
+| FR | Anforderung | Status |
+|----|-------------|:------:|
+| FR-01 | Registrierung mit eindeutiger E-Mail/Passwort | ✅ |
+| FR-02 | Login / Logout | ✅ |
+| FR-03 | Räume anlegen / umbenennen / löschen | ✅ |
+| FR-04 | Virtuelle Geräte hinzufügen (Typ + Name) | ✅ |
+| FR-05 | Geräte umbenennen / entfernen | ✅ |
+| FR-06 | Geräte manuell steuern (Schalter/Dimmer/Thermostat/Jalousie/Sensor) | ✅ |
+| FR-07 | Echtzeit-Status der Geräte in der UI | ✅ |
+| FR-08 | Activity-Log (Zeitstempel, Gerät, Actor) | ✅ |
+| FR-09 | Wiederkehrende Zeitpläne | ✅ |
+| FR-10 | Regeln (IF-Trigger-THEN-Action) | ✅ |
+| FR-11 | Zeit-, Schwellwert- und ereignisbasierte Trigger | ✅ |
+| FR-12 | In-App-Benachrichtigungen bei Regelausführung/-fehler | ✅ |
+| FR-13 | Rollen & Berechtigungen (Owner/Member) | ✅ |
+| FR-14 | Energie-Dashboard (Gerät/Raum/Haushalt, Tag/Woche) | ✅ |
+| FR-15 | Erkennung von Zeitplan-/Regelkonflikten | ✅ |
+| FR-16 | CSV-Export von Activity-Log / Energieverbrauch | ✅ |
+| FR-17 | Szenen (benannte Geräte-Zustände, 1-Klick-Aktivierung) | ✅ |
+| FR-18 | MQTT-Integration für physische Geräte (optional) | ✅ |
+| FR-19 | Tagessimulation mit beschleunigtem Replay | ✅ |
+| FR-20 | Member per E-Mail einladen / Zugriff entziehen | ✅ |
+| FR-21 | Vacation Mode (Zeitplan für Datumsbereich) | ✅ |
+
 ## Überblick über die Applikation aus Benutzersicht
 
 ➡️ **[Benutzerhandbuch](./docs/user-handbook.md)** — Installation & Start, Funktionsüberblick,
