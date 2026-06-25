@@ -124,7 +124,7 @@ In der Sidebar findest du:
 
 ## 6. Rooms: Räume verwalten
 
-![Raum Ansicht](./screenshots/Raum Ansicht.png)
+![Raum Ansicht](./screenshots/Raum_Ansicht.png)
 
 🔒 Nur Owner.
 
@@ -166,7 +166,7 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 7. Devices: Geräte steuern und filtern
 
-![Geräte Ansicht](./screenshots/Geräte Ansicht.png)
+![Geraete Ansicht](./screenshots/Geraete_Ansicht.png)
 
 ### Geräte nach Raum filtern
 
@@ -281,7 +281,7 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 10. Vacation Mode
 
-![Vacation Mode](./screenshots/Vacation Mode.png)
+![Vacation Mode](./screenshots/Vacation_Mode.png)
 
 🔒 Nur Owner.
 
@@ -366,7 +366,7 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 13. Energy
 
-![Energy Dashboard](./screenshots/Energy Dashboard.png)
+![Energy Dashboard](./screenshots/Energy_Dashboard.png)
 
 ### Aggregation umschalten
 
@@ -391,7 +391,7 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 14. Activity Log
 
-![Activity Log](./screenshots/Activity Log.png)
+![Activity Log](./screenshots/Activity_Log.png)
 
 ### Log filtern
 
@@ -414,7 +414,7 @@ Hinweis: Exportiert wird genau die aktuell sichtbare, gefilterte Tabelle.
 
 ## 15. Users
 
-![User Management](./screenshots/User Management.png)
+![User Management](./screenshots/User_Management.png)
 
 🔒 Nur Owner.
 
@@ -442,7 +442,7 @@ Hinweis: Exportiert wird genau die aktuell sichtbare, gefilterte Tabelle.
 
 ## 16. IoT Integration
 
-![IoT Integration](./screenshots/IoT Integration.png)
+![IoT Integration](./screenshots/IoT_Integration.png)
 
 🔒 Nur Owner.
 
