@@ -2,3 +2,9 @@
 /target/
 /.env
 /smarthome-db.properties
+
+# macOS
+.DS_Store
+
+# Office temp/lock files
+~$*
