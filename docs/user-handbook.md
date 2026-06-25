@@ -55,6 +55,10 @@ Danach öffnet sich die Login-Ansicht.
 
 ## 3. Registrierung und Login
 
+| Registrierung | Login |
+|---|---|
+| ![Registrierung](./screenshots/Register.png) | ![Login](./screenshots/Login.png) |
+
 ### Registrierung
 
 1. In der Login-Ansicht auf **Register** klicken.
@@ -120,6 +124,8 @@ In der Sidebar findest du:
 
 ## 6. Rooms: Räume verwalten
 
+![Raum Ansicht](./screenshots/Raum Ansicht.png)
+
 🔒 Nur Owner.
 
 ### Raum hinzufügen
@@ -159,6 +165,8 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 2. Eingabe bzw. Bestätigung durchführen.
 
 ## 7. Devices: Geräte steuern und filtern
+
+![Geräte Ansicht](./screenshots/Geräte Ansicht.png)
 
 ### Geräte nach Raum filtern
 
@@ -202,6 +210,8 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 8. Rules: Automationsregeln
 
+![Rules](./screenshots/Rules.png)
+
 🔒 Nur Owner.
 
 ### Regel anlegen
@@ -237,6 +247,8 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 9. Schedules: Zeitpläne
 
+![Schedules](./screenshots/Schedules.png)
+
 🔒 Nur Owner.
 
 ### Schedule erstellen
@@ -268,6 +280,8 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 - Hinweis prüfen und Zeitplan/Regeln bei Bedarf anpassen.
 
 ## 10. Vacation Mode
+
+![Vacation Mode](./screenshots/Vacation Mode.png)
 
 🔒 Nur Owner.
 
@@ -321,6 +335,8 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 12. Scenes
 
+![Scenes](./screenshots/Scenes.png)
+
 🔒 Nur Owner.
 
 ### Neue Szene erstellen
@@ -350,6 +366,8 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 13. Energy
 
+![Energy Dashboard](./screenshots/Energy Dashboard.png)
+
 ### Aggregation umschalten
 
 1. `Energy` öffnen.
@@ -373,6 +391,8 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 
 ## 14. Activity Log
 
+![Activity Log](./screenshots/Activity Log.png)
+
 ### Log filtern
 
 1. `Activity Log` öffnen.
@@ -393,6 +413,8 @@ Hinweis: Beim Löschen eines Raums werden zugehörige Geräte mit entfernt.
 Hinweis: Exportiert wird genau die aktuell sichtbare, gefilterte Tabelle.
 
 ## 15. Users
+
+![User Management](./screenshots/User Management.png)
 
 🔒 Nur Owner.
 
@@ -419,6 +441,8 @@ Hinweis: Exportiert wird genau die aktuell sichtbare, gefilterte Tabelle.
 2. Zugriff wird wieder aktiviert.
 
 ## 16. IoT Integration
+
+![IoT Integration](./screenshots/IoT Integration.png)
 
 🔒 Nur Owner.
 
